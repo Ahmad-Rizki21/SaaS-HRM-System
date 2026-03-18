@@ -6,17 +6,20 @@ STATUS: MASIH DALAM TAHAP PENGEMBANGAN (DEVELOPMENT)
 
 ---
 
-## Teknologi yang Digunakan
+---
 
-### Backend
-* Framework: Laravel 11
-* Authentication: Laravel Sanctum (Token based)
-* Database: MySQL
-* Library Pendukung: Maatwebsite Excel (untuk laporan)
+## Fitur Utama yang Sudah Siap 🚀
 
-### Frontend
-* Framework: Next.js (React)
-* Styling: Vanilla CSS
+Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
+
+*   **🔒 Authentication & Security**: Multi-tenant login, Role-based Access Control (RBAC), hash password, dan session management.
+*   **👥 Manajemen SDM**: Data karyawan lengkap, request perubahan profil, upload foto, dan manajemen jabatan (Role).
+*   **⏰ Kehadiran & Shift**: Check-in/out dengan validasi lokasi (dummy), manajemen shift kerja, jadwal mingguan, dan laporan absensi (Export Excel).
+*   **📅 Pengajuan Cuti**: Workflow pengajuan cuti, approval/rejection oleh atasan, dan history cuti.
+*   **💸 Reimbursement**: Pengajuan klaim biaya, sistem approval bertingkat, dan management saldo klaim.
+*   **📢 Komunikasi & Pengumuman**: Broadcast pengumuman ke seluruh karyawan melalui Dashboard (Kotak Pesan) dan Email Premium (HTML).
+*   **🎊 Hari Libur**: Manajemen kalender libur nasional dan kebijakan libur internal perusahaan.
+*   **📈 Log Aktivitas**: Audit trail otomatis yang mencatat setiap aksi penting pengguna (Tambah karyawan, hapus pengumuman, dsb).
 
 ---
 
@@ -24,47 +27,36 @@ STATUS: MASIH DALAM TAHAP PENGEMBANGAN (DEVELOPMENT)
 
 ```text
 SaaS/
-├── backend/                # Aplikasi Laravel API
+├── backend/                # Aplikasi Laravel 11 API (RESTful)
 │   ├── app/
-│   │   ├── Http/
-│   │   │   ├── Controllers/# Logika API (Auth, Attendance, Leave, dsb)
-│   │   │   └── Middleware/ # TenantMiddleware untuk isolasi data
-│   │   ├── Models/         # Definisi Struktur Data & Relasi
-│   │   └── Traits/         # BelongsToCompany untuk Multi-tenancy
+│   │   ├── Http/Controllers/ # Logika Bisnis (Auth, Attendance, Leave, Announcements, dsb)
+│   │   ├── Models/           # Struktur Database & Relasi Eloquent
+│   │   ├── Traits/           # Multi-tenancy logic (BelongsToCompany)
+│   │   └── Mail/             # Sistem Mailing (Official Notifications)
 │   ├── database/
-│   │   ├── migrations/     # Skema database
-│   │   └── seeders/        # Data awal (Roles, SuperAdmin)
-│   └── routes/             # Definisi API Endpoints (api.php)
-├── frontend/               # Aplikasi Next.js
-│   ├── app/                # App Router (Pages & Layouts)
-│   ├── components/         # Komponen UI Reusable
-│   └── public/             # Aset statis
-└── postman/                # Dokumentasi API
-    ├── collection.json     # Postman Collection Terbaru
-    └── environment.json    # Postman Environment
+│   │   ├── migrations/       # Skema database (Users, Roles, Notifications, dsb)
+│   │   └── seeders/          # Default data (Permissions, Admin)
+│   ├── resources/views/      # Template Email Premium (Blade)
+│   └── routes/api.php        # Gerbang utama API Endpoints
+├── frontend/               # Aplikasi Next.js 14 (App Router)
+│   ├── src/
+│   │   ├── app/dashboard/    # Halaman Dashboard & Modul-modul HRMS
+│   │   ├── components/       # UI Components (Reusable Pads, Guards)
+│   │   ├── contexts/         # Auth & Global State management
+│   │   └── lib/              # Axios instance & Utility functions
+│   └── public/               # Logo & Aset Statis
+└── postman/                # Alat bantu testing & dokumentasi
 ```
 
 ---
 
-## Cara Setup (Lokal)
+## Dokumentasi API 📖
 
-### Persiapan Backend
-1. Masuk ke folder backend: cd backend
-2. Install dependensi: composer install
-3. Salin file environment: cp .env.example .env (Konfigurasi database di .env)
-4. Generate app key: php artisan key:generate
-5. Jalankan migrasi dan seeder: php artisan migrate --seed
-6. Jalankan server: php artisan serve
+Daftar lengkap endpoint API beserta parameter dan contoh response dapat dilihat pada file berikut:
 
-### Persiapan Frontend
-1. Masuk ke folder frontend: cd frontend
-2. Install dependensi: npm install
-3. Jalankan server development: npm run dev
+👉 **[DOKUMENTASI API LENGKAP](./API_DOCUMENTATION.md)**
 
----
-
-## Dokumentasi API
-Gunakan file di dalam folder postman/ dan import ke aplikasi Postman Anda untuk melihat daftar endpoint secara lengkap beserta panduan penggunaannya di bagian Overview Collection.
+Atau import file di folder `postman/` ke aplikasi Postman Anda.
 
 ---
 *Dikembangkan oleh Ahmad Rizki - PT. Artacomindo Jejaring Nusa - 2026*
