@@ -15,5 +15,31 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data yang diinput tidak valid.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+        });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Alamat API tidak ditemukan.',
+                ], 404);
+            }
+        });
+
+        $exceptions->render(function (\Exception $e, $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Terjadi kesalahan sistem internal: ' . $e->getMessage(),
+                ], 500);
+            }
+        });
     })->create();
