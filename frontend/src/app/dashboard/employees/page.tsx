@@ -5,6 +5,7 @@ import axiosInstance from "@/lib/axios";
 import { Plus, Search, Edit2, Trash2, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
+import Pagination from "@/components/Pagination";
 
 interface Role {
   id: number;
@@ -36,6 +37,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,9 +53,9 @@ export default function EmployeesPage() {
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
 
   useEffect(() => {
-    fetchEmployees();
+    fetchEmployees(page);
     fetchRoles();
-  }, [searchQuery]);
+  }, [searchQuery, page]);
 
   const fetchRoles = async () => {
     try {
@@ -283,27 +285,12 @@ export default function EmployeesPage() {
 
         {/* Pagination Info */}
         {!loading && pagination && pagination.total > 0 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-[#ebedf0] bg-gray-50 text-xs text-gray-500">
-            <span>
-              Menampilkan data ke halaman {pagination.current_page} dari total {pagination.last_page} halaman
-            </span>
-            <div className="flex gap-2">
-              <button 
-                className="px-3 py-1.5 bg-white border border-gray-200 rounded hover:bg-gray-100 disabled:opacity-50 transition-colors"
-                disabled={pagination.current_page === 1}
-                onClick={() => fetchEmployees(pagination.current_page - 1)}
-              >
-                Sebelumnya
-              </button>
-              <button 
-                className="px-3 py-1.5 bg-white border border-gray-200 rounded hover:bg-gray-100 disabled:opacity-50 transition-colors"
-                disabled={pagination.current_page === pagination.last_page}
-                onClick={() => fetchEmployees(pagination.current_page + 1)}
-              >
-                Selanjutnya
-              </button>
-            </div>
-          </div>
+          <Pagination 
+            currentPage={pagination.current_page} 
+            lastPage={pagination.last_page} 
+            total={pagination.total} 
+            onPageChange={setPage} 
+          />
         )}
       </div>
 

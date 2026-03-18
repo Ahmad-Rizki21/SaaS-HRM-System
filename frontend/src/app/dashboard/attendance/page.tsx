@@ -5,20 +5,35 @@ import axiosInstance from "@/lib/axios";
 import { Search, Download, CheckCircle, Clock, FileWarning } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
+import Pagination from "@/components/Pagination";
+
 export default function AttendancePage() {
   const { hasPermission } = useAuth();
   const [attendance, setAttendance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    total: 0
+  });
 
   useEffect(() => {
-    fetchAttendance();
-  }, []);
+    fetchAttendance(page);
+  }, [page]);
 
-  const fetchAttendance = async () => {
+  const fetchAttendance = async (pageNumber: number) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/attendance/history");
+      const response = await axiosInstance.get(`/attendance/history?page=${pageNumber}`);
       setAttendance(response.data.data?.data || response.data.data || []);
+      if (response.data.data && response.data.data.current_page) {
+        setPagination({
+          current_page: response.data.data.current_page,
+          last_page: response.data.data.last_page,
+          total: response.data.data.total
+        });
+      }
     } catch (e) {
       console.error("Gagal mengambil data absensi", e);
     } finally {
@@ -100,6 +115,15 @@ export default function AttendancePage() {
               </tbody>
             </table>
           </div>
+        )}
+        
+        {pagination.last_page > 1 && (
+          <Pagination 
+            currentPage={pagination.current_page} 
+            lastPage={pagination.last_page} 
+            total={pagination.total} 
+            onPageChange={setPage} 
+          />
         )}
       </div>
     </div>

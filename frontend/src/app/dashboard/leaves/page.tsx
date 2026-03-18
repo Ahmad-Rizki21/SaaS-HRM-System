@@ -4,19 +4,34 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Check, X, Eye, Plane } from "lucide-react";
 
+import Pagination from "@/components/Pagination";
+
 export default function LeavesPage() {
   const [leaves, setLeaves] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    total: 0
+  });
 
   useEffect(() => {
-    fetchLeaves();
-  }, []);
+    fetchLeaves(page);
+  }, [page]);
 
-  const fetchLeaves = async () => {
+  const fetchLeaves = async (pageNumber: number) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/leave");
+      const response = await axiosInstance.get(`/leave?page=${pageNumber}`);
       setLeaves(response.data.data?.data || response.data.data || []);
+      if (response.data.data && response.data.data.current_page) {
+        setPagination({
+          current_page: response.data.data.current_page,
+          last_page: response.data.data.last_page,
+          total: response.data.data.total
+        });
+      }
     } catch (e) {
       console.error("Gagal mendapatkan data cuti", e);
     } finally {
@@ -115,6 +130,15 @@ export default function LeavesPage() {
               </tbody>
             </table>
           </div>
+        )}
+        
+        {pagination.last_page > 1 && (
+          <Pagination 
+            currentPage={pagination.current_page} 
+            lastPage={pagination.last_page} 
+            total={pagination.total} 
+            onPageChange={setPage} 
+          />
         )}
       </div>
     </div>

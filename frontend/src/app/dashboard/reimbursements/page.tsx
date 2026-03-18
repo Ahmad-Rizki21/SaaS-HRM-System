@@ -3,10 +3,18 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Check, X, Eye, ReceiptCent, Upload, AlertCircle, XCircle } from "lucide-react";
+import Pagination from "@/components/Pagination";
 
 export default function ReimbursementsPage() {
   const [reimbursements, setReimbursements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    total: 0
+  });
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<any>({
@@ -25,16 +33,23 @@ export default function ReimbursementsPage() {
   };
 
   useEffect(() => {
-    fetchReimbursements();
-    const interval = setInterval(fetchReimbursements, 30000);
+    fetchReimbursements(page);
+    const interval = setInterval(() => fetchReimbursements(page), 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [page]);
 
-  const fetchReimbursements = async () => {
+  const fetchReimbursements = async (pageNumber: number) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/reimbursements");
+      const response = await axiosInstance.get(`/reimbursements?page=${pageNumber}`);
       setReimbursements(response.data.data?.data || response.data.data || []);
+      if (response.data.data && response.data.data.current_page) {
+        setPagination({
+          current_page: response.data.data.current_page,
+          last_page: response.data.data.last_page,
+          total: response.data.data.total
+        });
+      }
     } catch (e) {
       console.error("Gagal mendapatkan data klaim", e);
     } finally {
@@ -49,7 +64,7 @@ export default function ReimbursementsPage() {
     try {
       await axiosInstance.post(`/reimbursements/${id}/approve`, { remark });
       alert("Klaim disetujui!");
-      fetchReimbursements();
+      fetchReimbursements(page);
     } catch (e) {
       alert("Gagal memproses klaim.");
     }
@@ -65,7 +80,7 @@ export default function ReimbursementsPage() {
     try {
       await axiosInstance.post(`/reimbursements/${id}/reject`, { remark });
       alert("Klaim ditolak.");
-      fetchReimbursements();
+      fetchReimbursements(page);
     } catch (e) {
       alert("Gagal memproses klaim.");
     }
@@ -95,7 +110,7 @@ export default function ReimbursementsPage() {
       alert("Klaim berhasil diajukan! Menunggu persetujuan admin.");
       setIsModalOpen(false);
       setFormData({ title: "", amount: "", description: "", attachment: null });
-      fetchReimbursements();
+      fetchReimbursements(page);
     } catch (e: any) {
       if (e.response?.status === 422 && e.response?.data?.errors) {
         const errorDetails = Object.values(e.response.data.errors)
@@ -244,6 +259,15 @@ export default function ReimbursementsPage() {
               </tbody>
             </table>
           </div>
+        )}
+        
+        {pagination.last_page > 1 && (
+          <Pagination 
+            currentPage={pagination.current_page} 
+            lastPage={pagination.last_page} 
+            total={pagination.total} 
+            onPageChange={setPage} 
+          />
         )}
       </div>
 
