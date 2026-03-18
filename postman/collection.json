@@ -1,12 +1,14 @@
 {
 	"info": {
 		"_postman_id": "864da7ba-b085-44fd-958d-ef70602c2309",
-		"name": "HRM SaaS Collection",
+		"name": "HRM SaaS Collection - COMPLETE",
+		"description": "# HRM SaaS MVP API Documentation\n\nSelamat datang di dokumentasi API untuk sistem **Multi-tenant HRM SaaS**. Dokumentasi ini mencakup seluruh fitur inti yang dibutuhkan untuk fase MVP.\n\n## Fitur Utama\n1.  **Multi-tenancy**: Data antar perusahaan terisolasi sepenuhnya (Tenant isolation).\n2.  **Authentication**: Menggunakan Laravel Sanctum (Bearer Token).\n3.  **Attendance**: Absensi berbasis lokasi (Geo-tagging) dengan deteksi keterlambatan otomatis berdasarkan jadwal.\n4.  **Work Schedules & Shifts**: Pengaturan jam kerja fleksibel (Pagi, Sore, Malam, NOC).\n5.  **Leave & Reimbursement**: Alur pengajuan dan persetujuan (Approval workflow).\n6.  **Payroll & Slip Gaji**: (Coming Soon).\n7.  **Reporting**: Export data absensi ke format Excel.\n\n## Role System\n-   **Super Admin**: Akses penuh ke seluruh sistem.\n-   **HRD / Manager**: Mengelola karyawan, jadwal, dan menyetujui pengajuan di dalam satu perusahaan.\n-   **Employee**: Melakukan absensi, melihat riwayat, dan mengajukan cuti/klaim.\n\n## Persiapan Penggunaan\n1.  Pastikan **Environment** `HRM SaaS Env` sudah terpilih.\n2.  Variabel `base_url` harus mengarah ke backend Anda (default: `http://127.0.0.1:8000`).\n3.  Lakukan **Login** terlebih dahulu. Token akan otomatis tersimpan ke variabel `token` setelah login berhasil.\n\n---\n*Dibuat oleh Ahmad Rizki - PT. Artacomindo Jejaring Nusa - 2026*",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
 			"name": "Authentication",
+			"description": "Endpoints for Login, Logout, and User profile.",
 			"item": [
 				{
 					"name": "Login",
@@ -27,77 +29,49 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							}
+							{ "key": "Accept", "value": "application/json" }
 						],
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"email\": \"superadmin@example.com\",\n    \"password\": \"password\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"options": { "raw": { "language": "json" } }
 						},
-						"url": {
-							"raw": "{{base_url}}/api/login",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"login"
-							]
-						}
-					},
-					"response": []
+						"url": "{{base_url}}/api/login"
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Accept", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/logout"
+					}
 				},
 				{
 					"name": "Get Current User",
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
-						"url": {
-							"raw": "{{base_url}}/api/user",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user"
-							]
-						}
-					},
-					"response": []
+						"url": "{{base_url}}/api/user"
+					}
 				}
 			]
 		},
 		{
 			"name": "Dashboard & Stats",
+			"description": "Real-time summary for Admin/HRD dashboard.",
 			"item": [
 				{
 					"name": "Get Summary",
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/dashboard/summary"
 					}
@@ -106,16 +80,14 @@
 		},
 		{
 			"name": "Company Management",
+			"description": "Adjust company identities and settings.",
 			"item": [
 				{
 					"name": "Get Company Info",
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/company"
 					}
@@ -125,19 +97,12 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"name\": \"SaaS HRM Updated\",\n    \"address\": \"Jakarta Selatan\",\n    \"default_radius\": 150\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": "{{base_url}}/api/company/update"
 					}
@@ -146,20 +111,14 @@
 		},
 		{
 			"name": "Employee Management",
+			"description": "CRUD operations for company employees.",
 			"item": [
 				{
 					"name": "Get All Employees",
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/employees"
 					}
@@ -169,121 +128,53 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi@example.com\",\n    \"password\": \"password123\",\n    \"role_id\": 2,\n    \"nik\": \"2024001\",\n    \"phone\": \"08123456789\",\n    \"join_date\": \"2024-03-01\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"name\": \"Karyawan Baru\",\n    \"email\": \"baru@example.com\",\n    \"password\": \"password123\",\n    \"role_id\": 1,\n    \"nik\": \"2026001\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": "{{base_url}}/api/employees"
 					}
-				}
-			]
-		},
-		{
-			"name": "Reimbursement",
-			"item": [
-				{
-					"name": "Get All Claims",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"url": "{{base_url}}/api/reimbursements"
-					}
 				},
 				{
-					"name": "Submit Claim",
+					"name": "Update Employee",
 					"request": {
-						"method": "POST",
+						"method": "PUT",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"Bensin Perjalanan Dinas\",\n    \"amount\": 50000,\n    \"description\": \"Bensin untuk ke kantor klien\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"name\": \"Budi Santoso Update\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
-						"url": "{{base_url}}/api/reimbursements"
-					}
-				}
-			]
-		},
-		{
-			"name": "Announcements",
-			"item": [
-				{
-					"name": "Get Announcements",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
-						],
-						"url": "{{base_url}}/api/announcements"
+						"url": "{{base_url}}/api/employees/2"
 					}
 				},
 				{
-					"name": "Publish Announcement",
+					"name": "Delete Employee",
 					"request": {
-						"method": "POST",
+						"method": "DELETE",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"title\": \"Libur Lebaran\",\n    \"content\": \"Libur lebaran dimulai pada tanggal 10 April\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": "{{base_url}}/api/announcements"
+						"url": "{{base_url}}/api/employees/2"
 					}
 				}
 			]
 		},
 		{
-			"name": "Shifts & Schedules",
+			"name": "Shifts & Scheduling",
+			"description": "Manage work timings and employee assignments.",
 			"item": [
 				{
-					"name": "Get Shifts",
+					"name": "Get All Shifts",
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/shifts"
 					}
@@ -293,18 +184,12 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Shift Pagi NOC\",\n    \"start_time\": \"08:00:00\",\n    \"end_time\": \"17:00:00\"\n}"
+							"raw": "{\n    \"name\": \"Shift Malam\",\n    \"start_time\": \"22:00:00\",\n    \"end_time\": \"06:00:00\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": "{{base_url}}/api/shifts"
 					}
@@ -314,18 +199,12 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"user_id\": 2,\n    \"shift_id\": 1,\n    \"date\": \"2026-03-18\"\n}"
+							"raw": "{\n    \"user_id\": 2,\n    \"shift_id\": 1,\n    \"date\": \"2026-03-20\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": "{{base_url}}/api/schedules"
 					}
@@ -334,64 +213,46 @@
 		},
 		{
 			"name": "Attendance",
+			"description": "Geo-tagged attendance check-ins, history, and exports.",
 			"item": [
 				{
 					"name": "Check-in",
 					"request": {
 						"method": "POST",
 						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"latitude\": -6.200000,\n    \"longitude\": 106.816666,\n    \"image\": \"base64_string_here\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"latitude\": -6.2,\n    \"longitude\": 106.8\n}",
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": "{{base_url}}/api/attendance/check-in"
 					}
 				},
 				{
-					"name": "History & Filter",
+					"name": "Check-out",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"latitude\": -6.2,\n    \"longitude\": 106.8\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/attendance/check-out"
+					}
+				},
+				{
+					"name": "History",
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
-						"url": {
-							"raw": "{{base_url}}/api/attendance/history?start_date=2024-03-01&end_date=2024-03-31",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"attendance",
-								"history"
-							],
-							"query": [
-								{
-									"key": "start_date",
-									"value": "2024-03-01"
-								},
-								{
-									"key": "end_date",
-									"value": "2024-03-31"
-								}
-							]
-						}
+						"url": "{{base_url}}/api/attendance/history"
 					}
 				},
 				{
@@ -399,10 +260,7 @@
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/attendance/export"
 					}
@@ -410,48 +268,173 @@
 			]
 		},
 		{
-			"name": "Leave",
+			"name": "Leave Management",
+			"description": "Handling employee leave requests and approvals.",
 			"item": [
+				{
+					"name": "Get All Leaves",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/leave"
+					}
+				},
 				{
 					"name": "Submit Leave",
 					"request": {
 						"method": "POST",
 						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"start_date\": \"2024-03-20\",\n    \"end_date\": \"2024-03-22\",\n    \"type\": \"annual\",\n    \"reason\": \"Cuti Tahunan\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": "{{base_url}}/api/leave"
+					}
+				},
+				{
+					"name": "Approve Leave",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/leave/1/approve"
+					}
+				},
+				{
+					"name": "Delete Leave (If Pending)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/leave/1"
+					}
+				}
+			]
+		},
+		{
+			"name": "Reimbursement",
+			"description": "Expense claims for employees.",
+			"item": [
+				{
+					"name": "Get All Claims",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/reimbursements"
+					}
+				},
+				{
+					"name": "Submit Claim",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Bensin Perjalanan Dinas\",\n    \"amount\": 50000,\n    \"description\": \"Tes klaim\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/reimbursements"
+					}
+				},
+				{
+					"name": "Approve Claim",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/reimbursements/1/approve"
+					}
+				},
+				{
+					"name": "Delete Claim (If Pending)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/reimbursements/1"
+					}
+				}
+			]
+		},
+		{
+			"name": "Announcements",
+			"description": "Internal company-wide communications.",
+			"item": [
+				{
+					"name": "Get All Announcements",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/announcements"
+					}
+				},
+				{
+					"name": "Publish Announcement",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Info Libur\",\n    \"content\": \"Libur hari raya idul fitri\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/announcements"
+					}
+				},
+				{
+					"name": "Update Announcement",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Konten pengumuman diubah\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/announcements/1"
+					}
+				},
+				{
+					"name": "Delete Announcement",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/announcements/1"
 					}
 				}
 			]
 		},
 		{
 			"name": "Activity Logs",
+			"description": "System-wide audit trail for Admins.",
 			"item": [
 				{
 					"name": "Get All Logs",
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}"
-							}
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/activity-logs"
 					}
