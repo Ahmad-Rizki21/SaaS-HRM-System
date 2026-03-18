@@ -19,14 +19,12 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Kredensial login Anda salah.'],
-            ]);
+            return $this->errorResponse('Kredensial login Anda salah.', 401);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
+        return $this->successResponse([
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => [
@@ -35,16 +33,15 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'role_id' => $user->role_id,
                 'company_id' => $user->company_id,
+                'profile_photo_url' => $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : null,
             ]
-        ]);
+        ], 'Login berhasil');
     }
 
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Logged out successfully'
-        ]);
+        return $this->successResponse(null, 'Logged out successfully');
     }
 }

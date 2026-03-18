@@ -16,8 +16,8 @@
 							"script": {
 								"exec": [
 									"var jsonData = pm.response.json();",
-									"if (jsonData.access_token) {",
-									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"if (jsonData.data && jsonData.data.access_token) {",
+									"    pm.environment.set(\"token\", jsonData.data.access_token);",
 									"}"
 								],
 								"type": "text/javascript"
@@ -56,35 +56,6 @@
 					"response": []
 				},
 				{
-					"name": "Logout",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/logout",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Get Current User",
 					"request": {
 						"method": "GET",
@@ -116,6 +87,54 @@
 			]
 		},
 		{
+			"name": "Employee Management",
+			"item": [
+				{
+					"name": "Get All Employees",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/api/employees"
+					}
+				},
+				{
+					"name": "Create Employee",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi@example.com\",\n    \"password\": \"password123\",\n    \"role_id\": 2,\n    \"nik\": \"2024001\",\n    \"phone\": \"08123456789\",\n    \"join_date\": \"2024-03-01\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{base_url}}/api/employees"
+					}
+				}
+			]
+		},
+		{
 			"name": "Attendance",
 			"item": [
 				{
@@ -125,76 +144,24 @@
 						"header": [
 							{
 								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							},
 							{
 								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"latitude\": -6.200000,\n    \"longitude\": 106.816666\n}",
+							"raw": "{\n    \"latitude\": -6.200000,\n    \"longitude\": 106.816666,\n    \"image\": \"base64_string_here\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": {
-							"raw": "{{base_url}}/api/attendance/check-in",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"attendance",
-								"check-in"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Check-out",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"latitude\": -6.200000,\n    \"longitude\": 106.816666\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{base_url}}/api/attendance/check-out",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"attendance",
-								"check-out"
-							]
-						}
-					},
-					"response": []
+						"url": "{{base_url}}/api/attendance/check-in"
+					}
 				},
 				{
 					"name": "History",
@@ -203,28 +170,15 @@
 						"header": [
 							{
 								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							},
 							{
 								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
+								"value": "Bearer {{token}}"
 							}
 						],
-						"url": {
-							"raw": "{{base_url}}/api/attendance/history",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"attendance",
-								"history"
-							]
-						}
-					},
-					"response": []
+						"url": "{{base_url}}/api/attendance/history"
+					}
 				}
 			]
 		},
@@ -232,71 +186,30 @@
 			"name": "Leave",
 			"item": [
 				{
-					"name": "List Leave",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/api/leave",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"leave"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Submit Leave",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
+								"value": "application/json"
 							},
 							{
 								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"start_date\": \"2024-03-20\",\n    \"end_date\": \"2024-03-22\",\n    \"reason\": \"Cuti Tahunan\"\n}",
+							"raw": "{\n    \"start_date\": \"2024-03-20\",\n    \"end_date\": \"2024-03-22\",\n    \"type\": \"annual\",\n    \"reason\": \"Cuti Tahunan\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
 								}
 							}
 						},
-						"url": {
-							"raw": "{{base_url}}/api/leave",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"leave"
-							]
-						}
-					},
-					"response": []
+						"url": "{{base_url}}/api/leave"
+					}
 				}
 			]
 		}

@@ -13,7 +13,7 @@ class LeaveController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(10);
             
-        return response()->json($leaves);
+        return $this->successResponse($leaves, 'Data cuti berhasil diambil.');
     }
 
     public function store(Request $request)
@@ -35,25 +35,19 @@ class LeaveController extends Controller
             'status' => 'pending',
         ]);
 
-        return response()->json([
-            'message' => 'Permohonan cuti berhasil diajukan.',
-            'data' => $leave
-        ]);
+        return $this->successResponse($leave, 'Permohonan cuti berhasil diajukan.', 201);
     }
 
     public function approve(Request $request, $id)
     {
         $leave = Leave::findOrFail($id);
         
-        // Cek permission (hanya manager/direktur yang bisa approve)
-        // Di sini kita bisa tambah logic role, sementara kita allow saja asalkan login
-        
         $leave->update([
             'status' => 'approved',
             'approved_by' => $request->user()->id,
         ]);
 
-        return response()->json(['message' => 'Permohonan cuti disetujui.']);
+        return $this->successResponse(null, 'Permohonan cuti disetujui.');
     }
 
     public function reject(Request $request, $id)
@@ -65,6 +59,6 @@ class LeaveController extends Controller
             'approved_by' => $request->user()->id,
         ]);
 
-        return response()->json(['message' => 'Permohonan cuti ditolak.']);
+        return $this->successResponse(null, 'Permohonan cuti ditolak.');
     }
 }

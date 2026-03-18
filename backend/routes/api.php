@@ -8,6 +8,7 @@ use App\Http\Middleware\TenantMiddleware;
 
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\EmployeeController;
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
@@ -17,6 +18,13 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    // Employees (Manage Employee)
+    Route::get('/employees', [EmployeeController::class, 'index']);
+    Route::post('/employees', [EmployeeController::class, 'store']);
+    Route::get('/employees/{id}', [EmployeeController::class, 'show']);
+    Route::put('/employees/{id}', [EmployeeController::class, 'update']);
+    Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
 
     // Attendance
     Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);

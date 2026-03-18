@@ -12,13 +12,12 @@ class AttendanceController extends Controller
     {
         $user = $request->user();
         
-        // Cek apakah sudah check-in hari ini
         $attendance = Attendance::where('user_id', $user->id)
             ->whereDate('check_in', Carbon::today())
             ->first();
             
         if ($attendance) {
-            return response()->json(['message' => 'Anda sudah check-in hari ini.'], 400);
+            return $this->errorResponse('Anda sudah check-in hari ini.', 400);
         }
 
         $attendance = Attendance::create([
@@ -30,10 +29,7 @@ class AttendanceController extends Controller
             'status' => 'present',
         ]);
 
-        return response()->json([
-            'message' => 'Check-in berhasil.',
-            'data' => $attendance
-        ]);
+        return $this->successResponse($attendance, 'Check-in berhasil.');
     }
 
     public function checkOut(Request $request)
@@ -46,7 +42,7 @@ class AttendanceController extends Controller
             ->first();
             
         if (!$attendance) {
-            return response()->json(['message' => 'Anda belum check-in atau sudah check-out.'], 400);
+            return $this->errorResponse('Anda belum check-in atau sudah check-out.', 400);
         }
 
         $attendance->update([
@@ -55,10 +51,7 @@ class AttendanceController extends Controller
             'longitude_out' => $request->longitude,
         ]);
 
-        return response()->json([
-            'message' => 'Check-out berhasil.',
-            'data' => $attendance
-        ]);
+        return $this->successResponse($attendance, 'Check-out berhasil.');
     }
 
     public function history(Request $request)
@@ -67,6 +60,6 @@ class AttendanceController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(10);
             
-        return response()->json($history);
+        return $this->successResponse($history, 'Riwayat absensi berhasil diambil.');
     }
 }
