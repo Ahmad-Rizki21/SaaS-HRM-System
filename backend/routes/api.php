@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Middleware\TenantMiddleware;
 
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\LeaveController;
+
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -16,13 +19,13 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     });
 
     // Attendance
-    Route::post('/attendance/check-in', function() { return 'Check-in pending'; });
-    Route::post('/attendance/check-out', function() { return 'Check-out pending'; });
-    Route::get('/attendance/history', function() { return 'History pending'; });
+    Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
+    Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
+    Route::get('/attendance/history', [AttendanceController::class, 'history']);
 
     // Leave
-    Route::post('/leave', function() { return 'Create leave pending'; });
-    Route::get('/leave', function() { return 'List leave pending'; });
-    Route::post('/leave/{id}/approve', function() { return 'Approve pending'; });
-    Route::post('/leave/{id}/reject', function() { return 'Reject pending'; });
+    Route::get('/leave', [LeaveController::class, 'index']);
+    Route::post('/leave', [LeaveController::class, 'store']);
+    Route::post('/leave/{id}/approve', [LeaveController::class, 'approve']);
+    Route::post('/leave/{id}/reject', [LeaveController::class, 'reject']);
 });
