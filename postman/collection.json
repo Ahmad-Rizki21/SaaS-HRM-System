@@ -87,6 +87,64 @@
 			]
 		},
 		{
+			"name": "Dashboard & Stats",
+			"item": [
+				{
+					"name": "Get Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/api/dashboard/summary"
+					}
+				}
+			]
+		},
+		{
+			"name": "Company Management",
+			"item": [
+				{
+					"name": "Get Company Info",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/api/company"
+					}
+				},
+				{
+					"name": "Update Company",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"SaaS HRM Updated\",\n    \"address\": \"Jakarta Selatan\",\n    \"default_radius\": 150\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{base_url}}/api/company/update"
+					}
+				}
+			]
+		},
+		{
 			"name": "Employee Management",
 			"item": [
 				{
@@ -135,6 +193,146 @@
 			]
 		},
 		{
+			"name": "Reimbursement",
+			"item": [
+				{
+					"name": "Get All Claims",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/api/reimbursements"
+					}
+				},
+				{
+					"name": "Submit Claim",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Bensin Perjalanan Dinas\",\n    \"amount\": 50000,\n    \"description\": \"Bensin untuk ke kantor klien\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{base_url}}/api/reimbursements"
+					}
+				}
+			]
+		},
+		{
+			"name": "Announcements",
+			"item": [
+				{
+					"name": "Get Announcements",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/api/announcements"
+					}
+				},
+				{
+					"name": "Publish Announcement",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Libur Lebaran\",\n    \"content\": \"Libur lebaran dimulai pada tanggal 10 April\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{base_url}}/api/announcements"
+					}
+				}
+			]
+		},
+		{
+			"name": "Shifts & Schedules",
+			"item": [
+				{
+					"name": "Get Shifts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/api/shifts"
+					}
+				},
+				{
+					"name": "Create Shift",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Shift Pagi NOC\",\n    \"start_time\": \"08:00:00\",\n    \"end_time\": \"17:00:00\"\n}"
+						},
+						"url": "{{base_url}}/api/shifts"
+					}
+				},
+				{
+					"name": "Assign Schedule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\": 2,\n    \"shift_id\": 1,\n    \"date\": \"2026-03-18\"\n}"
+						},
+						"url": "{{base_url}}/api/schedules"
+					}
+				}
+			]
+		},
+		{
 			"name": "Attendance",
 			"item": [
 				{
@@ -164,20 +362,49 @@
 					}
 				},
 				{
-					"name": "History",
+					"name": "History & Filter",
 					"request": {
 						"method": "GET",
 						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json"
-							},
 							{
 								"key": "Authorization",
 								"value": "Bearer {{token}}"
 							}
 						],
-						"url": "{{base_url}}/api/attendance/history"
+						"url": {
+							"raw": "{{base_url}}/api/attendance/history?start_date=2024-03-01&end_date=2024-03-31",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"attendance",
+								"history"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-03-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-03-31"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Export Attendance (Excel)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/api/attendance/export"
 					}
 				}
 			]
@@ -209,6 +436,24 @@
 							}
 						},
 						"url": "{{base_url}}/api/leave"
+					}
+				}
+			]
+		},
+		{
+			"name": "Activity Logs",
+			"item": [
+				{
+					"name": "Get All Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": "{{base_url}}/api/activity-logs"
 					}
 				}
 			]
