@@ -166,6 +166,148 @@
 			]
 		},
 		{
+			"name": "Profile Requests",
+			"description": "Employee profile update requests and admin approvals.",
+			"item": [
+				{
+					"name": "Get All Profile Requests (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/profile-requests"
+					}
+				},
+				{
+					"name": "Submit Profile Request (Employee)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"requested_data\": {\n        \"name\": \"Ahmad Rizki Updated\",\n        \"email\": \"rizki@example.com\"\n    }\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/profile-requests"
+					}
+				},
+				{
+					"name": "Approve Request",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/profile-requests/1/approve"
+					}
+				},
+				{
+					"name": "Reject Request",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/profile-requests/1/reject"
+					}
+				}
+			]
+		},
+		{
+			"name": "Role & Permissions",
+			"description": "Manage user access levels and granular permissions.",
+			"item": [
+				{
+					"name": "Get All Roles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/roles"
+					}
+				},
+				{
+					"name": "Get Role Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/roles/1"
+					}
+				},
+				{
+					"name": "Create Role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Supervisor NOC\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/roles"
+					}
+				},
+				{
+					"name": "Update Role",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Manager NOC Updated\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/roles/1"
+					}
+				},
+				{
+					"name": "Delete Role",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/roles/1"
+					}
+				},
+				{
+					"name": "Get All Permissions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/permissions"
+					}
+				},
+				{
+					"name": "Sync Role Permissions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"permissions\": [1, 2, 5, 10]\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/roles/1/permissions"
+					}
+				}
+			]
+		},
+		{
 			"name": "Shifts & Scheduling",
 			"description": "Manage work timings and employee assignments.",
 			"item": [
@@ -195,6 +337,41 @@
 					}
 				},
 				{
+					"name": "Update Shift",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Shift NOC Update\",\n    \"start_time\": \"20:00:00\",\n    \"end_time\": \"08:00:00\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/shifts/1"
+					}
+				},
+				{
+					"name": "Delete Shift",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/shifts/1"
+					}
+				},
+				{
+					"name": "Get All Schedules (Assignments)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/schedules"
+					}
+				},
+				{
 					"name": "Assign Schedule",
 					"request": {
 						"method": "POST",
@@ -208,6 +385,16 @@
 						},
 						"url": "{{base_url}}/api/schedules"
 					}
+				},
+				{
+					"name": "Delete Schedule",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/schedules/1"
+					}
 				}
 			]
 		},
@@ -220,6 +407,7 @@
 					"request": {
 						"method": "POST",
 						"header": [
+							{ "key": "Accept", "value": "application/json" },
 							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"body": {
@@ -235,6 +423,7 @@
 					"request": {
 						"method": "POST",
 						"header": [
+							{ "key": "Accept", "value": "application/json" },
 							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"body": {

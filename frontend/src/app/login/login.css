@@ -1,0 +1,343 @@
+/* ============================================
+   LOGIN PAGE - HRM NARWASTHU GROUP
+   Clean & Professional Design
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* === Layout === */
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+}
+
+/* === Left Panel === */
+.login-left-panel {
+  display: none;
+  position: relative;
+  width: 50%;
+  background: #1e2337;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .login-left-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.login-left-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* Illustration */
+.login-illustration-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+}
+
+.login-illustration {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  border-radius: 16px;
+}
+
+/* Left Panel Text */
+.login-left-text {
+  text-align: center;
+  color: #fff;
+}
+
+.login-left-text h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-bottom: 0.6rem;
+  color: #ffffff;
+}
+
+.login-left-text p {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.55);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Subtle dot pattern overlay */
+.login-left-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='20' cy='20' r='1'/%3E%3C/g%3E%3C/svg%3E");
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* === Right Panel === */
+.login-right-panel {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: #ffffff;
+}
+
+@media (min-width: 1024px) {
+  .login-right-panel {
+    width: 50%;
+    padding: 3rem;
+  }
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* === Header === */
+.login-header {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-bottom: 2.5rem;
+}
+
+.login-logo-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: #fef2f2;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.login-logo {
+  width: 34px;
+  height: auto;
+  object-fit: contain;
+}
+
+.login-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.login-subtitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #b91c1c;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* === Form === */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Error Message */
+.login-error {
+  padding: 10px 14px;
+  font-size: 0.83rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+/* Field */
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-label {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  color: #4b5563 !important;
+}
+
+.login-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.login-forgot {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #b91c1c;
+  text-decoration: none;
+}
+
+.login-forgot:hover {
+  text-decoration: underline;
+}
+
+/* Input */
+.login-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-input {
+  width: 100%;
+  height: 46px !important;
+  padding: 0 14px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.88rem !important;
+  background: #ffffff !important;
+  border: 1.5px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  color: #1a1a2e !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.login-input::placeholder {
+  color: #c5c8d0 !important;
+}
+
+.login-input:focus {
+  border-color: #b91c1c !important;
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.08) !important;
+  outline: none !important;
+}
+
+.login-input-password {
+  padding-right: 46px !important;
+}
+
+/* Password toggle */
+.login-password-toggle {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.login-password-toggle:hover {
+  color: #6b7280;
+}
+
+/* Submit Button */
+.login-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 46px;
+  margin-top: 0.25rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: #b91c1c;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.login-submit-btn:hover {
+  background: #991b1b;
+}
+
+.login-submit-btn:active {
+  background: #7f1d1d;
+}
+
+.login-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-spinner {
+  animation: loginSpin 0.8s linear infinite;
+}
+
+@keyframes loginSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Footer */
+.login-footer {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f3f4f6;
+  text-align: center;
+}
+
+.login-footer p {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+/* === Responsive === */
+@media (max-width: 1023px) {
+  .login-right-panel {
+    min-height: 100vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-right-panel {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .login-header {
+    flex-direction: column;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .login-brand {
+    align-items: center;
+  }
+
+  .login-title {
+    font-size: 1.2rem;
+  }
+}

@@ -17,6 +17,8 @@ use App\Http\Controllers\ReimbursementController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\ProfileRequestController;
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
@@ -24,7 +26,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        return $request->user()->load(['role.permissions']);
     });
 
     // Dashboard
@@ -86,4 +88,19 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::get('/employees/{id}', [EmployeeController::class, 'show']);
     Route::put('/employees/{id}', [EmployeeController::class, 'update']);
     Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+
+    // Roles & Permissions
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store']);
+    Route::get('/roles/{id}', [RoleController::class, 'show']);
+    Route::put('/roles/{id}', [RoleController::class, 'update']);
+    Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+    Route::get('/permissions', [RoleController::class, 'permissions']);
+    Route::post('/roles/{id}/permissions', [RoleController::class, 'syncPermissions']);
+
+    // Profile Update Requests
+    Route::get('/profile-requests', [ProfileRequestController::class, 'index']);
+    Route::post('/profile-requests', [ProfileRequestController::class, 'store']);
+    Route::post('/profile-requests/{id}/approve', [ProfileRequestController::class, 'approve']);
+    Route::post('/profile-requests/{id}/reject', [ProfileRequestController::class, 'reject']);
 });
