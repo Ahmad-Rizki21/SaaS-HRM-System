@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Check, X, Eye, ReceiptCent, Upload, AlertCircle, XCircle } from "lucide-react";
 import Pagination from "@/components/Pagination";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ReimbursementsPage() {
+  const { hasPermission } = useAuth();
   const [reimbursements, setReimbursements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -151,13 +153,15 @@ export default function ReimbursementsPage() {
           <p className="dash-page-desc">Tinjau dan proses klaim dana operasional yang diajukan oleh karyawan.</p>
         </div>
         <div className="dash-page-actions">
-          <button 
-            className="dash-btn dash-btn-primary"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Plus size={15} />
-            Buat Reimbursement Baru
-          </button>
+          {hasPermission('apply-reimbursements') && (
+            <button 
+              className="dash-btn dash-btn-primary"
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Plus size={15} />
+              Buat Reimbursement Baru
+            </button>
+          )}
         </div>
       </div>
 
@@ -218,41 +222,33 @@ export default function ReimbursementsPage() {
                     </td>
                     <td>{getStatusBadge(item.status)}</td>
                     <td className="text-right">
-                      {item.status === 'pending' ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <button 
-                            className="dash-action-btn view" 
-                            title="Lihat Detail"
-                            onClick={() => handleViewDetail(item)}
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button 
-                            className="dash-action-btn edit" 
-                            title="Setujui Klaim"
-                            onClick={() => handleApprove(item.id)}
-                          >
-                            <Check size={16} />
-                          </button>
-                          <button 
-                            className="dash-action-btn delete" 
-                            title="Tolak Klaim"
-                            onClick={() => handleReject(item.id)}
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-end">
-                          <button 
-                            className="dash-action-btn view" 
-                            title="Lihat Detail/Bukti"
-                            onClick={() => handleViewDetail(item)}
-                          >
-                            <Eye size={16} />
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex items-center justify-end gap-1">
+                        {item.status === 'pending' && hasPermission('approve-reimbursements') && (
+                          <>
+                            <button 
+                              className="dash-action-btn edit" 
+                              title="Setujui"
+                              onClick={() => handleApprove(item.id)}
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button 
+                              className="dash-action-btn delete" 
+                              title="Tolak"
+                              onClick={() => handleReject(item.id)}
+                            >
+                              <X size={16} />
+                            </button>
+                          </>
+                        )}
+                        <button 
+                          className="dash-action-btn view" 
+                          title="Lihat Detail"
+                          onClick={() => handleViewDetail(item)}
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

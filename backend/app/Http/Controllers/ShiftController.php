@@ -9,12 +9,14 @@ class ShiftController extends Controller
 {
     public function index(Request $request)
     {
+        abort_if(!$request->user()->hasPermission('manage-shifts'), 403, 'Akses ditolak.');
         $shifts = Shift::where('company_id', $request->user()->company_id)->get();
         return $this->successResponse($shifts, 'Daftar shift berhasil diambil.');
     }
 
     public function store(Request $request)
     {
+        abort_if(!$request->user()->hasPermission('manage-shifts'), 403, 'Akses ditolak.');
         $request->validate([
             'name' => 'required|string',
             'start_time' => 'required',
@@ -33,13 +35,15 @@ class ShiftController extends Controller
 
     public function update(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('manage-shifts'), 403, 'Akses ditolak.');
         $shift = Shift::findOrFail($id);
         $shift->update($request->all());
         return $this->successResponse($shift, 'Shift berhasil diperbarui.');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('manage-shifts'), 403, 'Akses ditolak.');
         $shift = Shift::findOrFail($id);
         $shift->delete();
         return $this->successResponse(null, 'Shift berhasil dihapus.');

@@ -10,6 +10,8 @@ class EmployeeController extends Controller
 {
     public function index(Request $request)
     {
+        abort_if(!$request->user()->hasPermission('view-employees'), 403, 'Akses ditolak.');
+
         $employees = User::where('company_id', $request->user()->company_id)
             ->with('role')
             ->orderBy('name', 'asc')
@@ -20,6 +22,8 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
+        abort_if(!$request->user()->hasPermission('create-employees'), 403, 'Akses ditolak.');
+
         $request->validate([
             'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
@@ -31,17 +35,19 @@ class EmployeeController extends Controller
             'join_date' => 'nullable|date',
         ]);
 
-        $employee = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'company_id' => $request->user()->company_id,
-            'role_id' => $request->role_id,
-            'nik' => $request->nik,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'join_date' => $request->join_date,
-        ]);
+        $employee = new User();
+        $employee->name = $request->name;
+        $employee->email = $request->email;
+        $employee->password = Hash::make($request->password);
+        $employee->company_id = $request->user()->company_id;
+        $employee->role_id = $request->role_id;
+        $employee->nik = $request->nik;
+        $employee->phone = $request->phone;
+        $employee->address = $request->address;
+        $employee->join_date = $request->join_date;
+        $employee->save();
+
+        $this->logActivity('CREATE_EMPLOYEE', "Menambahkan karyawan baru: {$employee->name}", $employee);
 
         return $this->successResponse($employee, 'Karyawan baru berhasil ditambahkan.', 201);
     }
@@ -54,6 +60,8 @@ class EmployeeController extends Controller
 
     public function update(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('edit-employees'), 403, 'Akses ditolak.');
+
         $employee = User::findOrFail($id);
         
         $request->validate([
@@ -68,14 +76,21 @@ class EmployeeController extends Controller
             $employee->update(['password' => Hash::make($request->password)]);
         }
 
+        $this->logActivity('UPDATE_EMPLOYEE', "Memperbarui data karyawan: {$employee->name}", $employee);
+
         return $this->successResponse($employee, 'Data karyawan berhasil diupdate.');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('delete-employees'), 403, 'Akses ditolak.');
+
         $employee = User::findOrFail($id);
+        $name = $employee->name;
         $employee->delete();
         
+        $this->logActivity('DELETE_EMPLOYEE', "Menghapus data karyawan: {$name} (ID: {$id})");
+
         return $this->successResponse(null, 'Karyawan berhasil dihapus.');
     }
 }

@@ -56,4 +56,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class);
     }
+
+    public function hasPermission($slug)
+    {
+        if (!$this->role) return false;
+        return $this->role->permissions()->where('slug', $slug)->exists();
+    }
 }

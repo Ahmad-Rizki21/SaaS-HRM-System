@@ -139,10 +139,15 @@ export default function LeavesPage() {
             <p className="dash-page-desc">Kelola persetujuan dan riwayat pengajuan cuti secara terpusat.</p>
           </div>
           <div className="dash-page-actions">
-            <button onClick={() => setIsModalOpen(true)} className="dash-btn dash-btn-primary">
-              <Plus size={15} />
-              Ajukan Cuti Baru
-            </button>
+            {hasPermission('apply-leaves') && (
+              <button 
+                onClick={() => setIsModalOpen(true)} 
+                className="dash-btn dash-btn-primary"
+              >
+                <Plus size={15} />
+                Ajukan Cuti Baru
+              </button>
+            )}
           </div>
         </div>
 
@@ -202,41 +207,33 @@ export default function LeavesPage() {
                       </td>
                       <td>{getStatusBadge(leave.status)}</td>
                       <td className="text-right">
-                        {leave.status === 'pending' && user?.role?.name !== 'Karyawan' && user?.role?.name !== 'Staff Karyawan' ? (
-                          <div className="flex items-center justify-end gap-1">
-                            <button 
-                              className="dash-action-btn view" 
-                              title="Lihat Detail"
-                              onClick={() => handleViewDetail(leave)}
-                            >
-                              <Eye size={16} />
-                            </button>
-                            <button 
-                              className="dash-action-btn edit" 
-                              title="Setujui"
-                              onClick={() => handleApprove(leave.id)}
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button 
-                              className="dash-action-btn delete" 
-                              title="Tolak"
-                              onClick={() => handleReject(leave.id)}
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-end">
-                            <button 
-                              className="dash-action-btn" 
-                              title="Lihat Form"
-                              onClick={() => handleViewDetail(leave)}
-                            >
-                              <Eye size={16} />
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex items-center justify-end gap-1">
+                          <button 
+                            className="dash-action-btn view" 
+                            title="Lihat Detail"
+                            onClick={() => handleViewDetail(leave)}
+                          >
+                            <Eye size={16} />
+                          </button>
+                          {leave.status === 'pending' && hasPermission('approve-leaves') && (
+                            <>
+                              <button 
+                                className="dash-action-btn edit" 
+                                title="Setujui"
+                                onClick={() => handleApprove(leave.id)}
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button 
+                                className="dash-action-btn delete" 
+                                title="Tolak"
+                                onClick={() => handleReject(leave.id)}
+                              >
+                                <X size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

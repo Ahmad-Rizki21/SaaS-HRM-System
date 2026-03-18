@@ -5,8 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use Illuminate\Http\Request;
 
+use App\Traits\Notifiable;
+use App\Models\User;
+use Illuminate\Support\Facades\Mail;
+
 class AnnouncementController extends Controller
 {
+    use Notifiable;
+
     public function index(Request $request)
     {
         $announcements = Announcement::where('company_id', $request->user()->company_id)
@@ -19,6 +25,7 @@ class AnnouncementController extends Controller
 
     public function store(Request $request)
     {
+        abort_if(!$request->user()->hasPermission('manage-announcements'), 403, 'Akses ditolak.');
         $request->validate([
             'title' => 'required|string',
             'content' => 'required|string',
@@ -31,11 +38,46 @@ class AnnouncementController extends Controller
             'content' => $request->content,
         ]);
 
+        // Broadcast to all company members
+        $members = User::where('company_id', $request->user()->company_id)
+            ->where('id', '!=', $request->user()->id)
+            ->get();
+
+        foreach ($members as $member) {
+            // 1. In-App Notification (Kotak Pesan)
+            $this->notify(
+                $member, 
+                "PENGUMUMAN: {$request->title}", 
+                "Terdapat pengumuman resmi baru: {$request->title}", 
+                'info',
+                '/dashboard/announcements',
+                'mail', // Category KOTAK PESAN
+                false // Jangan kirim email dari trait, kita kirim manual dengan template premium di bawah
+            );
+
+            // 2. Premium Email Notification
+            try {
+                Mail::send('emails.premium_announcement', [
+                    'member' => $member,
+                    'title' => $request->title,
+                    'announcement_content' => $request->content
+                ], function ($message) use ($member, $request) {
+                    $message->to($member->email)
+                        ->subject("PENGUMUMAN RESMI: {$request->title}");
+                });
+            } catch (\Exception $e) {
+                // Silently skip email if fails
+            }
+        }
+
+        $this->logActivity('CREATE_ANNOUNCEMENT', "Membuat pengumuman baru: {$request->title}", $announcement);
+
         return $this->successResponse($announcement, 'Pengumuman berhasil dipublish.', 201);
     }
 
     public function update(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('manage-announcements'), 403, 'Akses ditolak.');
         $announcement = Announcement::where('company_id', $request->user()->company_id)->findOrFail($id);
         
         $request->validate([
@@ -45,13 +87,20 @@ class AnnouncementController extends Controller
 
         $announcement->update($request->all());
 
+        $this->logActivity('UPDATE_ANNOUNCEMENT', "Memperbarui pengumuman: {$announcement->title}", $announcement);
+
         return $this->successResponse($announcement, 'Pengumuman berhasil diperbarui.');
     }
 
     public function destroy(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('manage-announcements'), 403, 'Akses ditolak.');
         $announcement = Announcement::where('company_id', $request->user()->company_id)->findOrFail($id);
+        $title = $announcement->title;
         $announcement->delete();
+        
+        $this->logActivity('DELETE_ANNOUNCEMENT', "Menghapus pengumuman: {$title}");
+
         return $this->successResponse(null, 'Pengumuman berhasil dihapus.');
     }
 }

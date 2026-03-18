@@ -81,6 +81,8 @@ class ReimbursementController extends Controller
             );
         }
 
+        $this->logActivity('SUBMIT_REIMBURSEMENT', "Mengajukan reimbursement '{$request->title}' senilai Rp " . number_format($request->amount, 0, ',', '.'), $reimbursement);
+
         return $this->successResponse($reimbursement, 'Klaim berhasil diajukan.', 201);
     }
 
@@ -106,6 +108,8 @@ class ReimbursementController extends Controller
             '/dashboard/reimbursements'
         );
         
+        $this->logActivity('APPROVE_REIMBURSEMENT', "Menyetujui klaim '{$reimbursement->title}' dari {$reimbursement->user->name}", $reimbursement);
+
         return $this->successResponse($reimbursement, 'Klaim disetujui.');
     }
 
@@ -131,6 +135,8 @@ class ReimbursementController extends Controller
             '/dashboard/reimbursements'
         );
         
+        $this->logActivity('REJECT_REIMBURSEMENT', "Menolak klaim '{$reimbursement->title}' dari {$reimbursement->user->name}", $reimbursement);
+
         return $this->successResponse($reimbursement, 'Klaim ditolak.');
     }
 
@@ -142,7 +148,12 @@ class ReimbursementController extends Controller
             return $this->errorResponse('Klaim yang sudah diproses tidak bisa dihapus.', 403);
         }
 
+        $id_deleted = $reimbursement->id;
+        $title_deleted = $reimbursement->title;
         $reimbursement->delete();
+
+        $this->logActivity('DELETE_REIMBURSEMENT', "Menghapus pengajuan reimbursement '{$title_deleted}' (ID: {$id_deleted})");
+
         return $this->successResponse(null, 'Klaim berhasil dihapus.');
     }
 }

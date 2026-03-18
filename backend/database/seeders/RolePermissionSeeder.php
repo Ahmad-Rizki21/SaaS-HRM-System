@@ -21,15 +21,24 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Lihat Cuti', 'slug' => 'view-leaves', 'group' => 'Cuti'],
             ['name' => 'Ajukan Cuti', 'slug' => 'apply-leaves', 'group' => 'Cuti'],
             ['name' => 'Setujui Cuti', 'slug' => 'approve-leaves', 'group' => 'Cuti'],
+            ['name' => 'Hapus Cuti', 'slug' => 'delete-leaves', 'group' => 'Cuti'],
             
             // Reimbursement
             ['name' => 'Lihat Klaim', 'slug' => 'view-reimbursements', 'group' => 'Reimbursement'],
             ['name' => 'Ajukan Klaim', 'slug' => 'apply-reimbursements', 'group' => 'Reimbursement'],
             ['name' => 'Setujui Klaim', 'slug' => 'approve-reimbursements', 'group' => 'Reimbursement'],
+            ['name' => 'Hapus Klaim', 'slug' => 'delete-reimbursements', 'group' => 'Reimbursement'],
             
+            // Operational
+            ['name' => 'Kelola Shift', 'slug' => 'manage-shifts', 'group' => 'Operasional'],
+            ['name' => 'Kelola Jadwal', 'slug' => 'manage-schedules', 'group' => 'Operasional'],
+            ['name' => 'Kelola Hari Libur', 'slug' => 'manage-holidays', 'group' => 'Operasional'],
+            ['name' => 'Kelola Pengumuman', 'slug' => 'manage-announcements', 'group' => 'Operasional'],
+
             // Pengaturan
             ['name' => 'Pengaturan Perusahaan', 'slug' => 'manage-company', 'group' => 'Pengaturan'],
             ['name' => 'Manajemen Role', 'slug' => 'manage-roles', 'group' => 'Pengaturan'],
+            ['name' => 'Lihat Log Aktivitas', 'slug' => 'view-activity-logs', 'group' => 'Pengaturan'],
         ];
 
         foreach ($permissions as $p) {
@@ -41,13 +50,22 @@ class RolePermissionSeeder extends Seeder
         $hrd = Role::updateOrCreate(['name' => 'HRD Manager']);
         $staff = Role::updateOrCreate(['name' => 'Staff Karyawan']);
 
-        // Sync all to admin
+        // Sync all to Super Admin
         $admin->permissions()->sync(Permission::all()->pluck('id'));
         
-        // HRD (some)
-        $hrd->permissions()->sync(Permission::whereIn('group', ['Pegawai', 'Cuti', 'Reimbursement'])->pluck('id'));
+        // HRD Manager: Manage Employees, Leaves, Reimbursements, and Operations
+        $hrdPermissions = Permission::whereIn('group', [
+            'Pegawai', 'Cuti', 'Reimbursement', 'Operasional'
+        ])->pluck('id');
+        $hrd->permissions()->sync($hrdPermissions);
 
-        // Staff (view mostly)
-        $staff->permissions()->sync(Permission::whereIn('slug', ['view-employees', 'apply-leaves', 'apply-reimbursements'])->pluck('id'));
+        // Staff Karyawan: Apply Leaves/Reimbursement & View basic records
+        $staffPermissions = Permission::whereIn('slug', [
+            'view-employees', 
+            'view-leaves', 'apply-leaves', 
+            'view-reimbursements', 'apply-reimbursements',
+            'view-announcements' // If added later
+        ])->pluck('id');
+        $staff->permissions()->sync($staffPermissions);
     }
 }

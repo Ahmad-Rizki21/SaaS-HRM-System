@@ -19,6 +19,7 @@ class HolidayController extends Controller
 
     public function store(Request $request)
     {
+        abort_if(!$request->user()->hasPermission('manage-holidays'), 403, 'Akses ditolak.');
         $request->validate([
             'name' => 'required|string',
             'date' => 'required|date',
@@ -30,30 +31,38 @@ class HolidayController extends Controller
             'date' => $request->date,
         ]);
 
+        $this->logActivity('CREATE_HOLIDAY', "Menambahkan hari libur: {$request->name} ({$request->date})", $holiday);
+
         return $this->successResponse($holiday, 'Hari libur berhasil ditambahkan.', 201);
     }
+
     public function update(Request $request, $id)
     {
-        $holiday = Holiday::findOrFail($id);
+        abort_if(!$request->user()->hasPermission('manage-holidays'), 403, 'Akses ditolak.');
+        $holiday = Holiday::where('company_id', $request->user()->company_id)->findOrFail($id);
         
-        if (!$holiday->company_id && $request->user()->role_id !== 7) { // Role 7 is Super Admin
-            return $this->errorResponse('Anda tidak bisa mengedit hari libur nasional.', 403);
-        }
+        $request->validate([
+            'name' => 'sometimes|string',
+            'date' => 'sometimes|date',
+        ]);
 
         $holiday->update($request->all());
+
+        $this->logActivity('UPDATE_HOLIDAY', "Memperbarui hari libur: {$holiday->name}", $holiday);
+
         return $this->successResponse($holiday, 'Hari libur berhasil diperbarui.');
     }
 
     public function destroy(Request $request, $id)
     {
-        $holiday = Holiday::findOrFail($id);
+        abort_if(!$request->user()->hasPermission('manage-holidays'), 403, 'Akses ditolak.');
+        $holiday = Holiday::where('company_id', $request->user()->company_id)->findOrFail($id);
+        $name = $holiday->name;
         
-        // Prevent deletion of national holidays if they are company users
-        if (!$holiday->company_id && $request->user()->role_id !== 1) {
-            return $this->errorResponse('Anda tidak bisa menghapus hari libur nasional.', 403);
-        }
-
         $holiday->delete();
+
+        $this->logActivity('DELETE_HOLIDAY', "Menghapus hari libur: {$name}");
+
         return $this->successResponse(null, 'Hari libur berhasil dihapus.');
     }
 }

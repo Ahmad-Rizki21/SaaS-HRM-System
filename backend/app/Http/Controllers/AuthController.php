@@ -24,6 +24,13 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        \App\Models\ActivityLog::create([
+            'company_id' => $user->company_id,
+            'user_id' => $user->id,
+            'action' => 'LOGIN',
+            'description' => "User {$user->name} berhasil masuk ke sistem.",
+        ]);
+
         return $this->successResponse([
             'access_token' => $token,
             'token_type' => 'Bearer',
@@ -33,6 +40,7 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $this->logActivity('LOGOUT', "User {$request->user()->name} keluar dari sistem.");
         $request->user()->currentAccessToken()->delete();
 
         return $this->successResponse(null, 'Logged out successfully');
@@ -54,6 +62,8 @@ class AuthController extends Controller
         $user->update([
             'password' => Hash::make($request->new_password)
         ]);
+
+        $this->logActivity('CHANGE_PASSWORD', "User {$user->name} telah mengubah kata sandi akunnya.");
 
         return $this->successResponse(null, 'Kata sandi berhasil diubah.');
     }

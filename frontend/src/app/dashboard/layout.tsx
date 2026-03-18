@@ -70,7 +70,8 @@ const sidebarLinks: SidebarLink[] = [
     icon: Clock,
     submenus: [
       { name: "Riwayat Absensi", href: "/dashboard/attendance" },
-      { name: "Jadwal & Shift", href: "/dashboard/schedules", permission: 'manage-company' },
+      { name: "Jadwal & Shift", href: "/dashboard/schedules", permission: 'manage-schedules' },
+      { name: "Hari Libur", href: "/dashboard/holidays", permission: 'manage-holidays' },
     ]
   },
   
@@ -79,9 +80,16 @@ const sidebarLinks: SidebarLink[] = [
     name: "Pengajuan", 
     icon: FileText,
     submenus: [
-      { name: "Cuti Karyawan", href: "/dashboard/leaves" },
-      { name: "Reimbursement", href: "/dashboard/reimbursements" },
+      { name: "Cuti Karyawan", href: "/dashboard/leaves", permission: 'view-leaves' },
+      { name: "Reimbursement", href: "/dashboard/reimbursements", permission: 'view-reimbursements' },
       { name: "Persetujuan (Approval)", href: "/dashboard/approvals", permission: 'approve-leaves' },
+    ]
+  },
+  {
+    name: "Komunikasi",
+    icon: Mail,
+    submenus: [
+      { name: "Pengumuman", href: "/dashboard/announcements", permission: 'view-leaves' }, // Everyone can view
     ]
   },
   {
@@ -101,8 +109,9 @@ const sidebarLinks: SidebarLink[] = [
     icon: Settings,
     permission: 'manage-roles',
     submenus: [
-      { name: "Manajemen Jabatan/Role", href: "/dashboard/roles" },
-      { name: "Hak Akses", href: "/dashboard/permissions" },
+      { name: "Manajemen Jabatan/Role", href: "/dashboard/roles", permission: 'manage-roles' },
+      { name: "Hak Akses", href: "/dashboard/permissions", permission: 'manage-roles' },
+      { name: "Log Aktivitas", href: "/dashboard/activity-logs", permission: 'view-activity-logs' },
     ]
   }
 ];
@@ -156,7 +165,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const fetchNotifications = async () => {
     try {
       const res = await axiosInstance.get('/notifications');
-      setNotifications(res.data.data || []);
+      const allData = res.data.data || [];
+      
+      // Split by category
+      setNotifications(allData.filter((n: any) => n.category === 'notif' || !n.category));
+      setInboxMessages(allData.filter((n: any) => n.category === 'mail'));
     } catch (error) {
       console.error("Failed to fetch notifications");
     }

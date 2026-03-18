@@ -479,7 +479,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"start_date\": \"2024-03-20\",\n    \"end_date\": \"2024-03-22\",\n    \"type\": \"annual\",\n    \"reason\": \"Cuti Tahunan\"\n}",
+							"raw": "{\n    \"start_date\": \"2024-03-20\",\n    \"end_date\": \"2024-03-22\",\n    \"type\": \"Cuti Tahunan\",\n    \"reason\": \"Keluarga ada acara\",\n    \"signature\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...\"\n}",
 							"options": { "raw": { "language": "json" } }
 						},
 						"url": "{{base_url}}/api/leave"
@@ -492,7 +492,27 @@
 						"header": [
 							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remark\": \"Disetujui, silakan serah terima pekerjaan sebelum cuti.\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
 						"url": "{{base_url}}/api/leave/1/approve"
+					}
+				},
+				{
+					"name": "Reject Leave",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remark\": \"Mohon maaf, pada tanggal tersebut sedang ada audit internal.\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/leave/1/reject"
 					}
 				},
 				{
@@ -543,7 +563,27 @@
 						"header": [
 							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remark\": \"Bukti valid, dana akan segera diproses.\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
 						"url": "{{base_url}}/api/reimbursements/1/approve"
+					}
+				},
+				{
+					"name": "Reject Claim",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remark\": \"Bukti kurang jelas, mohon upload ulang yang lebih tajam.\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/reimbursements/1/reject"
 					}
 				},
 				{
@@ -626,6 +666,83 @@
 							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/activity-logs"
+					}
+				}
+			]
+		},
+		{
+			"name": "Holidays Management",
+			"description": "Public holidays setting and information.",
+			"item": [
+				{
+					"name": "Get All Holidays",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/holidays"
+					}
+				},
+				{
+					"name": "Create Holiday",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Libur Nasional\",\n    \"date\": \"2026-04-10\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/holidays"
+					}
+				},
+				{
+					"name": "Delete Holiday",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/holidays/1"
+					}
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"description": "User notification management.",
+			"item": [
+				{
+					"name": "Get List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/notifications"
+					}
+				},
+				{
+					"name": "Mark as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/notifications/1/read"
+					}
+				},
+				{
+					"name": "Mark All as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/notifications/read-all"
 					}
 				}
 			]
