@@ -173,7 +173,7 @@ export default function HolidaysPage() {
                         const dateInfo = formatDate(h.date);
                         return (
                             <div key={h.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center gap-4 group relative">
-                                <div className="flex-shrink-0 w-14 h-14 bg-gray-50 rounded-xl flex flex-col items-center justify-center border border-gray-100 group-hover:bg-[#8B0000]/5 group-hover:border-[#8B0000]/10 transition-colors">
+                                <div className="shrink-0 w-14 h-14 bg-gray-50 rounded-xl flex flex-col items-center justify-center border border-gray-100 group-hover:bg-[#8B0000]/5 group-hover:border-[#8B0000]/10 transition-colors">
                                     <span className="text-lg font-black text-gray-900 group-hover:text-[#8B0000]">{dateInfo.day}</span>
                                     <span className="text-[10px] uppercase font-bold text-gray-400 group-hover:text-[#8B0000]/70">{dateInfo.month}</span>
                                 </div>
@@ -273,7 +273,7 @@ export default function HolidaysPage() {
 
       {/* Delete Modal */}
       {isDeleteModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
               <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 p-8 text-center">
                   <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500">
                       <Trash2 size={40} />
