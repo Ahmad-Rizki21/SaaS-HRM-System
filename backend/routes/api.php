@@ -19,6 +19,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ProfileRequestController;
+use App\Http\Controllers\Api\NotificationController;
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
@@ -103,4 +104,12 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::post('/profile-requests', [ProfileRequestController::class, 'store']);
     Route::post('/profile-requests/{id}/approve', [ProfileRequestController::class, 'approve']);
     Route::post('/profile-requests/{id}/reject', [ProfileRequestController::class, 'reject']);
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+
+    // User Profile Actions
+    Route::post('/user/change-password', [AuthController::class, 'changePassword']);
 });

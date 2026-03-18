@@ -6,7 +6,7 @@ import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, ExternalLink }
 
 interface ApprovalItem {
   id: number;
-  type: "leave" | "reimbursement";
+  type: "leave" | "reimbursement" | "profile";
   user_name: string;
   category: string; // "Cuti Tahunan", "Bensin", etc.
   description: string;
@@ -14,6 +14,7 @@ interface ApprovalItem {
   start_date?: string;
   end_date?: string;
   status: "pending" | "approved" | "rejected";
+  attachment?: string;
   created_at: string;
 }
 
@@ -22,14 +23,23 @@ export default function ApprovalsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "leave" | "reimbursement" | "profile">("all");
 
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+
+  const getStorageUrl = (path: string) => {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:8000";
+    return `${backendUrl}/storage/${path}`;
+  };
+
   useEffect(() => {
     fetchApprovals();
+    const interval = setInterval(fetchApprovals, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchApprovals = async () => {
     try {
       setLoading(true);
-      // Fetch Leave, Reimbursements, and Profile Requests
       const [leaveRes, reimRes, profileRes] = await Promise.all([
         axiosInstance.get("/leave"),
         axiosInstance.get("/reimbursements"),
@@ -45,6 +55,7 @@ export default function ApprovalsPage() {
         start_date: l.start_date,
         end_date: l.end_date,
         status: l.status,
+        attachment: null,
         created_at: l.created_at
       }));
 
@@ -56,6 +67,7 @@ export default function ApprovalsPage() {
         category: "Reimbursement",
         amount: r.amount,
         status: r.status,
+        attachment: r.attachment,
         created_at: r.created_at
       }));
 
@@ -66,10 +78,10 @@ export default function ApprovalsPage() {
         description: `Update data: ${Object.keys(p.new_data).join(", ")}`,
         category: "Perubahan Profil",
         status: p.status,
+        attachment: null,
         created_at: p.created_at
       }));
 
-      // Merge and filter for PENDING only in this view
       const merged = [...leaves, ...reimbursements, ...profiles]
         .filter(item => item.status === "pending")
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -83,7 +95,19 @@ export default function ApprovalsPage() {
   };
 
   const handleAction = async (id: number, type: string, action: "approve" | "reject") => {
-    if (!confirm(`Konfirmasi ${action === 'approve' ? 'Setujui' : 'Tolak'} pengajuan ini?`)) return;
+    let remark = "";
+    if (type === 'reimbursement') {
+        const promptMsg = action === 'approve' ? "Catatan persetujuan (opsional):" : "Alasan penolakan (WAJIB):";
+        const res = prompt(promptMsg);
+        if (res === null) return;
+        if (action === 'reject' && !res) {
+            alert("Alasan penolakan harus diisi!");
+            return;
+        }
+        remark = res;
+    } else {
+        if (!confirm(`Konfirmasi ${action === 'approve' ? 'Setujui' : 'Tolak'} pengajuan ini?`)) return;
+    }
     
     try {
       let endpoint = "";
@@ -91,12 +115,17 @@ export default function ApprovalsPage() {
       else if (type === 'reimbursement') endpoint = '/reimbursements';
       else if (type === 'profile') endpoint = '/profile-requests';
 
-      await axiosInstance.post(`${endpoint}/${id}/${action}`);
+      await axiosInstance.post(`${endpoint}/${id}/${action}`, { remark });
       alert(`Berhasil ${action === 'approve' ? 'menyetujui' : 'menolak'} pengajuan.`);
       fetchApprovals();
     } catch (e) {
       alert("Gagal memproses pengajuan.");
     }
+  };
+
+  const handleViewDetail = (item: any) => {
+    setSelectedItem(item);
+    setIsDetailModalOpen(true);
   };
 
   if (loading && items.length === 0) {
@@ -130,7 +159,7 @@ export default function ApprovalsPage() {
         ) : (
           items.filter(item => filter === 'all' || item.type === filter).map(item => (
             <div key={`${item.type}-${item.id}`} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row items-start gap-6">
-              <div className={`w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center ${
+              <div className={`w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center ${
                 item.type === 'leave' ? 'bg-blue-50 text-blue-600' : 
                 item.type === 'reimbursement' ? 'bg-emerald-50 text-emerald-600' :
                 'bg-orange-50 text-orange-600'
@@ -160,6 +189,14 @@ export default function ApprovalsPage() {
                     </div>
                   )}
                   <div className="flex items-center gap-1.5">{new Date(item.created_at).toLocaleDateString()}</div>
+                  {item.attachment && (
+                    <button 
+                      onClick={() => handleViewDetail(item)}
+                      className="flex items-center gap-1 text-[#8B0000] font-bold hover:underline"
+                    >
+                      <ExternalLink size={14} /> Lihat Bukti
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -181,6 +218,102 @@ export default function ApprovalsPage() {
           ))
         )}
       </div>
+
+      {/* Detail Modal */}
+      {isDetailModalOpen && selectedItem && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="font-bold text-gray-900 text-lg">Detail Pengajuan</h3>
+              <button 
+                onClick={() => setIsDetailModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#8B0000] font-bold text-xl shadow-sm italic">
+                    {selectedItem.user_name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 leading-tight">{selectedItem.user_name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 uppercase tracking-wider font-bold">{selectedItem.type}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-2xl">
+                    <p className="text-[10px] uppercase font-black text-gray-400 mb-1">KATEGORI</p>
+                    <p className="text-sm font-bold text-gray-800">{selectedItem.category}</p>
+                  </div>
+                  {selectedItem.amount && (
+                    <div className="p-4 border border-emerald-100 bg-emerald-50/30 rounded-2xl">
+                        <p className="text-[10px] uppercase font-black text-emerald-600/70 mb-1">NOMINAL</p>
+                        <p className="text-sm font-bold text-emerald-700 italic">IDR {parseInt(selectedItem.amount).toLocaleString()}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-[10px] uppercase font-black text-gray-400 mb-2 px-1">DESKRIPSI / ALASAN</p>
+                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <p className="text-sm text-gray-600 italic">"{selectedItem.description || 'Tidak ada keterangan tambahan'}"</p>
+                  </div>
+                </div>
+
+                {selectedItem.attachment && (
+                  <div>
+                    <p className="text-[10px] uppercase font-black text-gray-400 mb-2 px-1">BUKTI PENDUKUNG (ATTACHMENT)</p>
+                    <div className="rounded-2xl border border-gray-100 overflow-hidden bg-gray-100 group relative">
+                        <img 
+                            src={getStorageUrl(selectedItem.attachment)} 
+                            alt="Evidence" 
+                            className="w-full h-auto max-h-[300px] object-contain mx-auto"
+                            onError={(e) => {
+                                (e.target as any).src = 'https://placehold.co/600x400?text=Bukti+Gagal+Dimuat';
+                            }}
+                        />
+                        <a 
+                            href={getStorageUrl(selectedItem.attachment)} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-sm"
+                        >
+                            <ExternalLink size={20} className="mr-2" /> Buka Ukuran Penuh
+                        </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex gap-3">
+                <button 
+                  onClick={() => {
+                    setIsDetailModalOpen(false);
+                    handleAction(selectedItem.id, selectedItem.type, 'reject');
+                  }}
+                  className="flex-1 py-3 text-sm font-bold text-red-600 border border-red-100 bg-white rounded-xl hover:bg-red-50 transition shadow-sm"
+                >
+                  Tolak
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsDetailModalOpen(false);
+                    handleAction(selectedItem.id, selectedItem.type, 'approve');
+                  }}
+                  className="flex-2 py-3 text-sm font-bold text-white bg-emerald-600 rounded-xl shadow-lg shadow-emerald-900/10 hover:bg-emerald-700 transition"
+                >
+                  Setujui Sekarang
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

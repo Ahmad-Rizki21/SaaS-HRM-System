@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Leave;
 use Illuminate\Http\Request;
+use App\Traits\Notifiable;
 
 class LeaveController extends Controller
 {
+    use Notifiable;
+
     public function index(Request $request)
     {
         $query = Leave::with('user');
@@ -40,6 +43,13 @@ class LeaveController extends Controller
             'status' => 'pending',
         ]);
 
+        $this->notify(
+            $request->user(), 
+            'PENGAJUAN CUTI BERHASIL', 
+            "Permohonan cuti ({$request->type}) Anda dari tanggal {$request->start_date} s/d {$request->end_date} telah diajukan dan sedang menunggu persetujuan.",
+            'info'
+        );
+
         return $this->successResponse($leave, 'Permohonan cuti berhasil diajukan.', 201);
     }
 
@@ -52,6 +62,13 @@ class LeaveController extends Controller
             'approved_by' => $request->user()->id,
         ]);
 
+        $this->notify(
+            $leave->user, 
+            'CUTI DISETUJUI', 
+            "Permohonan cuti Anda untuk tanggal {$leave->start_date} s/d {$leave->end_date} telah DISETUJUI oleh Admin.",
+            'success'
+        );
+
         return $this->successResponse(null, 'Permohonan cuti disetujui.');
     }
 
@@ -63,6 +80,13 @@ class LeaveController extends Controller
             'status' => 'rejected',
             'approved_by' => $request->user()->id,
         ]);
+
+        $this->notify(
+            $leave->user, 
+            'CUTI DITOLAK', 
+            "Mohon maaf, permohonan cuti Anda untuk tanggal {$leave->start_date} s/d {$leave->end_date} telah DITOLAK.",
+            'danger'
+        );
 
         return $this->successResponse(null, 'Permohonan cuti ditolak.');
     }

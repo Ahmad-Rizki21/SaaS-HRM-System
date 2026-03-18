@@ -4,16 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Models\Reimbursement;
 use Illuminate\Http\Request;
+use App\Traits\Notifiable;
 
 class ReimbursementController extends Controller
 {
+    use Notifiable;
+
     public function index(Request $request)
     {
         $query = Reimbursement::with('user');
 
-        // Admin sees all in company, Employee sees only theirs
-        if ($request->user()->role_id !== 1 && $request->user()->role_id !== 2) {
-            $query->where('user_id', $request->user()->id);
+        $user = $request->user();
+
+        // Roles that can see all data in their company:
+        // 7: Super Admin, 2: HRD, 10: Finance, 3: Management, 8: HRD Manager
+        $approver_roles = [7, 2, 10, 3, 8];
+
+        if (!in_array($user->role_id, $approver_roles)) {
+            $query->where('user_id', $user->id);
+        } else {
+            // Admins should still only see data from their own company
+            $query->where('company_id', $user->company_id);
         }
 
         $reimbursements = $query->orderBy('id', 'desc')->paginate(10);
@@ -26,7 +37,7 @@ class ReimbursementController extends Controller
             'title' => 'required|string',
             'amount' => 'required|numeric',
             'description' => 'required|string',
-            'attachment' => 'nullable|image|max:2048',
+            'attachment' => 'nullable|image|max:10240',
         ]);
 
         $path = null;
@@ -44,6 +55,32 @@ class ReimbursementController extends Controller
             'status' => 'pending',
         ]);
 
+        // 1. Notify the Submitting User (Confirmation)
+        $this->notify(
+            $request->user(), 
+            'PENGAJUAN REIMBURSEMENT', 
+            "Klaim reimbursement Anda '{$request->title}' sebesar Rp " . number_format($request->amount, 0, ',', '.') . " telah diajukan.",
+            'info',
+            '/dashboard/reimbursements'
+        );
+
+        // 2. Notify Admins/Approvers/Finance in the same company
+        // Approver roles: Super Admin (7), HRD (2), Finance (10), HRD Manager (8)
+        $admins = \App\Models\User::where('company_id', $request->user()->company_id)
+            ->whereIn('role_id', [7, 2, 10, 8]) 
+            ->where('id', '!=', $request->user()->id)
+            ->get();
+
+        foreach ($admins as $admin) {
+            $this->notify(
+                $admin,
+                'KLAIM REIMBURSEMENT BARU',
+                "Karyawan {$request->user()->name} mengajukan klaim '{$request->title}' sebesar Rp " . number_format($request->amount, 0, ',', '.') . ".",
+                'warning',
+                '/dashboard/approvals'
+            );
+        }
+
         return $this->successResponse($reimbursement, 'Klaim berhasil diajukan.', 201);
     }
 
@@ -51,7 +88,23 @@ class ReimbursementController extends Controller
     {
         $reimbursement = Reimbursement::findOrFail($id);
         
-        $reimbursement->update(['status' => 'approved']);
+        $reimbursement->update([
+            'status' => 'approved',
+            'remark' => $request->remark
+        ]);
+
+        $msg = "Klaim reimbursement Anda '{$reimbursement->title}' sebesar Rp " . number_format($reimbursement->amount, 0, ',', '.') . " telah DISETUJUI.";
+        if ($request->remark) {
+            $msg .= " Catatan: {$request->remark}";
+        }
+
+        $this->notify(
+            $reimbursement->user, 
+            'REIMBURSEMENT DISETUJUI', 
+            $msg,
+            'success',
+            '/dashboard/reimbursements'
+        );
         
         return $this->successResponse($reimbursement, 'Klaim disetujui.');
     }
@@ -60,7 +113,23 @@ class ReimbursementController extends Controller
     {
         $reimbursement = Reimbursement::findOrFail($id);
         
-        $reimbursement->update(['status' => 'rejected']);
+        $reimbursement->update([
+            'status' => 'rejected',
+            'remark' => $request->remark
+        ]);
+
+        $msg = "Mohon maaf, klaim reimbursement Anda '{$reimbursement->title}' telah DITOLAK.";
+        if ($request->remark) {
+            $msg .= " Alasan: {$request->remark}";
+        }
+
+        $this->notify(
+            $reimbursement->user, 
+            'REIMBURSEMENT DITOLAK', 
+            $msg,
+            'danger',
+            '/dashboard/reimbursements'
+        );
         
         return $this->successResponse($reimbursement, 'Klaim ditolak.');
     }

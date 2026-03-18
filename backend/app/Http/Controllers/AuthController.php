@@ -44,4 +44,24 @@ class AuthController extends Controller
 
         return $this->successResponse(null, 'Logged out successfully');
     }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return $this->errorResponse('Kata sandi saat ini salah.', 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        return $this->successResponse(null, 'Kata sandi berhasil diubah.');
+    }
 }

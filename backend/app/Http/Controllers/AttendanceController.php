@@ -8,9 +8,12 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Traits\Notifiable;
 
 class AttendanceController extends Controller
 {
+    use Notifiable;
+
     public function checkIn(Request $request)
     {
         $user = $request->user();
@@ -31,8 +34,10 @@ class AttendanceController extends Controller
             ->first();
 
         $status = 'present';
-        if ($schedule && $schedule->shift) {
-            if ($now->toTimeString() > $schedule->shift->start_time) {
+        $shift = $schedule ? $schedule->shift : null;
+        
+        if ($shift) {
+            if ($now->toTimeString() > $shift->start_time) {
                 $status = 'late';
             }
         } else {
@@ -48,6 +53,13 @@ class AttendanceController extends Controller
             'status' => $status,
             'office_id' => $request->office_id,
         ]);
+
+        $this->notify(
+            $user, 
+            'BERHASIL ABSEN MASUK', 
+            "Anda telah berhasil absen masuk pada pukul {$now->format('H:i')} WIB. Status: " . strtoupper($status),
+            $status === 'late' ? 'warning' : 'success'
+        );
 
         return $this->successResponse($attendance, 'Check-in berhasil. Status: ' . $status);
     }
@@ -70,6 +82,13 @@ class AttendanceController extends Controller
             'latitude_out' => $request->latitude,
             'longitude_out' => $request->longitude,
         ]);
+
+        $this->notify(
+            $user, 
+            'BERHASIL ABSEN KELUAR', 
+            "Anda telah berhasil absen keluar pada pukul " . now()->format('H:i') . " WIB. Terima kasih atas kerja keras Anda!",
+            'info'
+        );
 
         return $this->successResponse($attendance, 'Check-out berhasil.');
     }
