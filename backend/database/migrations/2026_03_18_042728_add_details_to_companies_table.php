@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::table('companies', function (Blueprint $table) {
             $table->string('logo')->nullable();
             $table->text('address')->nullable();
+            $table->string('phone')->nullable();
             $table->integer('default_radius')->default(100);
         });
     }
@@ -24,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('companies', function (Blueprint $table) {
-            //
+            $table->dropColumn(['logo', 'address', 'phone', 'default_radius']);
         });
     }
 };

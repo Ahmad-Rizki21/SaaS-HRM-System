@@ -21,6 +21,7 @@ import {
   Search,
   Mail,
   Bell,
+  Loader2,
   UserCheck,
   UserX,
   MoreVertical,
@@ -141,9 +142,57 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeHeaderDropdown, setActiveHeaderDropdown] = useState<string | null>(null);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [activeHeaderDropdown, setActiveHeaderDropdown] = useState<'mail' | 'notif' | 'settings' | 'search' | null>(null);
+
+  // Search Logic
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{title: string, href: string, category: string}[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      const results: any[] = [];
+      
+      // 1. Search Menu Items
+      sidebarLinks.forEach(link => {
+        if (link.isHeading) return;
+        if (t(link.name).toLowerCase().includes(searchQuery.toLowerCase())) {
+          results.push({ title: t(link.name), href: link.href || "#", category: "Menu" });
+        }
+        if (link.submenus) {
+          link.submenus.forEach(sub => {
+            if (t(sub.name).toLowerCase().includes(searchQuery.toLowerCase())) {
+              results.push({ title: t(sub.name), href: sub.href, category: "Menu" });
+            }
+          });
+        }
+      });
+
+      // 2. Search Employees (Async)
+      try {
+        const res = await axiosInstance.get(`/employees?search=${searchQuery}&per_page=5`);
+        const employees = res.data.data.data || [];
+        employees.forEach((emp: any) => {
+          results.push({ title: emp.name, href: `/dashboard/employees?id=${emp.id}`, category: "Pegawai" });
+        });
+      } catch (e) { console.error(e); }
+
+      setSearchResults(results);
+      setIsSearching(false);
+      if (results.length > 0) setActiveHeaderDropdown('search');
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, t]);
   
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
@@ -157,6 +206,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -263,7 +313,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const isInsideDropdown = dropdownRef.current?.contains(event.target as Node);
+      const isInsideSearch = searchRef.current?.contains(event.target as Node);
+
+      if (!isInsideDropdown && !isInsideSearch) {
         setActiveHeaderDropdown(null);
       }
     }
@@ -271,8 +324,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleHeaderDropdown = (name: string) => {
-    setActiveHeaderDropdown((prev: string | null) => prev === name ? null : name);
+  const toggleHeaderDropdown = (name: any) => {
+    setActiveHeaderDropdown((prev) => prev === name ? null : name);
   };
 
   const handleLogout = async () => {
@@ -479,9 +532,51 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         {/* Desktop Header */}
         <header className="dash-desktop-header">
           {/* Kiri: Search Bar */}
-          <div className="dash-header-search">
+          <div className="dash-header-search relative" ref={searchRef}>
             <Search size={16} className="text-gray-400" />
-            <input type="text" placeholder={t('search')} aria-label="Search" />
+            <input 
+              type="text" 
+              placeholder={t('search')} 
+              aria-label="Search" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => { if (searchResults.length > 0) setActiveHeaderDropdown('search'); }}
+            />
+            {isSearching && <Loader2 size={14} className="animate-spin text-gray-400 absolute right-3" />}
+
+            {/* Search Results Dropdown */}
+            {activeHeaderDropdown === 'search' && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 w-80 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-100 animate-in slide-in-from-top-2">
+                <div className="p-3 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Hasil Pencarian</span>
+                  <button onClick={() => {setSearchQuery(""); setActiveHeaderDropdown(null)}} className="text-gray-400 hover:text-gray-600">
+                    <X size={14} />
+                  </button>
+                </div>
+                <div className="max-h-96 overflow-y-auto p-2">
+                  {searchResults.map((result, idx) => (
+                    <Link
+                      key={idx}
+                      href={result.href}
+                      onClick={() => {
+                        setActiveHeaderDropdown(null);
+                        setSearchQuery("");
+                      }}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-all group"
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${result.category === 'Menu' ? 'bg-blue-50 text-blue-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                        {result.category === 'Menu' ? <LayoutDashboard size={14} /> : <Users size={14} />}
+                      </div>
+                      <div className="text-left flex-1 min-w-0">
+                        <p className="text-xs font-bold text-gray-900 truncate group-hover:text-[#8B0000] transition-colors">{result.title}</p>
+                        <p className="text-[10px] text-gray-400 font-medium">{result.category}</p>
+                      </div>
+                      <ChevronRight size={14} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Kanan: Icons & Profile */}

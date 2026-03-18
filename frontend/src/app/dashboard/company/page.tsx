@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axiosInstance from "@/lib/axios";
-import { Save, Building2, MapPin, Mail, Phone } from "lucide-react";
+import { Save, Building2, MapPin, Mail, Phone, Loader2, Camera } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function CompanySettingsPage() {
   const { hasPermission } = useAuth();
+  const { t } = useLanguage();
   const [company, setCompany] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchCompany();
@@ -20,11 +26,55 @@ export default function CompanySettingsPage() {
     try {
       setLoading(true);
       const response = await axiosInstance.get("/company");
-      setCompany(response.data.data || {});
+      const data = response.data.data || {};
+      setCompany(data);
+      if (data.logo) {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://127.0.0.1:8000';
+        setPhotoPreview(`${baseUrl}/storage/${data.logo}`);
+      }
     } catch (e) {
       console.error("Gagal mendapatkan informasi perusahaan", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setIsSubmitting(true);
+      const formData = new FormData();
+      formData.append("name", company.name);
+      formData.append("email", company.email);
+      formData.append("phone", company.phone || "");
+      formData.append("address", company.address || "");
+      
+      if (photoFile) {
+        formData.append("logo", photoFile);
+      }
+
+      await axiosInstance.post("/company/update", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      
+      alert(t('success_save'));
+      fetchCompany();
+    } catch (e) {
+      console.error(e);
+      alert(t('failed_to_fetch'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -43,9 +93,13 @@ export default function CompanySettingsPage() {
         </div>
         <div className="dash-page-actions">
           {canEdit && (
-            <button className="dash-btn dash-btn-primary">
-              <Save size={15} />
-              Simpan Perubahan
+            <button 
+              className="dash-btn dash-btn-primary" 
+              onClick={handleSave}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              {isSubmitting ? t('submitting') : t('save')}
             </button>
           )}
         </div>
@@ -66,7 +120,8 @@ export default function CompanySettingsPage() {
                   <input
                     type="text"
                     disabled={!canEdit}
-                    defaultValue={company?.name || "Narwasthu Group"}
+                    value={company?.name || ""}
+                    onChange={(e) => setCompany({...company, name: e.target.value})}
                     className={`w-full h-10 pl-9 pr-4 text-sm ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors`}
                   />
                 </div>
@@ -79,7 +134,8 @@ export default function CompanySettingsPage() {
                   <input
                     type="email"
                     disabled={!canEdit}
-                    defaultValue={company?.email || "admin@narwasthu.com"}
+                    value={company?.email || ""}
+                    onChange={(e) => setCompany({...company, email: e.target.value})}
                     className={`w-full h-10 pl-9 pr-4 text-sm ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors`}
                   />
                 </div>
@@ -92,7 +148,8 @@ export default function CompanySettingsPage() {
                   <input
                     type="tel"
                     disabled={!canEdit}
-                    defaultValue={company?.phone || "+62 "}
+                    value={company?.phone || ""}
+                    onChange={(e) => setCompany({...company, phone: e.target.value})}
                     className={`w-full h-10 pl-9 pr-4 text-sm ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors`}
                   />
                 </div>
@@ -105,7 +162,8 @@ export default function CompanySettingsPage() {
                   <textarea
                     rows={4}
                     disabled={!canEdit}
-                    defaultValue={company?.address || ""}
+                    value={company?.address || ""}
+                    onChange={(e) => setCompany({...company, address: e.target.value})}
                     className={`w-full pt-2.5 pb-2 pl-9 pr-4 text-sm ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors resize-none`}
                   ></textarea>
                 </div>
@@ -120,12 +178,32 @@ export default function CompanySettingsPage() {
             <h2 className="text-base font-semibold text-gray-900 mb-5 border-b border-[#ebedf0] pb-3">
               Logo Perusahaan
             </h2>
-            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
-              <img src="/logo.png" alt="Company Logo" className="h-16 w-auto mb-4" />
+            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50 relative group">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Company Logo" className="h-24 w-auto object-contain mb-4 rounded-lg" />
+              ) : (
+                <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center mb-4 border border-gray-200">
+                   <Building2 className="text-gray-300" size={40} />
+                </div>
+              )}
+              
               {canEdit && (
-                <button className="text-sm font-medium text-blue-600 hover:text-blue-800 bg-white border border-gray-200 px-4 py-1.5 rounded-md shadow-sm transition-colors">
-                  Ganti Logo
-                </button>
+                <>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handlePhotoChange} 
+                    className="hidden" 
+                    accept="image/*"
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800 bg-white border border-gray-200 px-4 py-1.5 rounded-md shadow-sm transition-colors"
+                  >
+                    <Camera size={14} />
+                    {photoPreview ? "Ganti Logo" : "Upload Logo"}
+                  </button>
+                </>
               )}
             </div>
             <p className="text-xs text-gray-500 mt-3 text-center">

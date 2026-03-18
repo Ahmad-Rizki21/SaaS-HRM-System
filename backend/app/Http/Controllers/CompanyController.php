@@ -20,18 +20,20 @@ class CompanyController extends Controller
         $request->validate([
             'name' => 'sometimes|string',
             'email' => 'sometimes|email',
+            'phone' => 'sometimes|string',
             'address' => 'sometimes|string',
-            'default_radius' => 'sometimes|integer',
+            'logo' => 'sometimes|image|max:2048',
         ]);
 
-        $company->update($request->all());
-
-        // Handle Logo Upload if needed later, for now simple update
+        $data = $request->only(['name', 'email', 'phone', 'address']);
+        
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('companies', 'public');
-            $company->update(['logo' => $path]);
+            $data['logo'] = $path;
         }
 
-        return $this->successResponse($company, 'Data perusahaan berhasil diupdate.');
+        $company->update($data);
+
+        return $this->successResponse($company, 'Data perusahaan berhasil diperbarui.');
     }
 }

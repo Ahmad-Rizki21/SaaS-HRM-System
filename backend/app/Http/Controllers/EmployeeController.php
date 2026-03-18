@@ -13,9 +13,18 @@ class EmployeeController extends Controller
         abort_if(!$request->user()->hasPermission('view-employees'), 403, 'Akses ditolak.');
 
         $employees = User::where('company_id', $request->user()->company_id)
+            ->when($request->search, function($q) use ($request) {
+                $q->where(function($qq) use ($request) {
+                    $qq->where('name', 'like', "%{$request->search}%")
+                      ->orWhere('email', 'like', "%{$request->search}%");
+                });
+            })
+            ->when($request->id, function($q) use ($request) {
+                $q->where('id', $request->id);
+            })
             ->with('role')
             ->orderBy('name', 'asc')
-            ->paginate(10);
+            ->paginate($request->per_page ?? 10);
             
         return $this->successResponse($employees, 'Data karyawan berhasil diambil.');
     }

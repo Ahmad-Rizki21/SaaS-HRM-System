@@ -6,6 +6,7 @@ import { Plus, Search, Edit2, Trash2, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import Pagination from "@/components/Pagination";
+import { useSearchParams } from "next/navigation";
 
 interface Role {
   id: number;
@@ -33,10 +34,14 @@ interface PaginationData {
 
 export default function EmployeesPage() {
   const { hasPermission } = useAuth();
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search");
+  const urlId = searchParams.get("id");
+
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(urlSearch || "");
   const [page, setPage] = useState(1);
 
   // Modal states
@@ -55,7 +60,7 @@ export default function EmployeesPage() {
   useEffect(() => {
     fetchEmployees(page);
     fetchRoles();
-  }, [searchQuery, page]);
+  }, [searchQuery, page, urlSearch, urlId]);
 
   const fetchRoles = async () => {
     try {
@@ -69,7 +74,9 @@ export default function EmployeesPage() {
   const fetchEmployees = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get(`/employees?page=${page}`);
+      const s = urlSearch || searchQuery;
+      // If we have urlId, we might want to fetch just that ID, or pass it to backend
+      const response = await axiosInstance.get(`/employees?page=${page}&search=${s}${urlId ? `&id=${urlId}` : ""}`);
       const { data, ...paginator } = response.data.data;
       setEmployees(data || []);
       setPagination(paginator);
