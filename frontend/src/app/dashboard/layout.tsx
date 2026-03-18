@@ -52,71 +52,72 @@ type SidebarLink = {
 };
 
 const sidebarLinks: SidebarLink[] = [
-  { name: "Menu Utama", isHeading: true },
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "main_menu", isHeading: true },
+  { name: "dashboard", href: "/dashboard", icon: LayoutDashboard },
   
-  { name: "Manajemen SDM", isHeading: true, permission: 'view-employees' },
+  { name: "human_resources", isHeading: true, permission: 'view-employees' },
   { 
-    name: "Pegawai", 
+    name: "employees", 
     icon: Users,
     permission: 'view-employees',
     submenus: [
-      { name: "Data Karyawan", href: "/dashboard/employees", permission: 'view-employees' },
-      { name: "Profil Perusahaan", href: "/dashboard/company", permission: 'manage-company' },
+      { name: "employees", href: "/dashboard/employees", permission: 'view-employees' },
+      { name: "company_profile", href: "/dashboard/company", permission: 'manage-company' },
     ]
   },
   { 
-    name: "Kehadiran", 
+    name: "attendance", 
     icon: Clock,
     submenus: [
-      { name: "Riwayat Absensi", href: "/dashboard/attendance" },
-      { name: "Jadwal & Shift", href: "/dashboard/schedules", permission: 'manage-schedules' },
-      { name: "Hari Libur", href: "/dashboard/holidays", permission: 'manage-holidays' },
+      { name: "attendance_history", href: "/dashboard/attendance" },
+      { name: "schedules", href: "/dashboard/schedules", permission: 'manage-schedules' },
+      { name: "holidays", href: "/dashboard/holidays", permission: 'manage-holidays' },
     ]
   },
   
-  { name: "Administrasi", isHeading: true },
+  { name: "administration", isHeading: true },
   { 
-    name: "Pengajuan", 
+    name: "applications", 
     icon: FileText,
     submenus: [
-      { name: "Cuti Karyawan", href: "/dashboard/leaves", permission: 'view-leaves' },
-      { name: "Reimbursement", href: "/dashboard/reimbursements", permission: 'view-reimbursements' },
-      { name: "Persetujuan (Approval)", href: "/dashboard/approvals", permission: 'approve-leaves' },
+      { name: "leaves", href: "/dashboard/leaves", permission: 'view-leaves' },
+      { name: "reimbursements", href: "/dashboard/reimbursements", permission: 'view-reimbursements' },
+      { name: "approvals", href: "/dashboard/approvals", permission: 'approve-leaves' },
     ]
   },
   {
-    name: "Komunikasi",
+    name: "communication",
     icon: Mail,
     submenus: [
-      { name: "Pengumuman", href: "/dashboard/announcements", permission: 'view-leaves' }, // Everyone can view
+      { name: "announcements", href: "/dashboard/announcements", permission: 'view-leaves' },
     ]
   },
   {
-    name: "Laporan",
+    name: "reports",
     icon: CreditCard,
     permission: 'view-employees',
     submenus: [
-      { name: "Laporan Absensi", href: "/dashboard/reports/attendance", permission: 'view-employees' },
-      { name: "Laporan Reimbursement", href: "/dashboard/reports/reimbursements", permission: 'view-employees' },
-      { name: "Laporan Cuti", href: "/dashboard/reports/leaves", permission: 'view-employees' },
-      { name: "Laporan Gaji", href: "/dashboard/reports/payroll", permission: 'view-employees' },
+      { name: "attendance_report", href: "/dashboard/reports/attendance", permission: 'view-employees' },
+      { name: "reimbursement_report", href: "/dashboard/reports/reimbursements", permission: 'view-employees' },
+      { name: "leave_report", href: "/dashboard/reports/leaves", permission: 'view-employees' },
+      { name: "payroll_report", href: "/dashboard/reports/payroll", permission: 'view-employees' },
     ]
   },
-  { name: "Sistem", isHeading: true, permission: 'manage-roles' },
+  { name: "system", isHeading: true, permission: 'manage-roles' },
   {
-    name: "Pengaturan",
+    name: "settings",
     icon: Settings,
     permission: 'manage-roles',
     submenus: [
-      { name: "Manajemen Jabatan/Role", href: "/dashboard/roles", permission: 'manage-roles' },
-      { name: "Hak Akses", href: "/dashboard/permissions", permission: 'manage-roles' },
-      { name: "Log Aktivitas", href: "/dashboard/activity-logs", permission: 'view-activity-logs' },
+      { name: "role_management", href: "/dashboard/roles", permission: 'manage-roles' },
+      { name: "permissions", href: "/dashboard/permissions", permission: 'manage-roles' },
+      { name: "activity_logs", href: "/dashboard/activity-logs", permission: 'view-activity-logs' },
     ]
   }
 ];
 
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 
 export default function DashboardLayout({
   children,
@@ -125,7 +126,9 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthProvider>
-      <DashboardContent>{children}</DashboardContent>
+      <LanguageProvider>
+        <DashboardContent>{children}</DashboardContent>
+      </LanguageProvider>
     </AuthProvider>
   );
 }
@@ -134,6 +137,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, permissions, hasPermission, refreshUser, logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -315,7 +319,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
             return (
               <li key={`heading-${index}`} className="dash-nav-heading">
-                {link.name}
+                {t(link.name)}
               </li>
             );
           }
@@ -337,7 +341,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 >
                   <div className="flex items-center gap-[10px]">
                     <Icon className="dash-nav-icon" />
-                    {link.name}
+                    {t(link.name)}
                   </div>
                   {isOpen ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />}
                 </button>
@@ -353,7 +357,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                             className={`dash-submenu-link ${isActive ? "dash-submenu-active" : ""}`}
                           >
                             <span className="dash-submenu-dot" />
-                            {sub.name}
+                            {t(sub.name)}
                           </Link>
                         </li>
                       );
@@ -374,7 +378,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 className={`dash-nav-link ${isActive ? "dash-nav-link-active" : ""}`}
               >
                 <Icon className="dash-nav-icon" />
-                {link.name}
+                {t(link.name)}
               </Link>
             </li>
           );
@@ -411,7 +415,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             disabled={isLoggingOut}
           >
             <LogOut className="dash-nav-icon" />
-            {isLoggingOut ? "Keluar..." : "Keluar Akun"}
+            {isLoggingOut ? t('approving') : t('logout')}
           </button>
         </div>
       </aside>
@@ -477,15 +481,26 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           {/* Kiri: Search Bar */}
           <div className="dash-header-search">
             <Search size={16} className="text-gray-400" />
-            <input type="text" placeholder="Search..." aria-label="Search" />
+            <input type="text" placeholder={t('search')} aria-label="Search" />
           </div>
 
           {/* Kanan: Icons & Profile */}
           <div className="dash-header-right">
             <div className="dash-header-icons" ref={dropdownRef}>
+              {/* Language Switcher */}
+              <button 
+                className="dash-header-icon-btn flex items-center gap-1.5 px-2 hover:bg-gray-100 rounded-lg transition-colors border border-transparent mr-1"
+                onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+                title={language === 'id' ? 'Ganti ke English' : 'Switch to Indonesian'}
+              >
+                <div className="w-5 h-5 rounded-full overflow-hidden border border-gray-200 flex items-center justify-center bg-gray-50 uppercase text-[10px] font-black text-gray-500">
+                   {language}
+                </div>
+              </button>
+
               <button 
                 className={`dash-header-icon-btn ${activeHeaderDropdown === 'mail' ? 'text-[#8B0000]' : ''}`} 
-                title="Pesan"
+                title={t('messages')}
                 onClick={() => toggleHeaderDropdown('mail')}
               >
                 <Mail size={18} />
@@ -494,7 +509,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
               <button 
                 className={`dash-header-icon-btn ${activeHeaderDropdown === 'notif' ? 'text-[#8B0000]' : ''}`} 
-                title="Notifikasi"
+                title={t('notifications')}
                 onClick={() => toggleHeaderDropdown('notif')}
               >
                 <Bell size={18} />
@@ -503,7 +518,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
               <button 
                 className={`dash-header-icon-btn ${activeHeaderDropdown === 'settings' ? 'text-[#8B0000]' : ''}`} 
-                title="Pengaturan Akun"
+                title={t('settings')}
                 onClick={() => toggleHeaderDropdown('settings')}
               >
                 <Settings size={18} />
