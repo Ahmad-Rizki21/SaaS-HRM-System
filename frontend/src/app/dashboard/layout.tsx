@@ -29,7 +29,8 @@ import {
   Filter,
   User,
   Shield,
-  Laptop
+  Laptop,
+  Camera
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useState, useEffect, useRef } from "react";
@@ -140,7 +141,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [inboxMessages, setInboxMessages] = useState<any[]>([]);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -171,12 +182,25 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     e.preventDefault();
     setIsSubmittingProfile(true);
     try {
-      await axiosInstance.post("/profile-requests", { new_data: profileData });
-      alert("Permintaan update profil berhasil dikirim. Menunggu persetujuan admin.");
+      // First update profile data (direct update for name/phone)
+      await axiosInstance.post('/profile/update', profileData);
+
+      // Then upload photo if exists
+      if (photoFile) {
+        const formData = new FormData();
+        formData.append('photo', photoFile);
+        await axiosInstance.post('/profile/upload-photo', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
+      alert("Profil berhasil diperbarui!");
       setIsProfileModalOpen(false);
-      refreshUser(); // Refresh user data after successful submission
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      refreshUser();
     } catch (e: any) {
-      alert("Gagal mengirim permintaan: " + (e.response?.data?.message || e.message));
+      alert("Gagal memperbarui profil: " + (e.response?.data?.message || e.message));
     } finally {
       setIsSubmittingProfile(false);
     }
@@ -586,7 +610,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 <span className="dash-header-name">{user?.name || "User"}</span>
                 <span className="dash-header-role">{user?.role?.name || "Karyawan"}</span>
               </div>
-              <div className="dash-header-avatar">{(user?.name || "U").charAt(0)}</div>
+              <div className="dash-header-avatar overflow-hidden">
+                {user?.profile_photo_url ? (
+                  <img src={user.profile_photo_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  (user?.name || "U").charAt(0)
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -611,7 +641,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 bg-black/50 z-100 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900">Ajukan Perubahan Profil</h3>
+              <h3 className="text-lg font-bold text-gray-900">Edit Profil Saya</h3>
               <button 
                 onClick={() => setIsProfileModalOpen(false)}
                 className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -621,6 +651,32 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             </div>
             
             <form onSubmit={handleProfileSubmit} className="p-6 space-y-4">
+              {/* Photo Upload Section */}
+              <div className="flex flex-col items-center mb-4">
+                <div className="relative group cursor-pointer" onClick={() => document.getElementById('profile-photo-input')?.click()}>
+                  <div className="w-24 h-24 rounded-full border-4 border-gray-50 overflow-hidden bg-gray-100 flex items-center justify-center shadow-inner relative">
+                    {photoPreview || user?.profile_photo_url ? (
+                      <img src={photoPreview || user?.profile_photo_url} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={40} className="text-gray-300" />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Camera size={20} className="text-white" />
+                    </div>
+                  </div>
+                  <input 
+                    type="file" 
+                    id="profile-photo-input" 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handlePhotoChange} 
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-white p-1.5 rounded-full shadow-md border border-gray-100 text-[#8B0000]">
+                    <Camera size={14} />
+                  </div>
+                </div>
+                <p className="text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-tight">Klik untuk ganti foto</p>
+              </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-500 uppercase">Nama Lengkap</label>
                 <input 

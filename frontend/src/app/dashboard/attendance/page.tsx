@@ -3,30 +3,16 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Search, Download, CheckCircle, Clock, FileWarning } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function AttendancePage() {
+  const { hasPermission } = useAuth();
   const [attendance, setAttendance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [permissions, setPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     fetchAttendance();
-    fetchUserPermissions();
   }, []);
-
-  const fetchUserPermissions = async () => {
-    try {
-      const response = await axiosInstance.get("/user");
-      const permSlugs = response.data.role?.permissions?.map((p: any) => p.slug) || [];
-      setPermissions(permSlugs);
-    } catch (e) {
-      console.error("Gagal ambil permission user", e);
-    }
-  };
-
-  const hasPermission = (permission: string) => {
-    return permissions.includes(permission);
-  };
 
   const fetchAttendance = async () => {
     try {

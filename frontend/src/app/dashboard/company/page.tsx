@@ -3,30 +3,16 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Save, Building2, MapPin, Mail, Phone } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CompanySettingsPage() {
+  const { hasPermission } = useAuth();
   const [company, setCompany] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [permissions, setPermissions] = useState<string[]>([]);
 
   useEffect(() => {
     fetchCompany();
-    fetchUserPermissions();
   }, []);
-
-  const fetchUserPermissions = async () => {
-    try {
-      const response = await axiosInstance.get("/user");
-      const permSlugs = response.data.role?.permissions?.map((p: any) => p.slug) || [];
-      setPermissions(permSlugs);
-    } catch (e) {
-      console.error("Gagal ambil permission user", e);
-    }
-  };
-
-  const hasPermission = (permission: string) => {
-    return permissions.includes(permission);
-  };
 
   const canEdit = hasPermission('manage-company');
 

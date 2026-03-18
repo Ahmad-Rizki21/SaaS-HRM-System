@@ -22,6 +22,13 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected $appends = ['profile_photo_url'];
+
+    public function getProfilePhotoUrlAttribute()
+    {
+        return $this->profile_photo_path ? asset('storage/' . $this->profile_photo_path) : null;
+    }
+
     protected function casts(): array
     {
         return [

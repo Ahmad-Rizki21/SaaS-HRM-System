@@ -9,8 +9,6 @@ import {
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import Image from "next/image";
 
-import { useAuth } from "@/contexts/AuthContext";
-
 interface DashboardData {
   total_employees: number;
   present_today: number;
@@ -20,16 +18,20 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-  const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [viewEmployeeId, setViewEmployeeId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const dashRes = await axiosInstance.get("/dashboard/summary");
+        const [dashRes, userRes] = await Promise.all([
+          axiosInstance.get("/dashboard/summary"),
+          axiosInstance.get("/user")
+        ]);
         setData(dashRes.data.data);
+        setUser(userRes.data);
       } catch (e) {
         console.error("Gagal mendapatkan data", e);
       } finally {
@@ -91,7 +93,7 @@ export default function DashboardPage() {
     { name: 'Terry Saris', role: 'Software Developer', date: '22/08/2024' },
   ];
 
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#8B0000] border-t-transparent rounded-full animate-spin" />

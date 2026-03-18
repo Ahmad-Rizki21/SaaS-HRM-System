@@ -11,6 +11,7 @@ interface User {
   name: string;
   email: string;
   role_id: number;
+  profile_photo_url?: string;
   role?: {
     id: number;
     name: string;
@@ -38,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUser = async () => {
     try {
       const response = await axiosInstance.get("/user");
-      const userData = response.data;
+      const userData = response.data.data?.user || response.data;
       setUser(userData);
       const slugs = userData.role?.permissions?.map((p: any) => p.slug) || [];
       setPermissions(slugs);

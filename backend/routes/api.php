@@ -20,15 +20,14 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ProfileRequestController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\ProfileController;
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/user', function (Request $request) {
-        return $request->user()->load(['role.permissions']);
-    });
+    Route::get('/user', [ProfileController::class, 'me']);
 
     // Dashboard
     Route::get('/dashboard/summary', [DashboardController::class, 'index']);
@@ -110,6 +109,8 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
-    // User Profile Actions
+    // Profile Settings
+    Route::post('/profile/update', [ProfileController::class, 'update']);
+    Route::post('/profile/upload-photo', [ProfileController::class, 'uploadPhoto']);
     Route::post('/user/change-password', [AuthController::class, 'changePassword']);
 });
