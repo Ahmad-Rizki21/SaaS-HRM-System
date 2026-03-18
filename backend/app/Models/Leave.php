@@ -12,6 +12,11 @@ class Leave extends Model
 
     protected $fillable = [
         'user_id', 'company_id', 'start_date', 'end_date',
-        'type', 'reason', 'status', 'approved_by'
+        'type', 'reason', 'status', 'approved_by', 'signature', 'remark'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
