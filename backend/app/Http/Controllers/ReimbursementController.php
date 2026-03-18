@@ -64,4 +64,16 @@ class ReimbursementController extends Controller
         
         return $this->successResponse($reimbursement, 'Klaim ditolak.');
     }
+
+    public function destroy(Request $request, $id)
+    {
+        $reimbursement = Reimbursement::findOrFail($id);
+
+        if ($reimbursement->status !== 'pending') {
+            return $this->errorResponse('Klaim yang sudah diproses tidak bisa dihapus.', 403);
+        }
+
+        $reimbursement->delete();
+        return $this->successResponse(null, 'Klaim berhasil dihapus.');
+    }
 }

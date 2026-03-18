@@ -32,6 +32,17 @@ class HolidayController extends Controller
 
         return $this->successResponse($holiday, 'Hari libur berhasil ditambahkan.', 201);
     }
+    public function update(Request $request, $id)
+    {
+        $holiday = Holiday::findOrFail($id);
+        
+        if (!$holiday->company_id && $request->user()->role_id !== 7) { // Role 7 is Super Admin
+            return $this->errorResponse('Anda tidak bisa mengedit hari libur nasional.', 403);
+        }
+
+        $holiday->update($request->all());
+        return $this->successResponse($holiday, 'Hari libur berhasil diperbarui.');
+    }
 
     public function destroy(Request $request, $id)
     {

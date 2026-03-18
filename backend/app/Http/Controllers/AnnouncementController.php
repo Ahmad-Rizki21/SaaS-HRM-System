@@ -33,4 +33,25 @@ class AnnouncementController extends Controller
 
         return $this->successResponse($announcement, 'Pengumuman berhasil dipublish.', 201);
     }
+
+    public function update(Request $request, $id)
+    {
+        $announcement = Announcement::where('company_id', $request->user()->company_id)->findOrFail($id);
+        
+        $request->validate([
+            'title' => 'sometimes|string',
+            'content' => 'sometimes|string',
+        ]);
+
+        $announcement->update($request->all());
+
+        return $this->successResponse($announcement, 'Pengumuman berhasil diperbarui.');
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $announcement = Announcement::where('company_id', $request->user()->company_id)->findOrFail($id);
+        $announcement->delete();
+        return $this->successResponse(null, 'Pengumuman berhasil dihapus.');
+    }
 }

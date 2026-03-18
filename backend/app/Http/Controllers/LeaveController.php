@@ -9,9 +9,14 @@ class LeaveController extends Controller
 {
     public function index(Request $request)
     {
-        $leaves = Leave::where('user_id', $request->user()->id)
-            ->orderBy('id', 'desc')
-            ->paginate(10);
+        $query = Leave::with('user');
+
+        // Admin, HRD, Direktur, etc. see all in company. Karyawan sees only theirs.
+        if ($request->user()->role_id == 1) { // Karyawan
+            $query->where('user_id', $request->user()->id);
+        }
+
+        $leaves = $query->orderBy('id', 'desc')->paginate(10);
             
         return $this->successResponse($leaves, 'Data cuti berhasil diambil.');
     }
@@ -60,5 +65,17 @@ class LeaveController extends Controller
         ]);
 
         return $this->successResponse(null, 'Permohonan cuti ditolak.');
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $leave = Leave::findOrFail($id);
+
+        if ($leave->status !== 'pending') {
+            return $this->errorResponse('Cuti yang sudah diproses tidak bisa dihapus.', 403);
+        }
+
+        $leave->delete();
+        return $this->successResponse(null, 'Cuti berhasil dihapus.');
     }
 }
