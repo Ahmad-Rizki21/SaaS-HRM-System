@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, ExternalLink } from "lucide-react";
+import { ListPageSkeleton } from "@/components/Skeleton";
 
 interface ApprovalItem {
   id: number;
-  type: "leave" | "reimbursement" | "profile";
+  type: "leave" | "reimbursement" | "profile" | "overtime";
   user_name: string;
   category: string; // "Cuti Tahunan", "Bensin", etc.
   description: string;
@@ -21,10 +22,14 @@ interface ApprovalItem {
 export default function ApprovalsPage() {
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "leave" | "reimbursement" | "profile">("all");
+  const [filter, setFilter] = useState<"all" | "leave" | "reimbursement" | "profile" | "overtime">("all");
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const [actionModal, setActionModal] = useState<{isOpen: boolean, action: "approve" | "reject" | null, item: ApprovalItem | null}>({isOpen: false, action: null, item: null});
+  const [remarkInput, setRemarkInput] = useState("");
 
   const getStorageUrl = (path: string) => {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:8000";
@@ -40,10 +45,11 @@ export default function ApprovalsPage() {
   const fetchApprovals = async () => {
     try {
       setLoading(true);
-      const [leaveRes, reimRes, profileRes] = await Promise.all([
+      const [leaveRes, reimRes, profileRes, overtimeRes] = await Promise.all([
         axiosInstance.get("/leave"),
         axiosInstance.get("/reimbursements"),
-        axiosInstance.get("/profile-requests")
+        axiosInstance.get("/profile-requests"),
+        axiosInstance.get("/overtimes")
       ]);
 
       const leaves = (leaveRes.data.data.data || []).map((l: any) => ({
@@ -71,6 +77,20 @@ export default function ApprovalsPage() {
         created_at: r.created_at
       }));
 
+      const overtimeData = overtimeRes.data.data?.data || overtimeRes.data.data || [];
+      const overtimes = overtimeData.map((o: any) => ({
+        id: o.id,
+        type: "overtime",
+        user_name: o.user?.name || "Karyawan",
+        description: o.reason,
+        category: "Lembur",
+        start_date: o.start_time,
+        end_date: o.end_time,
+        status: o.status,
+        attachment: null,
+        created_at: o.created_at
+      }));
+
       const profiles = (profileRes.data.data || []).map((p: any) => ({
         id: p.id,
         type: "profile",
@@ -82,7 +102,7 @@ export default function ApprovalsPage() {
         created_at: p.created_at
       }));
 
-      const merged = [...leaves, ...reimbursements, ...profiles]
+      const merged = [...leaves, ...reimbursements, ...profiles, ...overtimes]
         .filter(item => item.status === "pending")
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -94,32 +114,40 @@ export default function ApprovalsPage() {
     }
   };
 
-  const handleAction = async (id: number, type: string, action: "approve" | "reject") => {
-    let remark = "";
-    if (type === 'reimbursement') {
-        const promptMsg = action === 'approve' ? "Catatan persetujuan (opsional):" : "Alasan penolakan (WAJIB):";
-        const res = prompt(promptMsg);
-        if (res === null) return;
-        if (action === 'reject' && !res) {
-            alert("Alasan penolakan harus diisi!");
-            return;
-        }
-        remark = res;
-    } else {
-        if (!confirm(`Konfirmasi ${action === 'approve' ? 'Setujui' : 'Tolak'} pengajuan ini?`)) return;
+  const handleActionClick = (item: ApprovalItem, action: "approve" | "reject") => {
+    setActionModal({ isOpen: true, action, item });
+    setRemarkInput("");
+  };
+
+  const executeAction = async () => {
+    const { action, item } = actionModal;
+    if (!action || !item) return;
+
+    if (action === 'reject' && !remarkInput.trim() && (item.type === 'reimbursement' || item.type === 'overtime')) {
+        alert("Alasan penolakan WAJIB diisi!");
+        return;
     }
+    
+    setActionModal({ isOpen: false, action: null, item: null });
+    setProcessingId(`${item.type}-${item.id}`);
     
     try {
       let endpoint = "";
-      if (type === 'leave') endpoint = '/leave';
-      else if (type === 'reimbursement') endpoint = '/reimbursements';
-      else if (type === 'profile') endpoint = '/profile-requests';
+      if (item.type === 'leave') endpoint = '/leave';
+      else if (item.type === 'reimbursement') endpoint = '/reimbursements';
+      else if (item.type === 'profile') endpoint = '/profile-requests';
+      else if (item.type === 'overtime') endpoint = '/overtimes';
 
-      await axiosInstance.post(`${endpoint}/${id}/${action}`, { remark });
+      console.log(`Processing ${action} for ${item.type} ID: ${item.id}`);
+      await axiosInstance.post(`${endpoint}/${item.id}/${action}`, { remark: remarkInput });
+      
       alert(`Berhasil ${action === 'approve' ? 'menyetujui' : 'menolak'} pengajuan.`);
-      fetchApprovals();
-    } catch (e) {
-      alert("Gagal memproses pengajuan.");
+      await fetchApprovals();
+    } catch (e: any) {
+      console.error("Error processing approval:", e);
+      alert("Gagal memproses pengajuan: " + (e.response?.data?.message || "Terjadi kesalahan server"));
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -129,7 +157,7 @@ export default function ApprovalsPage() {
   };
 
   if (loading && items.length === 0) {
-    return <div className="flex h-[80vh] items-center justify-center"><div className="w-8 h-8 border-4 border-[#8B0000] border-t-transparent rounded-full animate-spin"></div></div>;
+    return <ListPageSkeleton />;
   }
 
   return (
@@ -143,6 +171,7 @@ export default function ApprovalsPage() {
           <button onClick={() => setFilter("all")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'all' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Semua</button>
           <button onClick={() => setFilter("leave")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'leave' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Cuti</button>
           <button onClick={() => setFilter("reimbursement")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'reimbursement' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Klaim</button>
+          <button onClick={() => setFilter("overtime")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'overtime' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Lembur</button>
           <button onClick={() => setFilter("profile")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'profile' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Profil</button>
         </div>
       </div>
@@ -166,6 +195,7 @@ export default function ApprovalsPage() {
               }`}>
                 {item.type === 'leave' ? <Calendar size={28} /> : 
                  item.type === 'reimbursement' ? <DollarSign size={28} /> : 
+                 item.type === 'overtime' ? <Clock size={28} /> : 
                  <User size={28} />}
               </div>
               
@@ -202,16 +232,18 @@ export default function ApprovalsPage() {
 
               <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
                 <button 
-                  onClick={() => handleAction(item.id, item.type, 'reject')}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 border border-red-100 rounded-xl hover:bg-red-50 transition"
+                  onClick={() => handleActionClick(item, 'reject')}
+                  disabled={processingId === `${item.type}-${item.id}`}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 border border-red-100 rounded-xl hover:bg-red-50 transition disabled:opacity-50"
                 >
-                  <XCircle size={18} /> Tolak
+                  <XCircle size={18} /> {processingId === `${item.type}-${item.id}` ? "..." : "Tolak"}
                 </button>
                 <button 
-                  onClick={() => handleAction(item.id, item.type, 'approve')}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-700 transition"
+                  onClick={() => handleActionClick(item, 'approve')}
+                  disabled={processingId === `${item.type}-${item.id}`}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-700 transition disabled:opacity-50"
                 >
-                  <CheckCircle size={18} /> Setujui
+                  <CheckCircle size={18} /> {processingId === `${item.type}-${item.id}` ? "..." : "Setujui"}
                 </button>
               </div>
             </div>
@@ -295,7 +327,7 @@ export default function ApprovalsPage() {
                 <button 
                   onClick={() => {
                     setIsDetailModalOpen(false);
-                    handleAction(selectedItem.id, selectedItem.type, 'reject');
+                    handleActionClick(selectedItem, 'reject');
                   }}
                   className="flex-1 py-3 text-sm font-bold text-red-600 border border-red-100 bg-white rounded-xl hover:bg-red-50 transition shadow-sm"
                 >
@@ -304,11 +336,56 @@ export default function ApprovalsPage() {
                 <button 
                   onClick={() => {
                     setIsDetailModalOpen(false);
-                    handleAction(selectedItem.id, selectedItem.type, 'approve');
+                    handleActionClick(selectedItem, 'approve');
                   }}
                   className="flex-2 py-3 text-sm font-bold text-white bg-emerald-600 rounded-xl shadow-lg shadow-emerald-900/10 hover:bg-emerald-700 transition"
                 >
                   Setujui Sekarang
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action Modal */}
+      {actionModal.isOpen && actionModal.item && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className={`font-bold text-lg ${actionModal.action === 'approve' ? 'text-emerald-700' : 'text-red-700'}`}>
+                {actionModal.action === 'approve' ? 'Setujui Pengajuan' : 'Tolak Pengajuan'}
+              </h3>
+              <button 
+                onClick={() => setActionModal({ isOpen: false, action: null, item: null })}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"
+              >
+                <XCircle size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-600 mb-4">
+                Tuliskan {actionModal.action === 'approve' ? 'catatan (opsional)' : 'alasan penolakan (WAJIB)'} untuk pengajuan ini.
+              </p>
+              <textarea
+                className="w-full border border-gray-200 bg-gray-50 rounded-xl p-4 text-sm outline-none focus:border-[#8B0000] focus:ring-4 focus:ring-[#8B0000]/5 min-h-[100px] transition-all"
+                placeholder={actionModal.action === 'approve' ? 'Tulis catatan...' : 'Tulis alasan penolakan...'}
+                value={remarkInput}
+                onChange={(e) => setRemarkInput(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex gap-3">
+               <button 
+                  onClick={() => setActionModal({ isOpen: false, action: null, item: null })}
+                  className="flex-1 py-3 text-sm font-bold text-gray-500 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={executeAction}
+                  className={`flex-1 py-3 text-sm font-bold text-white rounded-xl shadow-lg transition active:scale-95 ${actionModal.action === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/10' : 'bg-red-600 hover:bg-red-700 shadow-red-900/10'}`}
+                >
+                  Konfirmasi
                 </button>
             </div>
           </div>

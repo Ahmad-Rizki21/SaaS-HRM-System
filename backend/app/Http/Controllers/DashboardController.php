@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Leave;
+use App\Models\Overtime;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -35,12 +36,17 @@ class DashboardController extends Controller
         $absentToday = $totalEmployees - $presentToday - $onLeaveToday;
         $absentToday = max($absentToday, 0); // Safety
 
+        $pendingOvertimes = Overtime::where('company_id', $user->company_id)
+            ->where('status', 'pending')
+            ->count();
+
         return $this->successResponse([
             'total_employees' => $totalEmployees,
             'present_today' => $presentToday,
             'late_today' => $lateToday,
             'on_leave_today' => $onLeaveToday,
             'absent_today' => $absentToday,
+            'pending_overtimes' => $pendingOvertimes,
         ], 'Data ringkasan dashboard berhasil diambil.');
     }
 }

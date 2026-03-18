@@ -5,6 +5,7 @@ import axiosInstance from "@/lib/axios";
 import { Save, Building2, MapPin, Mail, Phone, Loader2, Camera } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { CompanySkeleton } from "@/components/Skeleton";
 
 export default function CompanySettingsPage() {
   const { hasPermission } = useAuth();
@@ -79,9 +80,7 @@ export default function CompanySettingsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="dash-loading"><div className="dash-spinner" /></div>
-    );
+    return <CompanySkeleton />;
   }
 
   return (

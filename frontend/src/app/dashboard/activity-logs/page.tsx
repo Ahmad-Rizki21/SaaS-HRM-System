@@ -5,6 +5,7 @@ import axiosInstance from "@/lib/axios";
 import { Search, Loader2, Database, User, Clock, Info, Filter, Calendar, X } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
+import { TableSkeleton } from "@/components/Skeleton";
 
 interface ActivityLog {
   id: number;
@@ -206,10 +207,7 @@ export default function ActivityLogsPage() {
       {/* Main Table Container */}
       <div className="dash-table-container rounded-2xl! p-0! overflow-hidden bg-white">
         {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-gray-400">
-            <Loader2 className="animate-spin mb-4" size={40} />
-            <p className="text-sm font-medium">Memuat data log...</p>
-          </div>
+          <div className="p-6"><TableSkeleton rows={10} cols={4} /></div>
         ) : logs.length === 0 ? (
           <div className="py-20 flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-200">

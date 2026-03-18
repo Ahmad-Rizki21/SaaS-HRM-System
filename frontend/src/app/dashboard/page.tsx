@@ -4,19 +4,21 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { 
   Users, UserCheck, UserX, Calendar as CalendarIcon, 
-  MoreVertical, Eye, Plus, Search, Filter, X
+  MoreVertical, Eye, Plus, Search, Filter, X, Clock, AlertCircle
 } from "lucide-react";
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import Image from "next/image";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { DashboardSkeleton } from "@/components/Skeleton";
 
 interface DashboardData {
   total_employees: number;
   present_today: number;
   late_today: number;
-  leave_today: number;
+  on_leave_today: number;
   absent_today: number;
+  pending_overtimes: number;
 }
 
 export default function DashboardPage() {
@@ -43,8 +45,9 @@ export default function DashboardPage() {
     total_employees: 0,
     present_today: 0,
     late_today: 0,
-    leave_today: 0,
+    on_leave_today: 0,
     absent_today: 0,
+    pending_overtimes: 0,
   };
 
   // Dummy data for charts
@@ -92,16 +95,12 @@ export default function DashboardPage() {
   ];
 
   if (loading || authLoading) {
-    return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#8B0000] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (user?.role?.name === "Karyawan" || user?.role?.name === "Staff Karyawan") {
     return (
-      <div className="max-w-[1400px] mx-auto pb-8 animate-in fade-in duration-500">
+      <div className="w-full pb-8 animate-in fade-in duration-500 px-4 md:px-8">
         {/* Header Pegawai */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
@@ -216,7 +215,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto pb-8">
+    <div className="w-full pb-8 px-4 md:px-8">
       {/* Top Header Row for Layout Name */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-[22px] font-bold text-gray-900">Dashboard</h1>
@@ -273,12 +272,23 @@ export default function DashboardPage() {
             </div>
             <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-center justify-between shadow-sm">
               <div>
-                <div className="text-[28px] font-bold text-gray-900 leading-none mb-1">{summary.leave_today || '06'}</div>
+                <div className="text-[28px] font-bold text-gray-900 leading-none mb-1">{summary.on_leave_today || '0'}</div>
                 <div className="text-xs font-medium text-gray-500 uppercase">Total On Leave</div>
               </div>
               <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
                 <Users size={20} />
               </div>
+            </div>
+            
+            <div className="bg-linear-to-br from-[#8B0000] to-[#500000] rounded-xl p-5 flex items-center justify-between shadow-lg shadow-red-900/10 relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-12 translate-x-12 blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+               <div className="relative z-10">
+                 <div className="text-[28px] font-black text-white leading-none mb-1">{summary.pending_overtimes || '0'}</div>
+                 <div className="text-xs font-black text-white/70 uppercase tracking-widest">Lembur Pending</div>
+               </div>
+               <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white backdrop-blur-sm relative z-10">
+                 <Clock size={24} className="animate-pulse" />
+               </div>
             </div>
           </div>
 

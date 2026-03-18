@@ -84,6 +84,7 @@ const sidebarLinks: SidebarLink[] = [
       { name: "leaves", href: "/dashboard/leaves", permission: 'view-leaves' },
       { name: "reimbursements", href: "/dashboard/reimbursements", permission: 'view-reimbursements' },
       { name: "approvals", href: "/dashboard/approvals", permission: 'approve-leaves' },
+      { name: "overtime", href: "/dashboard/overtimes" },
     ]
   },
   {
@@ -101,6 +102,7 @@ const sidebarLinks: SidebarLink[] = [
       { name: "attendance_report", href: "/dashboard/reports/attendance", permission: 'view-employees' },
       { name: "reimbursement_report", href: "/dashboard/reports/reimbursements", permission: 'view-employees' },
       { name: "leave_report", href: "/dashboard/reports/leaves", permission: 'view-employees' },
+      { name: "overtime_report", href: "/dashboard/reports/overtimes", permission: 'view-employees' },
       { name: "payroll_report", href: "/dashboard/reports/payroll", permission: 'view-employees' },
     ]
   },
@@ -296,6 +298,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     try {
       await axiosInstance.put(`/notifications/${id}/read`);
       setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setInboxMessages(inboxMessages.map(m => m.id === id ? { ...m, is_read: true } : m));
     } catch (error) {
       console.error("Failed to mark notification as read");
     }
@@ -305,6 +308,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     try {
       await axiosInstance.put('/notifications/read-all');
       setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+      setInboxMessages(inboxMessages.map(m => ({ ...m, is_read: true })));
     } catch (error) {
       console.error("Failed to mark all as read");
     }
@@ -353,7 +357,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     });
 
     const toggleGroup = (name: string) => {
-      setOpenGroup(prev => prev === name ? null : name);
+      if (!isSidebarOpen) {
+        // Expand sidebar and open the clicked group
+        setIsSidebarOpen(true);
+        setOpenGroup(name);
+      } else {
+        // Toggle normally
+        setOpenGroup(prev => prev === name ? null : name);
+      }
     };
 
     const filteredLinks = sidebarLinks.filter(link => hasPermission(link.permission));
@@ -391,12 +402,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 <button
                   className={`dash-nav-link w-full dash-nav-group-btn ${hasActiveChild ? "dash-nav-group-active" : ""}`}
                   onClick={() => toggleGroup(link.name)}
+                  title={!isSidebarOpen ? t(link.name) : undefined}
                 >
                   <div className="flex items-center gap-[10px]">
                     <Icon className="dash-nav-icon" />
-                    {t(link.name)}
+                    <span>{t(link.name)}</span>
                   </div>
-                  {isOpen ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />}
+                  {isOpen ? <ChevronDown size={14} className="text-gray-400 group-chevron" /> : <ChevronRight size={14} className="text-gray-400 group-chevron" />}
                 </button>
                 {isOpen && (
                   <ul className="dash-submenu-list">
@@ -429,9 +441,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 href={link.href!}
                 onClick={onNavigate}
                 className={`dash-nav-link ${isActive ? "dash-nav-link-active" : ""}`}
+                title={!isSidebarOpen ? t(link.name) : undefined}
               >
                 <Icon className="dash-nav-icon" />
-                {t(link.name)}
+                <span>{t(link.name)}</span>
               </Link>
             </li>
           );
@@ -454,7 +467,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="dash-layout">
+    <div className={`dash-layout ${!isSidebarOpen ? 'sidebar-collapsed' : ''}`}>
       {/* Desktop Sidebar */}
       <aside className="dash-sidebar">
         <SidebarBrand />
@@ -468,7 +481,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             disabled={isLoggingOut}
           >
             <LogOut className="dash-nav-icon" />
-            {isLoggingOut ? t('approving') : t('logout')}
+            <span>{isLoggingOut ? t('approving') : t('logout')}</span>
           </button>
         </div>
       </aside>
@@ -531,52 +544,61 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         {/* Desktop Header */}
         <header className="dash-desktop-header">
-          {/* Kiri: Search Bar */}
-          <div className="dash-header-search relative" ref={searchRef}>
-            <Search size={16} className="text-gray-400" />
-            <input 
-              type="text" 
-              placeholder={t('search')} 
-              aria-label="Search" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => { if (searchResults.length > 0) setActiveHeaderDropdown('search'); }}
-            />
-            {isSearching && <Loader2 size={14} className="animate-spin text-gray-400 absolute right-3" />}
+          {/* Kiri: Search Bar & Toggle */}
+          <div className="flex items-center gap-2 md:gap-4">
+            <button 
+              className="p-2 -ml-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all hidden md:flex items-center justify-center cursor-pointer"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              title="Toggle Sidebar"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="dash-header-search relative" ref={searchRef}>
+              <Search size={16} className="text-gray-400" />
+              <input 
+                type="text" 
+                placeholder={t('search')} 
+                aria-label="Search" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => { if (searchResults.length > 0) setActiveHeaderDropdown('search'); }}
+              />
+              {isSearching && <Loader2 size={14} className="animate-spin text-gray-400 absolute right-3" />}
 
-            {/* Search Results Dropdown */}
-            {activeHeaderDropdown === 'search' && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 w-80 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-100 animate-in slide-in-from-top-2">
-                <div className="p-3 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Hasil Pencarian</span>
-                  <button onClick={() => {setSearchQuery(""); setActiveHeaderDropdown(null)}} className="text-gray-400 hover:text-gray-600">
-                    <X size={14} />
-                  </button>
+              {/* Search Results Dropdown */}
+              {activeHeaderDropdown === 'search' && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 w-80 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-100 animate-in slide-in-from-top-2">
+                  <div className="p-3 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Hasil Pencarian</span>
+                    <button onClick={() => {setSearchQuery(""); setActiveHeaderDropdown(null)}} className="text-gray-400 hover:text-gray-600">
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto p-2">
+                    {searchResults.map((result, idx) => (
+                      <Link
+                        key={idx}
+                        href={result.href}
+                        onClick={() => {
+                          setActiveHeaderDropdown(null);
+                          setSearchQuery("");
+                        }}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-all group"
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${result.category === 'Menu' ? 'bg-blue-50 text-blue-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                          {result.category === 'Menu' ? <LayoutDashboard size={14} /> : <Users size={14} />}
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                          <p className="text-xs font-bold text-gray-900 truncate group-hover:text-[#8B0000] transition-colors">{result.title}</p>
+                          <p className="text-[10px] text-gray-400 font-medium">{result.category}</p>
+                        </div>
+                        <ChevronRight size={14} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-                <div className="max-h-96 overflow-y-auto p-2">
-                  {searchResults.map((result, idx) => (
-                    <Link
-                      key={idx}
-                      href={result.href}
-                      onClick={() => {
-                        setActiveHeaderDropdown(null);
-                        setSearchQuery("");
-                      }}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-all group"
-                    >
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${result.category === 'Menu' ? 'bg-blue-50 text-blue-500' : 'bg-emerald-50 text-emerald-500'}`}>
-                        {result.category === 'Menu' ? <LayoutDashboard size={14} /> : <Users size={14} />}
-                      </div>
-                      <div className="text-left flex-1 min-w-0">
-                        <p className="text-xs font-bold text-gray-900 truncate group-hover:text-[#8B0000] transition-colors">{result.title}</p>
-                        <p className="text-[10px] text-gray-400 font-medium">{result.category}</p>
-                      </div>
-                      <ChevronRight size={14} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Kanan: Icons & Profile */}
@@ -631,14 +653,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     )}
                   </div>
                   <ul className="dash-dropdown-list">
-                    {inboxMessages.length > 0 ? (
-                      inboxMessages.map(m => (
-                        <li key={m.id} className={`dash-dropdown-item ${!m.is_read ? 'bg-amber-50/50' : ''}`}>
+                    {inboxMessages.filter(m => !m.is_read).length > 0 ? (
+                      inboxMessages.filter(m => !m.is_read).map(m => (
+                        <li 
+                          key={m.id} 
+                          className="dash-dropdown-item cursor-pointer hover:bg-gray-50 transition-colors bg-amber-50/50 border-l-2 border-amber-400"
+                          onClick={() => handleMarkAsRead(m.id)}
+                        >
                           <div className="dash-dropdown-icon"><User size={16} /></div>
                           <div className="dash-dropdown-content">
-                            <span className="dash-dropdown-label">{m.from_name}</span>
+                            <span className="dash-dropdown-label">{m.from_name || 'Sistem'}</span>
                             <span className="dash-dropdown-desc">{m.message}</span>
-                            <span className="dash-dropdown-time">{m.created_at}</span>
+                            <span className="dash-dropdown-time">{new Date(m.created_at).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
                         </li>
                       ))
@@ -649,7 +675,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                       </li>
                     )}
                   </ul>
-                  <div className="dash-dropdown-footer">
+                  <div className="dash-dropdown-footer flex items-center justify-between px-4!">
+                    <button onClick={handleMarkAllAsRead} className="text-[10px] font-black text-[#8B0000] hover:underline uppercase tracking-widest">Bersihkan Pesan</button>
                     <button className="dash-dropdown-all-btn">Lihat Semua Pesan</button>
                   </div>
                 </div>

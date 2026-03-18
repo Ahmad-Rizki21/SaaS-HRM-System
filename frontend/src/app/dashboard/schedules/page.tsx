@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
+import { TableSkeleton } from "@/components/Skeleton";
 
 interface Schedule {
   id: number;
@@ -323,7 +324,7 @@ export default function SchedulesPage() {
       ) : (
         <div className="dash-table-container">
           {loading ? (
-             <div className="dash-loading"><div className="dash-spinner" /></div>
+             <div className="p-6"><TableSkeleton rows={6} cols={5} /></div>
           ) : schedules.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">

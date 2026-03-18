@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Search, Download, CheckCircle, Clock, FileWarning } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { TableSkeleton } from "@/components/Skeleton";
 
 import Pagination from "@/components/Pagination";
 
@@ -77,7 +78,7 @@ export default function AttendancePage() {
 
       <div className="dash-table-container">
         {loading ? (
-          <div className="dash-loading"><div className="dash-spinner" /></div>
+          <div className="p-6"><TableSkeleton rows={8} cols={5} /></div>
         ) : attendance.length === 0 ? (
           <div className="p-8 text-center text-gray-500 text-sm">
             Belum ada rekaman absensi.

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Check, X, Eye } from "lucide-react";
+import { TableSkeleton } from "@/components/Skeleton";
 
 export default function RequestsPage() {
   const [leaves, setLeaves] = useState<any[]>([]);
@@ -61,7 +62,7 @@ export default function RequestsPage() {
 
       <div className="dash-table-container">
         {loading ? (
-          <div className="dash-loading"><div className="dash-spinner" /></div>
+          <div className="p-6"><TableSkeleton rows={5} cols={5} /></div>
         ) : leaves.length === 0 ? (
           <div className="p-8 text-center text-gray-500 text-sm">
             Tidak ada data pengajuan cuti atau klaim saat ini.

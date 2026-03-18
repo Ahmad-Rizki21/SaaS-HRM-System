@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Download, Search, Calendar, User, ReceiptCent, Filter, Eye, XCircle, ExternalLink } from "lucide-react";
+import { Download, Search, Calendar, User, ReceiptCent, Filter, Eye, XCircle, ExternalLink, FileSpreadsheet } from "lucide-react";
+import * as XLSX from 'xlsx';
 
 export default function ReimbursementReportsPage() {
   const [data, setData] = useState<any[]>([]);
@@ -51,6 +52,34 @@ export default function ReimbursementReportsPage() {
 
   const totalAmount = filteredData.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
 
+  const exportToExcel = () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data untuk diexport!");
+      return;
+    }
+
+    const exportData = filteredData.map((item, index) => ({
+      "No": index + 1,
+      "Nama Karyawan": item.user?.name || "Karyawan",
+      "Tanggal Pengajuan": new Date(item.created_at).toLocaleDateString('id-ID'),
+      "Judul Klaim": item.title,
+      "Keterangan": item.description,
+      "Nominal (Rp)": parseInt(item.amount),
+      "Status": item.status === 'approved' ? 'Disetujui' : item.status === 'rejected' ? 'Ditolak' : 'Menunggu',
+      "Catatan HR": item.remark || "-"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    worksheet['!cols'] = [
+      { wch: 5 }, { wch: 25 }, { wch: 18 }, { wch: 30 }, 
+      { wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 30 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Reimbursement");
+    XLSX.writeFile(workbook, `Laporan_Reimbursement_${new Date().getTime()}.xlsx`);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="dash-page-header">
@@ -63,9 +92,13 @@ export default function ReimbursementReportsPage() {
               <span className="text-[10px] font-black text-gray-400 uppercase">Total Rekap:</span>
               <span className="text-sm font-bold text-[#8B0000]">Rp {totalAmount.toLocaleString()}</span>
            </div>
-          <button className="dash-btn dash-btn-primary" onClick={() => window.print()}>
+          <button className="dash-btn dash-btn-primary bg-[#107c41] hover:bg-[#0c6130] text-white!" onClick={exportToExcel}>
+            <FileSpreadsheet size={15} />
+            Export Excel
+          </button>
+          <button className="dash-btn" onClick={() => window.print()}>
             <Download size={15} />
-            Cetak Laporan
+            Cetak PDF
           </button>
         </div>
       </div>
@@ -111,7 +144,7 @@ export default function ReimbursementReportsPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                  <tr><td colSpan={6} className="px-6 py-12 text-center"><div className="w-6 h-6 border-2 border-[#8B0000] border-t-transparent rounded-full animate-spin mx-auto" /></td></tr>
+                  <tr><td colSpan={6} className="px-6 py-4">{Array.from({length: 5}).map((_, i) => <div key={i} className="flex gap-4 py-3"><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 w-16" /><div className="animate-pulse bg-gray-200 rounded h-4 w-10" /></div>)}</td></tr>
               ) : filteredData.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-20 text-center text-gray-400 font-bold">Tidak ada riwayat klaim yang ditemukan.</td>

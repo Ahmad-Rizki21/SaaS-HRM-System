@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ProfileRequestController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\OvertimeController;
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
@@ -65,6 +66,13 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::post('/leave/{id}/approve', [LeaveController::class, 'approve']);
     Route::post('/leave/{id}/reject', [LeaveController::class, 'reject']);
     Route::delete('/leave/{id}', [LeaveController::class, 'destroy']);
+
+    // Overtimes
+    Route::get('/overtimes', [OvertimeController::class, 'index']);
+    Route::post('/overtimes', [OvertimeController::class, 'store']);
+    Route::post('/overtimes/{id}/approve', [OvertimeController::class, 'approve']);
+    Route::post('/overtimes/{id}/reject', [OvertimeController::class, 'reject']);
+    Route::delete('/overtimes/{id}', [OvertimeController::class, 'destroy']);
 
     // Reimbursements
     Route::get('/reimbursements', [ReimbursementController::class, 'index']);

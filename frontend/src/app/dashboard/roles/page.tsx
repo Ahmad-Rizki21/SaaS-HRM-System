@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Edit2, Trash2, Shield, Info, X } from "lucide-react";
+import { RolesSkeleton } from "@/components/Skeleton";
 
 interface Permission {
   id: number;
@@ -135,11 +136,7 @@ export default function RolesPage() {
   };
 
   if (loading && roles.length === 0) {
-    return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#8B0000] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <RolesSkeleton />;
   }
 
   return (

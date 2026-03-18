@@ -5,6 +5,7 @@ import axiosInstance from "@/lib/axios";
 import { Plus, Search, Check, X, Eye, ReceiptCent, Upload, AlertCircle, XCircle } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
+import { TableSkeleton } from "@/components/Skeleton";
 
 export default function ReimbursementsPage() {
   const { hasPermission } = useAuth();
@@ -178,7 +179,7 @@ export default function ReimbursementsPage() {
 
       <div className="dash-table-container">
         {loading ? (
-          <div className="dash-loading"><div className="dash-spinner" /></div>
+          <div className="p-6"><TableSkeleton rows={6} cols={6} /></div>
         ) : reimbursements.length === 0 ? (
           <div className="p-8 text-center text-gray-500 text-sm">
             Tidak ada pengajuan klaim/reimbursement.

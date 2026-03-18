@@ -49,11 +49,13 @@ export const translations = {
     attendance_report: "Laporan Absensi",
     reimbursement_report: "Laporan Klaim",
     leave_report: "Laporan Cuti",
+    overtime_report: "Laporan Lembur",
     payroll_report: "Laporan Gaji",
     role_management: "Manajemen Jabatan",
     permissions: "Hak Akses",
     company_profile: "Profil Perusahaan",
     applications: "Pengajuan",
+    overtime: "Lembur",
     communication: "Komunikasi",
 
     // Common Messages
@@ -111,11 +113,13 @@ export const translations = {
     attendance_report: "Attendance Report",
     reimbursement_report: "Reimbursement Report",
     leave_report: "Leave Report",
+    overtime_report: "Overtime Report",
     payroll_report: "Payroll Report",
     role_management: "Role Management",
     permissions: "Permissions",
     company_profile: "Company Profile",
     applications: "Applications",
+    overtime: "Overtime",
     communication: "Communication",
 
     // Common Messages

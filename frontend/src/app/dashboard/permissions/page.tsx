@@ -5,6 +5,7 @@ import axiosInstance from "@/lib/axios";
 import { Shield, Search, Lock, UserCheck, Key, FileText, Settings, BadgeCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
+import { RolesSkeleton } from "@/components/Skeleton";
 
 interface Permission {
   id: number;
@@ -91,9 +92,7 @@ export default function PermissionsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="dash-spinner" />
-          </div>
+          <RolesSkeleton />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredGroups.map(({ group, perms }) => (

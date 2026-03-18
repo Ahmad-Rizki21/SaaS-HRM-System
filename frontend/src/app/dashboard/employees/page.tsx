@@ -6,6 +6,7 @@ import { Plus, Search, Edit2, Trash2, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import Pagination from "@/components/Pagination";
+import { TableSkeleton } from "@/components/Skeleton";
 import { useSearchParams } from "next/navigation";
 
 interface Role {
@@ -211,9 +212,7 @@ export default function EmployeesPage() {
       {/* Table */}
       <div className="dash-table-container">
         {loading ? (
-          <div className="dash-loading">
-            <div className="dash-spinner" />
-          </div>
+          <div className="p-6"><TableSkeleton rows={6} cols={6} /></div>
         ) : filteredEmployees.length === 0 ? (
           <div className="p-8 text-center text-gray-500 text-sm">
             Tidak ada data karyawan ditemukan.

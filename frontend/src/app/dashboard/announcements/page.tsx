@@ -134,9 +134,21 @@ export default function AnnouncementsPage() {
       </div>
 
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center text-gray-400">
-          <Loader2 className="animate-spin mb-4" size={40} />
-          <p className="text-sm font-medium">Memuat data pengumuman...</p>
+        <div className="space-y-4">
+          {[1,2,3,4].map((i) => (
+            <div key={i} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="animate-pulse bg-gray-200 rounded h-5 w-2/5" />
+                <div className="animate-pulse bg-gray-200 rounded-full h-6 w-20" />
+              </div>
+              <div className="animate-pulse bg-gray-200 rounded h-3 w-full" />
+              <div className="animate-pulse bg-gray-200 rounded h-3 w-3/4" />
+              <div className="flex items-center gap-3 pt-1">
+                <div className="animate-pulse bg-gray-200 rounded h-3 w-24" />
+                <div className="animate-pulse bg-gray-200 rounded h-3 w-20" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : announcements.length === 0 ? (
         <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">

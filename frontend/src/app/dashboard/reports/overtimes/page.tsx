@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Download, Search, Calendar, User, FileText, Filter, Eye, XCircle, FileSpreadsheet } from "lucide-react";
+import { Download, Search, Calendar, User, Clock, Filter, Eye, XCircle, FileSpreadsheet } from "lucide-react";
 import * as XLSX from 'xlsx';
 
-export default function LeaveReportsPage() {
+export default function OvertimeReportsPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -20,10 +20,10 @@ export default function LeaveReportsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/leave");
+      const response = await axiosInstance.get("/overtimes");
       setData(response.data.data?.data || response.data.data || []);
     } catch (e) {
-      console.error("Gagal ambil data cuti", e);
+      console.error("Gagal ambil data lembur", e);
     } finally {
       setLoading(false);
     }
@@ -54,30 +54,31 @@ export default function LeaveReportsPage() {
     const exportData = filteredData.map((item, index) => ({
       "No": index + 1,
       "Nama Karyawan": item.user?.name || "Karyawan",
-      "Tanggal Mulai": new Date(item.start_date).toLocaleDateString('id-ID'),
-      "Tanggal Selesai": new Date(item.end_date).toLocaleDateString('id-ID'),
-      "Alasan Cuti": item.reason || "-",
+      "Tanggal Lembur": item.date,
+      "Waktu Mulai": item.start_time.substring(0,5),
+      "Waktu Selesai": item.end_time.substring(0,5),
+      "Alasan Lembur": item.reason || "-",
       "Status": item.status === 'approved' ? 'Disetujui' : item.status === 'rejected' ? 'Ditolak' : 'Menunggu',
       "Catatan Admin": item.remark || "-"
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     worksheet['!cols'] = [
-      { wch: 5 }, { wch: 25 }, { wch: 18 }, { wch: 18 }, 
-      { wch: 40 }, { wch: 15 }, { wch: 30 }
+      { wch: 5 },  { wch: 25 }, { wch: 15 }, { wch: 15 }, 
+      { wch: 15 }, { wch: 40 }, { wch: 15 }, { wch: 30 }
     ];
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Cuti");
-    XLSX.writeFile(workbook, `Laporan_Cuti_${new Date().getTime()}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Lembur");
+    XLSX.writeFile(workbook, `Laporan_Lembur_${new Date().getTime()}.xlsx`);
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="dash-page-header">
         <div>
-          <h1 className="dash-page-title">Riwayat & Laporan Cuti</h1>
-          <p className="dash-page-desc">Data komprehensif riwayat pengajuan cuti seluruh karyawan.</p>
+          <h1 className="dash-page-title">Riwayat & Laporan Lembur</h1>
+          <p className="dash-page-desc">Data komprehensif riwayat pengajuan lembur seluruh karyawan.</p>
         </div>
         <div className="dash-page-actions">
           <button className="dash-btn dash-btn-primary bg-[#107c41] hover:bg-[#0c6130] text-white!" onClick={exportToExcel}>
@@ -96,8 +97,8 @@ export default function LeaveReportsPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text" 
-            placeholder="Cari karyawan atau alasan cuti..." 
-            className="w-full pl-11 pr-4 h-12 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#8B0000]/20 transition-all"
+            placeholder="Cari karyawan atau alasan lembur..." 
+            className="w-full pl-11 pr-4 h-12 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#8B0000]/20 transition-all font-medium"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -117,14 +118,14 @@ export default function LeaveReportsPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden mb-10">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Karyawan</th>
-                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tgl Mulai</th>
-                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tgl Selesai</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tanggal</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Waktu</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Alasan</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Aksi</th>
@@ -132,26 +133,26 @@ export default function LeaveReportsPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                  <tr><td colSpan={6} className="px-6 py-4">{Array.from({length: 5}).map((_, i) => <div key={i} className="flex gap-4 py-3"><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 w-16" /><div className="animate-pulse bg-gray-200 rounded h-4 w-10" /></div>)}</td></tr>
+                  <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Memuat data laporan...</td></tr>
               ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-20 text-center text-gray-400 font-bold">Tidak ada riwayat cuti yang ditemukan.</td>
+                    <td colSpan={6} className="px-6 py-20 text-center text-gray-400 font-bold">Tidak ada riwayat lembur yang ditemukan.</td>
                   </tr>
               ) : filteredData.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-xs font-black shadow-sm">
+                      <div className="w-8 h-8 rounded-full bg-[#8B0000]/5 text-[#8B0000] flex items-center justify-center text-xs font-black shadow-sm uppercase italic">
                         {item.user?.name?.charAt(0) || "K"}
                       </div>
                       <span className="text-sm font-bold text-gray-900">{item.user?.name || "Karyawan"}</span>
                     </div>
                   </td>
                   <td className="px-6 py-5 text-sm text-gray-700 font-medium">
-                    {new Date(item.start_date).toLocaleDateString('id-ID')}
+                    {item.date}
                   </td>
                   <td className="px-6 py-5 text-sm text-gray-700 font-medium">
-                    {new Date(item.end_date).toLocaleDateString('id-ID')}
+                    {item.start_time.substring(0,5)} - {item.end_time.substring(0,5)}
                   </td>
                   <td className="px-6 py-5">
                     <span className="text-sm text-gray-600 block line-clamp-1">{item.reason || "-"}</span>
@@ -177,7 +178,7 @@ export default function LeaveReportsPage() {
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 className="font-bold text-gray-900 text-lg">History Detail Cuti</h3>
+              <h3 className="font-bold text-gray-900 text-lg">Detail Laporan Lembur</h3>
               <button 
                 onClick={() => setIsDetailModalOpen(false)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"
@@ -186,48 +187,54 @@ export default function LeaveReportsPage() {
               </button>
             </div>
             
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
+            <div className="p-8 max-h-[70vh] overflow-y-auto">
               <div className="space-y-6">
-                 {/* User & Info */}
-                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl">
-                    <div className="w-12 h-12 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-xl italic shadow-md">
+                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div className="w-12 h-12 rounded-xl bg-[#8B0000] text-white flex items-center justify-center font-bold text-xl italic shadow-md uppercase">
                         {selectedItem.user?.name?.charAt(0) || "K"}
                     </div>
                     <div>
                         <p className="text-sm font-bold text-gray-900 leading-tight">{selectedItem.user?.name || "Karyawan"}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Status: {selectedItem.status}</p>
+                        <p className="text-xs text-gray-500 mt-1 uppercase font-bold tracking-widest">{selectedItem.status}</p>
                     </div>
                  </div>
 
                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-2xl">
-                        <p className="text-[10px] uppercase font-black text-gray-400 mb-1">TANGGAL MULAI</p>
-                        <p className="text-sm font-bold text-gray-900">{new Date(selectedItem.start_date).toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
+                    <div className="p-4 border border-gray-100 rounded-2xl bg-white shadow-sm">
+                        <p className="text-[10px] uppercase font-black text-gray-400 mb-1">TANGGAL</p>
+                        <p className="text-sm font-bold text-gray-900">{selectedItem.date}</p>
                     </div>
-                    <div className="p-4 border rounded-2xl">
-                        <p className="text-[10px] uppercase font-black text-gray-400 mb-1">TANGGAL SELESAI</p>
-                        <p className="text-sm font-bold text-gray-900">{new Date(selectedItem.end_date).toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
+                    <div className="p-4 border border-gray-100 rounded-2xl bg-white shadow-sm">
+                        <p className="text-[10px] uppercase font-black text-gray-400 mb-1">DURASI</p>
+                        <p className="text-sm font-bold text-gray-900">{selectedItem.start_time.substring(0,5)} - {selectedItem.end_time.substring(0,5)}</p>
                     </div>
                  </div>
 
-                 <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl">
-                    <p className="text-[10px] uppercase font-black text-gray-400 mb-2">ALASAN CUTI</p>
-                    <p className="text-sm text-gray-600 leading-relaxed italic font-medium">"{selectedItem.reason || 'Sakit/Izin Tanpa Keterangan'}"</p>
+                 <div className="p-5 bg-gray-50 border border-gray-100 rounded-2xl shadow-inner-sm">
+                    <p className="text-[10px] uppercase font-black text-gray-400 mb-2 tracking-widest">ALASAN LEMBUR</p>
+                    <p className="text-sm text-gray-600 leading-relaxed italic font-medium">"{selectedItem.reason || '-'}"</p>
                  </div>
+
+                 {selectedItem.remark && (
+                   <div className={`p-5 rounded-2xl border ${selectedItem.status === 'rejected' ? 'bg-rose-50 border-rose-100 text-rose-800' : 'bg-teal-50 border-teal-100 text-teal-800'}`}>
+                     <span className="text-[10px] font-black uppercase tracking-widest mb-1.5 block">CATATAN HR</span>
+                     <p className="text-sm font-bold">{selectedItem.remark}</p>
+                   </div>
+                 )}
               </div>
             </div>
 
             <div className="p-6 bg-gray-50/50 border-t border-gray-100">
                <button 
                   onClick={() => setIsDetailModalOpen(false)}
-                  className="w-full py-3 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition shadow-sm"
+                  className="w-full py-3.5 text-sm font-bold text-white bg-gray-900 rounded-xl hover:bg-black transition shadow-lg active:scale-95"
                 >
-                  Tutup History
+                  Tutup Laporan
                 </button>
             </div>
           </div>
         </div>
-      )}
+       )}
     </div>
   );
 }

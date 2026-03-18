@@ -6,6 +6,7 @@ import { Plus, Search, Check, X, Eye, Plane, Printer } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import SignaturePad from "@/components/SignaturePad";
 import { useAuth } from "@/contexts/AuthContext";
+import { TableSkeleton } from "@/components/Skeleton";
 
 export default function LeavesPage() {
   const { hasPermission, user } = useAuth();
@@ -164,7 +165,7 @@ export default function LeavesPage() {
 
         <div className="dash-table-container">
           {loading ? (
-            <div className="dash-loading"><div className="dash-spinner" /></div>
+            <div className="p-6"><TableSkeleton rows={6} cols={6} /></div>
           ) : leaves.length === 0 ? (
             <div className="p-8 text-center text-gray-500 text-sm">
               Tidak ada data pengajuan cuti.
