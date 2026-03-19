@@ -95,7 +95,13 @@ class AttendanceController extends Controller
 
     public function history(Request $request)
     {
-        $query = Attendance::where('user_id', $request->user()->id);
+        $query = Attendance::with('user')->where('company_id', $request->user()->company_id);
+
+        // Karyawan hanya bisa melihat absensinya sendiri (Diasumsikan role_id 1 = Karyawan)
+        // Jika sistem role kompleks, bisa juga cek hasPermission('view-all-attendance')
+        if ($request->user()->role_id == 1) {
+            $query->where('user_id', $request->user()->id);
+        }
 
         if ($request->start_date && $request->end_date) {
             $query->whereBetween('check_in', [$request->start_date, $request->end_date]);

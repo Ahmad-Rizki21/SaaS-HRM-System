@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import axiosInstance from "@/lib/axios";
-import { Save, Building2, MapPin, Mail, Phone, Loader2, Camera } from "lucide-react";
+import { Save, Building2, MapPin, Mail, Phone, Loader2, Camera, Target } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { CompanySkeleton } from "@/components/Skeleton";
@@ -60,6 +60,9 @@ export default function CompanySettingsPage() {
       formData.append("email", company.email);
       formData.append("phone", company.phone || "");
       formData.append("address", company.address || "");
+      formData.append("latitude", company.latitude || "");
+      formData.append("longitude", company.longitude || "");
+      formData.append("radius_meters", String(company.radius_meters || "50"));
       
       if (photoFile) {
         formData.append("logo", photoFile);
@@ -166,6 +169,62 @@ export default function CompanySettingsPage() {
                     className={`w-full pt-2.5 pb-2 pl-9 pr-4 text-sm ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors resize-none`}
                   ></textarea>
                 </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Pengaturan Radius & GPS Lokasi Kantor */}
+          <div className="dash-table-container p-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-5 border-b border-[#ebedf0] pb-3">
+              Lokasi & Radius Presensi (GPS)
+            </h2>
+            <form className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-gray-700">Latitude Pusat</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input
+                      type="text"
+                      disabled={!canEdit}
+                      value={company?.latitude || ""}
+                      placeholder="-6.200000"
+                      onChange={(e) => setCompany({...company, latitude: e.target.value})}
+                      className={`w-full h-10 pl-9 pr-4 text-sm ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors`}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-gray-700">Longitude Pusat</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input
+                      type="text"
+                      disabled={!canEdit}
+                      value={company?.longitude || ""}
+                      placeholder="106.816666"
+                      onChange={(e) => setCompany({...company, longitude: e.target.value})}
+                      className={`w-full h-10 pl-9 pr-4 text-sm ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-2 mt-4">
+                <label className="text-sm font-medium text-gray-700">Jarak Radius Maksimal (Meter)</label>
+                <div className="relative">
+                  <Target className="absolute left-3 top-1/2 -translate-y-1/2 text-red-500" size={16} />
+                  <input
+                    type="number"
+                    disabled={!canEdit}
+                    value={company?.radius_meters || "50"}
+                    min="1"
+                    onChange={(e) => setCompany({...company, radius_meters: e.target.value})}
+                    className={`w-full h-10 pl-9 pr-4 text-sm ${!canEdit ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'} border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors font-bold text-gray-900 border-l-4 border-l-red-500`}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 font-medium">Batas jangkauan kelonggaran absensi dari titik area. Disarankan minimal 50 meter untuk offset GPS ponsel karyawan.</p>
               </div>
             </form>
           </div>

@@ -48,6 +48,25 @@ export default function AttendancePage() {
     return <span className="dash-badge dash-badge-neutral">{status}</span>;
   };
 
+  const handleExport = async () => {
+    try {
+      const response = await axiosInstance.get('/attendance/export', {
+        responseType: 'blob', // Penting untuk handle file
+      });
+      // Buat URL lokal untuk blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Riwayat_Absensi_${new Date().getTime()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (e) {
+      console.error("Gagal mendownload laporan Excel", e);
+      alert("Gagal mengunduh Laporan Excel.");
+    }
+  };
+
   return (
     <div>
       <div className="dash-page-header">
@@ -57,7 +76,7 @@ export default function AttendancePage() {
         </div>
         <div className="dash-page-actions">
           {hasPermission('view-employees') && (
-            <button className="dash-btn dash-btn-outline">
+            <button className="dash-btn dash-btn-outline" onClick={handleExport}>
               <Download size={15} />
               Export Laporan
             </button>

@@ -93,6 +93,7 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     // Employees (Manage Employee)
     Route::get('/employees', [EmployeeController::class, 'index']);
     Route::post('/employees', [EmployeeController::class, 'store']);
+    Route::post('/employees/import', [EmployeeController::class, 'import']);
     Route::get('/employees/{id}', [EmployeeController::class, 'show']);
     Route::put('/employees/{id}', [EmployeeController::class, 'update']);
     Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);

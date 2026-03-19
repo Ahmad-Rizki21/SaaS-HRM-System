@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Imports\EmployeeImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EmployeeController extends Controller
 {
@@ -101,5 +103,23 @@ class EmployeeController extends Controller
         $this->logActivity('DELETE_EMPLOYEE', "Menghapus data karyawan: {$name} (ID: {$id})");
 
         return $this->successResponse(null, 'Karyawan berhasil dihapus.');
+    }
+
+    public function import(Request $request)
+    {
+        abort_if(!$request->user()->hasPermission('create-employees'), 403, 'Akses ditolak.');
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls|max:5120'
+        ]);
+
+        try {
+            Excel::import(new EmployeeImport($request->user()->company_id), $request->file('file'));
+            
+            $this->logActivity('IMPORT_EMPLOYEE', "Mengimpor karyawan secara massal via Excel");
+            return $this->successResponse(null, 'Data karyawan berhasil diimpor.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengimpor: ' . $e->getMessage(), 500);
+        }
     }
 }

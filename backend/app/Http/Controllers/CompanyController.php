@@ -23,9 +23,12 @@ class CompanyController extends Controller
             'phone' => 'sometimes|string',
             'address' => 'sometimes|string',
             'logo' => 'sometimes|image|max:2048',
+            'latitude' => 'sometimes|numeric',
+            'longitude' => 'sometimes|numeric',
+            'radius_meters' => 'sometimes|numeric',
         ]);
 
-        $data = $request->only(['name', 'email', 'phone', 'address']);
+        $data = $request->only(['name', 'email', 'phone', 'address', 'latitude', 'longitude', 'radius_meters']);
         
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('companies', 'public');

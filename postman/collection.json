@@ -101,7 +101,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"SaaS HRM Updated\",\n    \"address\": \"Jakarta Selatan\",\n    \"default_radius\": 150\n}",
+							"raw": "{\n    \"name\": \"SaaS HRM Updated\",\n    \"address\": \"Jakarta Selatan\",\n    \"target_absensi\": \"WFO\",\n    \"latitude\": \"-6.200000\",\n    \"longitude\": \"106.816666\",\n    \"radius_meters\": 50\n}",
 							"options": { "raw": { "language": "json" } }
 						},
 						"url": "{{base_url}}/api/company/update"
@@ -161,6 +161,22 @@
 							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/employees/2"
+					}
+				},
+				{
+					"name": "Import Employee (Excel/CSV)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "file", "type": "file", "src": ["/path/to/your/file.xlsx"] }
+							]
+						},
+						"url": "{{base_url}}/api/employees/import"
 					}
 				}
 			]

@@ -70,6 +70,7 @@ const sidebarLinks: SidebarLink[] = [
     name: "attendance", 
     icon: Clock,
     submenus: [
+      { name: "Live Attendance", href: "/dashboard/live-attendance" },
       { name: "attendance_history", href: "/dashboard/attendance" },
       { name: "schedules", href: "/dashboard/schedules", permission: 'manage-schedules' },
       { name: "holidays", href: "/dashboard/holidays", permission: 'manage-holidays' },

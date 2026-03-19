@@ -13,6 +13,7 @@ class AttendanceExport implements FromQuery, WithMapping, WithHeadings
     protected $companyId;
     protected $startDate;
     protected $endDate;
+    private $rowNumber = 0;
 
     public function __construct($companyId, $userId = null, $startDate = null, $endDate = null)
     {
@@ -24,7 +25,7 @@ class AttendanceExport implements FromQuery, WithMapping, WithHeadings
 
     public function query()
     {
-        $query = Attendance::where('company_id', $this->companyId);
+        $query = Attendance::with(['user'])->where('company_id', $this->companyId);
 
         if ($this->userId) {
             $query->where('user_id', $this->userId);
@@ -40,24 +41,37 @@ class AttendanceExport implements FromQuery, WithMapping, WithHeadings
     public function headings(): array
     {
         return [
-            'ID',
-            'User',
-            'Company',
-            'Check In',
-            'Check Out',
+            'No.',
+            'Tanggal',
+            'Nama Karyawan',
+            'Jam Masuk',
+            'Jam Keluar',
             'Status',
+            'Titik Lokasi Absen (Lat, Lng)',
         ];
     }
 
     public function map($attendance): array
     {
+        $statusIndo = $attendance->status;
+        if ($statusIndo === 'present') {
+            $statusIndo = 'Tepat Waktu';
+        } elseif ($statusIndo === 'late') {
+            $statusIndo = 'Terlambat';
+        } elseif ($statusIndo === 'no_schedule') {
+            $statusIndo = 'Tidak Ada Jadwal';
+        } else {
+            $statusIndo = ucfirst($statusIndo);
+        }
+
         return [
-            $attendance->id,
+            ++$this->rowNumber,
+            $attendance->date,
             $attendance->user->name ?? 'N/A',
-            $attendance->company->name ?? 'N/A',
-            $attendance->check_in,
-            $attendance->check_out,
-            $attendance->status,
+            $attendance->check_in_time ?: '-',
+            $attendance->check_out_time ?: '-',
+            $statusIndo,
+            $attendance->check_in_location
         ];
     }
 }

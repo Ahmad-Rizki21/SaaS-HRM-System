@@ -11,6 +11,7 @@ import Image from "next/image";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardSkeleton } from "@/components/Skeleton";
+import { useRouter } from "next/navigation";
 
 interface DashboardData {
   total_employees: number;
@@ -22,6 +23,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,11 +125,14 @@ export default function DashboardPage() {
           <div className="lg:col-span-2 space-y-8">
             {/* Quick Actions & Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-linear-to-br from-[#8B0000] to-[#5a0000] rounded-[2rem] p-6 text-white shadow-xl shadow-red-900/20 relative overflow-hidden group">
+              <div 
+                onClick={() => router.push('/dashboard/live-attendance')}
+                className="bg-linear-to-br from-[#8B0000] to-[#5a0000] rounded-[2rem] p-6 text-white shadow-xl shadow-red-900/20 relative overflow-hidden group cursor-pointer hover:-translate-y-1 transition-transform"
+              >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                <p className="text-xs font-bold text-white/70 uppercase mb-2 tracking-widest">Absensi Bulan Ini</p>
-                <div className="text-4xl font-black mb-1">22 <span className="text-lg font-medium text-white/50">/ 24</span></div>
-                <p className="text-[10px] bg-white/20 inline-block px-2 py-1 rounded-lg font-bold">TINGKAT KEHADIRAN 92%</p>
+                <p className="text-xs font-bold text-white/70 uppercase mb-2 tracking-widest">Live Attendance</p>
+                <div className="text-4xl font-black mb-1">Face Recog</div>
+                <p className="text-[10px] bg-white/20 inline-block px-2 py-1 mt-2 rounded-lg font-bold group-hover:bg-white group-hover:text-[#8B0000] transition-colors">ABSEN SEKARANG →</p>
               </div>
               
               <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm flex flex-col justify-between">

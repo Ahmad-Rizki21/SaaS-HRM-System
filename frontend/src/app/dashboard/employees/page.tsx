@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Edit2, Trash2, X } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import Pagination from "@/components/Pagination";
@@ -62,6 +63,88 @@ export default function EmployeesPage() {
     fetchEmployees(page);
     fetchRoles();
   }, [searchQuery, page, urlSearch, urlId]);
+
+  const downloadTemplate = () => {
+    const templateData: any[] = [
+      { 
+        nama: "Andi Saputra (Contoh)", 
+        email: "andi@example.com", 
+        nik: "123456789", 
+        password: "password123", 
+        role_id: 3, 
+        tanggal_gabung: "2024-01-01" 
+      },
+      { 
+        nama: "Budi Santoso (Contoh)", 
+        email: "budi@example.com", 
+        nik: "987654321", 
+        password: "password123", 
+        role_id: 3, 
+        tanggal_gabung: "2024-01-02" 
+      }
+    ];
+
+    // Beri jarak baris kosong
+    templateData.push({ nama: "", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" });
+    templateData.push({ nama: "", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" });
+    
+    // Tambahkan baris panduan agar HR gampang baca
+    templateData.push({ nama: ">>> PETUNJUK PENGISIAN KOLOM ROLE_ID <<<", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" });
+    
+    availableRoles.forEach(role => {
+      templateData.push({ 
+        nama: `👉 Ketik angka ${role.id} untuk posisi ${role.name.toUpperCase()}`, 
+        email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" 
+      });
+    });
+
+    templateData.push({ nama: "Catatan: Baris panduan ini tidak akan masuk ke sistem saat di-import (otomatis diabaikan).", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" });
+    
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    
+    // Atur lebar kolom supaya enak dibaca
+    worksheet['!cols'] = [
+      { wch: 45 }, // Nama 
+      { wch: 25 }, // Email
+      { wch: 15 }, // NIK
+      { wch: 15 }, // Password
+      { wch: 10 }, // Role
+      { wch: 18 }, // Tanggal
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template Karyawan");
+    XLSX.writeFile(workbook, "Template_Import_Karyawan.xlsx");
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.match(/\.(xlsx|xls|csv)$/)) {
+      alert("Hanya file Excel atau CSV yang diperbolehkan.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setLoading(true);
+      await axiosInstance.post("/employees/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      alert("Import berhasil! Data karyawan sedang diproses.");
+      fetchEmployees(1);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || "Gagal mengimpor file.");
+    } finally {
+      setLoading(false);
+      // reset input
+      e.target.value = '';
+    }
+  };
 
   const fetchRoles = async () => {
     try {
@@ -182,8 +265,28 @@ export default function EmployeesPage() {
           <h1 className="dash-page-title">Data Pegawai HRMS</h1>
           <p className="dash-page-desc">Kelola seluruh data anggota tim dari panel admin master.</p>
         </div>
-        <div className="dash-page-actions">
+        <div className="dash-page-actions flex gap-2">
           <PermissionGuard slug="create-employees">
+            <button 
+              onClick={downloadTemplate}
+              className="dash-btn dash-btn-outline"
+              title="Download Template Excel"
+            >
+              <FileDown size={14} />
+              Template
+            </button>
+            
+            <label className="dash-btn dash-btn-outline" style={{ cursor: 'pointer' }}>
+              <FileUp size={14} />
+              Import Data
+              <input 
+                type="file" 
+                accept=".xlsx, .xls, .csv" 
+                className="hidden" 
+                onChange={handleFileUpload} 
+              />
+            </label>
+
             <button 
               onClick={handleOpenAddModal}
               className="dash-btn dash-btn-primary"
