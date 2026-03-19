@@ -21,39 +21,57 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 ## ⏰ Kehadiran & Shift
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
-| `POST` | `/api/attendance/check-in` | Absensi masuk |
+| `POST` | `/api/attendance/check-in` | Absensi masuk (Geo/Selfie) |
 | `POST` | `/api/attendance/check-out` | Absensi pulang |
+| `GET` | `/api/attendance/today` | Status absensi hari ini |
 | `GET` | `/api/attendance/history` | Riwayat absensi user |
 | `GET` | `/api/attendance/export` | Export laporan absensi ke Excel |
 | `GET` | `/api/shifts` | List semua jam kerja/shift |
 | `POST` | `/api/shifts` | Buat master shift baru |
 
-## 📅 Cuti & Reimbursement
+## 📅 Cuti, Lembur & Reimbursement
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
 | `GET` | `/api/leave` | List pengajuan cuti |
 | `POST` | `/api/leave` | Ajukan cuti baru |
-| `POST` | `/api/leave/{id}/approve` | Persetujuan cuti oleh atasan |
+| `POST` | `/api/leave/{id}/approve` | Persetujuan cuti |
+| `POST` | `/api/leave/{id}/reject` | Penolakan cuti |
+| `GET` | `/api/overtimes` | List pengajuan lembur |
+| `POST` | `/api/overtimes` | Ajukan lembur baru |
+| `POST` | `/api/overtimes/{id}/approve` | Persetujuan lembur |
+| `POST` | `/api/overtimes/{id}/reject` | Penolakan lembur |
 | `GET` | `/api/reimbursements` | List klaim biaya |
 | `POST` | `/api/reimbursements` | Ajukan klaim baru |
 | `POST` | `/api/reimbursements/{id}/approve` | Persetujuan klaim biaya |
+
+## 💰 Gaji & Tugas
+| Method | Endpoint | Deskripsi |
+| :--- | :--- | :--- |
+| `GET` | `/api/salary` | List slip gaji karyawan |
+| `GET` | `/api/tasks` | List tugas/pekerjaan |
+| `POST` | `/api/tasks/{id}/status` | Update status tugas (Todo/Done) |
 
 ## 📢 Pengumuman & Hari Libur
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
 | `GET` | `/api/announcements` | List semua pengumuman |
-| `POST` | `/api/announcements` | Buat pengumuman baru (Broadcast Email & Kotak Pesan) |
+| `POST` | `/api/announcements` | Buat pengumuman baru |
 | `GET` | `/api/holidays` | List kalender hari libur |
-| `POST` | `/api/holidays` | Tambah hari libur internal kantor |
+| `POST` | `/api/holidays` | Tambah hari libur internal |
 
 ## 🛠️ Sistem & Settings
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
 | `GET` | `/api/roles` | List semua jabatan |
-| `GET` | `/api/permissions` | List semua hak akses yang tersedia |
+| `GET` | `/api/permissions` | List semua hak akses |
 | `GET` | `/api/activity-logs` | Lihat riwayat aktivitas sistem |
-| `GET` | `/api/notifications` | List notifikasi & pesan (Kotak Pesan) |
+| `GET` | `/api/notifications` | List notifikasi & pesan |
 | `PUT` | `/api/notifications/{id}/read` | Tandai notifikasi sudah dibaca |
+| `POST` | `/api/notifications/read-all` | Tandai semua sudah dibaca |
+| `POST` | `/api/notifications-clear` | Hapus seluruh riwayat notifikasi |
+| `POST` | `/api/profile/update` | Update data profil user |
+| `POST` | `/api/profile/upload-photo` | Upload foto profil |
+| `POST` | `/api/user/change-password` | Ganti password user |
 
 ---
 *Gunakan file `postman/collection.json` untuk dokumentasi lebih detail (contoh body request & response).*

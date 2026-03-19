@@ -14,12 +14,13 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 
 *   **Authentication & Security**: Multi-tenant login, Role-based Access Control (RBAC), hash password, dan session management.
 *   **Manajemen SDM**: Data karyawan lengkap, request perubahan profil, upload foto, dan manajemen jabatan (Role).
-*   **Kehadiran & Shift**: Check-in/out dengan validasi lokasi (dummy), manajemen shift kerja, jadwal mingguan, dan laporan absensi (Export Excel).
-*   **Pengajuan Cuti**: Workflow pengajuan cuti, approval/rejection oleh atasan, dan history cuti.
-*   **Reimbursement**: Pengajuan klaim biaya, sistem approval bertingkat, dan management saldo klaim.
-*   **Komunikasi & Pengumuman**: Broadcast pengumuman ke seluruh karyawan melalui Dashboard (Kotak Pesan) dan Email Premium (HTML).
-*   **Hari Libur**: Manajemen kalender libur nasional dan kebijakan libur internal perusahaan.
-*   **Log Aktivitas**: Audit trail otomatis yang mencatat setiap aksi penting pengguna.
+*   **Kehadiran & Shift**: Check-in/out dengan GPS & Selfie, manajemen shift kerja, jadwal mingguan, dan laporan absensi (Export Excel).
+*   **Pengajuan Cuti & Lembur**: Workflow pengajuan cuti & lembur, approval/rejection oleh atasan, dan history lengkap.
+*   **Reimbursement**: Pengajuan klaim biaya dengan sistem approval bertingkat.
+*   **Manajemen Tugas (Tasks)**: Pembagian tugas ke karyawan melalui dashboard admin/mobile.
+*   **Slip Gaji (Salary)**: Akses slip gaji digital bulanan secara aman.
+*   **Komunikasi & Pengumuman**: Broadcast pengumuman melalui Dashboard (Kotak Pesan) dan Email Premium (HTML).
+*   **Notifikasi Real-time**: Sistem notifikasi push & database untuk pemberitahuan status pengajuan.
 
 ---
 
@@ -28,24 +29,16 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 ```text
 SaaS/
 ├── backend/                # Aplikasi Laravel 11 API (RESTful)
-│   ├── app/
-│   │   ├── Http/Controllers/ # Logika Bisnis (Auth, Attendance, Leave, Announcements, dsb)
-│   │   ├── Models/           # Struktur Database & Relasi Eloquent
-│   │   ├── Traits/           # Multi-tenancy logic (BelongsToCompany)
-│   │   └── Mail/             # Sistem Mailing (Official Notifications)
-│   ├── database/
-│   │   ├── migrations/       # Skema database
-│   │   └── seeders/          # Default data (Permissions, Admin)
-│   ├── resources/views/      # Template Email Premium (Blade)
-│   └── routes/api.php        # Definisi API Endpoints
-├── frontend/               # Aplikasi Next.js 14 (App Router)
-│   ├── src/
-│   │   ├── app/dashboard/    # Halaman Dashboard & Modul-modul HRMS
-│   │   ├── components/       # UI Components
-│   │   ├── contexts/         # Auth & Global State
-│   │   └── lib/              # Axios instance & Utility functions
-│   └── public/               # Logo & Aset Statis
-└── postman/                # Alat bantu testing & dokumentasi
+│   ├── app/                # Logika Bisnis (Auth, Attendance, Leave, Overtimes, dsb)
+│   ├── database/           # Skema database & Migrations
+│   └── routes/api.php      # Definisi API Endpoints
+├── frontend/               # Dashboard Admin (Next.js 14)
+│   ├── src/app/dashboard/  # Modul-modul Managerial HRMS
+│   └── src/components/     # UI Components (Modern Design)
+├── mobile/                 # Aplikasi Karyawan (Flutter & Dart)
+│   ├── lib/api/            # Integrasi Mobile-to-Backend
+│   └── lib/screens/        # UI/UX Mobile (Attendance, Notifications, dsb)
+└── postman/                # Alat bantu testing (collection.json)
 ```
 
 ---
@@ -55,15 +48,14 @@ SaaS/
 ### Persiapan Backend
 1. Masuk ke folder backend: `cd backend`
 2. Install dependensi: `composer install`
-3. Salin file environment: `cp .env.example .env` (Lakukan konfigurasi database di .env)
-4. Generate app key: `php artisan key:generate`
-5. Jalankan migrasi dan seeder: `php artisan migrate --seed`
-6. Jalankan server: `php artisan serve`
+3. Salin file environment: `cp .env.example .env` (Lakukan konfigurasi database)
+4. Jalankan migrasi dan seeder: `php artisan migrate --seed`
+5. Jalankan server: `php artisan serve`
 
-### Persiapan Frontend
-1. Masuk ke folder frontend: `cd frontend`
-2. Install dependensi: `npm install`
-3. Jalankan server development: `npm run dev`
+### Persiapan Mobile
+1. Masuk ke folder mobile: `cd mobile`
+2. Install dependensi: `flutter pub get`
+3. Jalankan aplikasi: `flutter run` (Gunakan Emulator atau Device fisik)
 
 ---
 

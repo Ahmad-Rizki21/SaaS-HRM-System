@@ -469,6 +469,16 @@
 						],
 						"url": "{{base_url}}/api/attendance/export"
 					}
+				},
+				{
+					"name": "Today Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/attendance/today"
+					}
 				}
 			]
 		},
@@ -539,6 +549,114 @@
 							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/leave/1"
+					}
+				}
+			]
+		},
+		{
+			"name": "Overtime Management",
+			"description": "Handling employee overtime requests and approvals.",
+			"item": [
+				{
+					"name": "Get All Overtimes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/overtimes"
+					}
+				},
+				{
+					"name": "Submit Overtime",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2024-03-20\",\n    \"start_time\": \"18:00\",\n    \"end_time\": \"21:00\",\n    \"reason\": \"Lembur perbaikan server\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/overtimes"
+					}
+				},
+				{
+					"name": "Approve Overtime",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remark\": \"Lembur disetujui.\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/overtimes/1/approve"
+					}
+				},
+				{
+					"name": "Reject Overtime",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"remark\": \"Lembur ditolak.\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/overtimes/1/reject"
+					}
+				}
+			]
+		},
+		{
+			"name": "Salary & Payroll",
+			"description": "View employee salary slips.",
+			"item": [
+				{
+					"name": "Get All Salaries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/salary"
+					}
+				}
+			]
+		},
+		{
+			"name": "Tasks Management",
+			"description": "Employee work assignments and status updates.",
+			"item": [
+				{
+					"name": "Get All Tasks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/tasks"
+					}
+				},
+				{
+					"name": "Update Task Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"completed\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/tasks/1/status"
 					}
 				}
 			]
@@ -754,11 +872,21 @@
 				{
 					"name": "Mark All as Read",
 					"request": {
-						"method": "PUT",
+						"method": "POST",
 						"header": [
 							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
 						"url": "{{base_url}}/api/notifications/read-all"
+					}
+				},
+				{
+					"name": "Clear All Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/notifications-clear"
 					}
 				}
 			]
