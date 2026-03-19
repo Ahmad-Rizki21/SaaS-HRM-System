@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use App\Traits\Notifiable;
 
 class ProfileController extends Controller
 {
+    use Notifiable;
     public function update(Request $request)
     {
         $user = $request->user();
@@ -43,6 +45,31 @@ class ProfileController extends Controller
                 'new_data' => $changes,
                 'status' => 'pending'
             ]);
+
+            // Notify user
+            $this->notify(
+                $user,
+                'PENGAJUAN PERUBAHAN PROFIL',
+                "Permohonan perubahan data profil Anda sedang menunggu persetujuan admin.",
+                'info'
+            );
+
+            // Notify Admins and HR
+            $adminRoles = \App\Models\Role::whereIn('name', ['Super Admin', 'HRD', 'Manager', 'Management'])->pluck('id');
+
+            $admins = \App\Models\User::where('company_id', $user->company_id)
+                ->whereIn('role_id', $adminRoles)
+                ->get();
+
+            foreach ($admins as $admin) {
+                $this->notify(
+                    $admin,
+                    'PERUBAHAN PROFIL BARU',
+                    "{$user->name} telah mengajukan perubahan data profil sensitif (NIK/Email/Telepon).",
+                    'warning',
+                    '/dashboard/profile-requests' // Link to approval page
+                );
+            }
 
             return $this->successResponse([
                 'user' => $user->fresh()->load('role.permissions'),

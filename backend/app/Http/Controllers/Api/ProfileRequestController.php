@@ -7,11 +7,17 @@ use App\Models\ProfileRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 
+use App\Traits\Notifiable;
+
 class ProfileRequestController extends Controller
 {
-    public function index()
+    use Notifiable;
+
+    public function index(Request $request)
     {
-        $requests = ProfileRequest::with('user')->where('status', 'pending')->get();
+        $requests = ProfileRequest::with('user')->where('status', 'pending')
+            ->where('company_id', $request->user()->company_id)
+            ->get();
         return response()->json([
             'success' => true,
             'data' => $requests
@@ -26,13 +32,40 @@ class ProfileRequestController extends Controller
             'new_data' => 'required|array'
         ]);
 
+        $changes = $request->new_data;
+
         $profileRequest = ProfileRequest::create([
             'user_id' => $user->id,
             'company_id' => $user->company_id,
-            'old_data' => $user->only(['name', 'email', 'phone', 'address']),
-            'new_data' => $request->new_data, // items like name, phone, address
+            'old_data' => $user->only(array_keys($changes)),
+            'new_data' => $changes,
             'status' => 'pending'
         ]);
+
+        // Notify user
+        $this->notify(
+            $user,
+            'PENGAJUAN PERUBAHAN PROFIL',
+            "Permohonan perubahan data profil Anda sedang menunggu persetujuan admin.",
+            'info'
+        );
+
+        // Notify Admins and HR
+        $adminRoles = \App\Models\Role::whereIn('name', ['Super Admin', 'HRD', 'Manager', 'Management'])->pluck('id');
+        
+        $admins = \App\Models\User::where('company_id', $user->company_id)
+            ->whereIn('role_id', $adminRoles)
+            ->get();
+
+        foreach ($admins as $admin) {
+            $this->notify(
+                $admin,
+                'PERUBAHAN PROFIL BARU',
+                "{$user->name} telah mengajukan perubahan data profil sensitif (NIK/Email/Telepon).",
+                'warning',
+                '/dashboard/profile-requests'
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -53,6 +86,14 @@ class ProfileRequestController extends Controller
             'approved_by' => $request->user()->id
         ]);
 
+        // Notify user of approval
+        $this->notify(
+            $user,
+            'PERUBAHAN PROFIL DISETUJUI',
+            "Permohonan perubahan data profil Anda telah disetujui oleh admin.",
+            'success'
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Update profil disetujui dan data karyawan telah diperbarui.'
@@ -67,6 +108,16 @@ class ProfileRequestController extends Controller
             'status' => 'rejected',
             'approved_by' => $request->user()->id
         ]);
+
+        $user = User::findOrFail($profileRequest->user_id);
+        
+        // Notify user of rejection
+        $this->notify(
+            $user,
+            'PERUBAHAN PROFIL DITOLAK',
+            "Permohonan perubahan data profil Anda ditolak oleh admin.",
+            'danger'
+        );
 
         return response()->json([
             'success' => true,
