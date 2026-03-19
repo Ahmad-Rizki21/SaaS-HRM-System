@@ -85,6 +85,40 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
+  Future<void> _clearAll() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Hapus Semua?", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Text("Apakah Anda yakin ingin menghapus semua notifikasi?", style: GoogleFonts.outfit()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.outfit(color: Colors.grey))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true), 
+            child: Text("Hapus", style: GoogleFonts.outfit(color: Colors.red, fontWeight: FontWeight.bold))
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        final success = await ApiService.clearNotifications();
+        if (success) {
+          await _fetchNotifications();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Notifikasi berhasil dibersihkan"), backgroundColor: Colors.green));
+        } else {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal membersihkan notifikasi"), backgroundColor: Colors.red));
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Terjadi kesalahan: $e"), backgroundColor: Colors.red));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,6 +135,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          if (_notifications.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.delete_sweep_outlined, color: Colors.white),
+              onPressed: _clearAll,
+            ),
           IconButton(
             icon: Icon(Icons.refresh, color: Colors.white),
             onPressed: _fetchNotifications,

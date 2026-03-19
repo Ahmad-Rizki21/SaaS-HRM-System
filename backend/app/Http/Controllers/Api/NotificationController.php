@@ -46,4 +46,16 @@ class NotificationController extends Controller
             'message' => 'All notifications marked as read'
         ]);
     }
+
+    public function destroyAll()
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $user->notifications()->delete();
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'All notifications deleted'
+        ]);
+    }
 }

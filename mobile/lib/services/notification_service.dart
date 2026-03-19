@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_service.dart';
 
 class NotificationService {
@@ -12,9 +13,21 @@ class NotificationService {
   Timer? _pollingTimer;
   int? _lastNotifId;
   bool _isInitialized = false;
+  bool _isEnabled = true;
+
+  bool get isEnabled => _isEnabled;
+
+  Future<void> setEnabled(bool value) async {
+    _isEnabled = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notifications_enabled', value);
+  }
 
   Future<void> init() async {
     if (_isInitialized) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    _isEnabled = prefs.getBool('notifications_enabled') ?? true;
 
     // 1. Android settings
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -69,6 +82,7 @@ class NotificationService {
   }
 
   Future<void> showNotification(int id, String title, String body) async {
+    if (!_isEnabled) return; // JANGAN TAMPILKAN JIKA DIMATIKAN
     try {
       // Show Banner with custom sound
       const AndroidNotificationDetails androidPlatformChannelSpecifics =

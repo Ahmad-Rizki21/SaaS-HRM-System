@@ -31,8 +31,8 @@ class OvertimeController extends Controller
     {
         $request->validate([
             'date' => 'required|date',
-            'start_time' => 'required',
-            'end_time' => 'required|after:start_time',
+            'start_time' => 'required|string',
+            'end_time' => 'required|string',
             'reason' => 'required|string',
         ]);
 
@@ -58,7 +58,7 @@ class OvertimeController extends Controller
 
         // Notify Admins, HR, and Super Admin
         $admins = User::where('company_id', $request->user()->company_id)
-            ->whereIn('role_id', [2, 3, 4]) // HR, Super Admin, Manager
+            ->where('role_id', '>', 1) // Any role above Karyawan
             ->get();
             
         foreach ($admins as $admin) {

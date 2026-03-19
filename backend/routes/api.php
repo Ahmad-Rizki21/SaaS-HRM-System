@@ -57,6 +57,7 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     // Attendance
     Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
+    Route::get('/attendance/today', [AttendanceController::class, 'today']);
     Route::get('/attendance/history', [AttendanceController::class, 'history']);
     Route::get('/attendance/export', [AttendanceController::class, 'export']);
 
@@ -116,7 +117,15 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/notifications-clear', [NotificationController::class, 'destroyAll']);
+
+    // Salary (Gaji)
+    Route::get('/salary', [\App\Http\Controllers\SalaryController::class, 'index']);
+
+    // Tasks (Tugas)
+    Route::get('/tasks', [\App\Http\Controllers\TaskController::class, 'index']);
+    Route::post('/tasks/{id}/status', [\App\Http\Controllers\TaskController::class, 'updateStatus']);
 
     // Profile Settings
     Route::post('/profile/update', [ProfileController::class, 'update']);

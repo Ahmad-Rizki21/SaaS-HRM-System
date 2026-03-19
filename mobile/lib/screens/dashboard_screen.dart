@@ -6,6 +6,15 @@ import 'profile_screen.dart';
 import 'riwayat_screen.dart';
 import '../services/notification_service.dart';
 
+import 'package:intl/intl.dart';
+import 'attendance_screen.dart';
+import 'settings_tab.dart';
+import 'leave_screen.dart';
+import 'overtime_screen.dart';
+import 'salary_screen.dart';
+import 'task_screen.dart';
+
+
 class DashboardScreen extends StatefulWidget {
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -16,7 +25,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _userName = "Memuat...";
   String _userRole = "";
   String? _profilePhotoUrl;
-  bool _isCheckedIn = false;
+  Map<String, dynamic>? _attendanceData;
 
   final Color primaryColor = Color(0xFF800000);
   final Color secondaryColor = Color(0xFFB00000);
@@ -25,7 +34,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _fetchProfile();
+    _fetchAttendance();
     NotificationService().startPolling(); // Mulai cek notifikasi
+  }
+
+  Future<void> _fetchAttendance() async {
+    final data = await ApiService.getTodayAttendance();
+    if (mounted) {
+      setState(() {
+        _attendanceData = data;
+      });
+    }
+  }
+
+  String _formatTime(String? dateTimeStr) {
+    if (dateTimeStr == null) return "--:--";
+    try {
+      final DateTime dt = DateTime.parse(dateTimeStr).toLocal();
+      return DateFormat('HH:mm').format(dt);
+    } catch (e) {
+      return "--:--";
+    }
   }
 
   @override
@@ -55,7 +84,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _onAbsenTapped() async {
+    final dynamic res = await Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (c) => AttendanceScreen(isCheckIn: _attendanceData?['check_in'] == null))
+    );
+    if (res != null) {
+      setState(() {
+        _attendanceData = res;
+      });
+      _fetchAttendance(); // Sync final state
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Absensi Berhasil Tercatat!"), backgroundColor: Colors.green)
+      );
+    }
+  }
+
   void _onItemTapped(int index) {
+
     setState(() => _selectedIndex = index);
   }
 
@@ -87,11 +133,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         floatingActionButton: _selectedIndex == 0
             ? FloatingActionButton.extended(
-                onPressed: () {},
+                onPressed: _onAbsenTapped,
                 backgroundColor: primaryColor,
                 elevation: 10,
-                label: Text("ABSEN SEKARANG", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1)),
-                icon: Icon(Icons.center_focus_strong, color: Colors.white),
+                label: Text(
+                  _attendanceData?['check_in'] == null ? "ABSEN SEKARANG" : (_attendanceData?['check_out'] == null ? "ABSEN PULANG" : "SUDAH ABSEN"),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1),
+                ),
+                icon: Icon(Icons.camera_front, color: Colors.white),
               )
             : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -125,7 +174,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 2:
         return ProfileScreen();
       case 3:
-        return _buildSettingsContent();
+        return SettingsTab(onLogout: _handleLogout);
       default:
         return _buildHomeContent();
     }
@@ -201,20 +250,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Text("Absensi Hari Ini", style: TextStyle(color: Colors.white70, fontSize: 13)),
                           SizedBox(height: 5),
-                          Text(_isCheckedIn ? "Sudah Check-In" : "Klik Untuk Absen",
-                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(
+                            _attendanceData?['check_in'] != null 
+                              ? (_attendanceData?['check_out'] != null ? "Selesai Kerja" : "Sudah Check-In")
+                              : "Klik Untuk Absen",
+                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
-                      Icon(Icons.qr_code_2, color: Colors.white, size: 40),
+                      Icon(Icons.face_retouching_natural, color: Colors.white, size: 40),
                     ],
                   ),
                   SizedBox(height: 25),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildAttendanceDetail("Masuk", "--:--"),
+                      _buildAttendanceDetail("Masuk", _formatTime(_attendanceData?['check_in'])),
                       Container(height: 30, width: 1, color: Colors.white24),
-                      _buildAttendanceDetail("Pulang", "--:--"),
+                      _buildAttendanceDetail("Pulang", _formatTime(_attendanceData?['check_out'])),
                     ],
                   ),
                 ],
@@ -242,15 +295,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   itemCount: 8,
                   itemBuilder: (context, index) {
                     final menuItems = [
-                      {'icon': Icons.camera_front, 'label': 'Absen', 'color': primaryColor},
-                      {'icon': Icons.calendar_month, 'label': 'Cuti', 'color': Colors.orange[800]},
-                      {'icon': Icons.receipt_long, 'label': 'Gaji', 'color': Colors.green[800]},
-                      {'icon': Icons.history_edu, 'label': 'Riwayat', 'color': Colors.purple[800], 'onTap': () => _onItemTapped(1)},
-                      {'icon': Icons.more_time, 'label': 'Lembur', 'color': Colors.red[800]},
-                      {'icon': Icons.task, 'label': 'Tugas', 'color': Colors.teal[800]},
-                      {'icon': Icons.person, 'label': 'Profil', 'color': Colors.indigo[800], 'onTap': () => _onItemTapped(2)},
-                      {'icon': Icons.logout, 'label': 'Keluar', 'color': Colors.grey[700], 'onTap': _handleLogout},
+                      {
+                        'icon': Icons.camera_front,
+                        'label': 'Absen',
+                        'color': primaryColor,
+                        'onTap': () => _onAbsenTapped(),
+                      },
+                      {
+                        'icon': Icons.calendar_month,
+                        'label': 'Cuti',
+                        'color': Colors.orange[800],
+                        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => LeaveScreen())),
+                      },
+                      {
+                        'icon': Icons.receipt_long,
+                        'label': 'Gaji',
+                        'color': Colors.green[800],
+                        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => SalaryScreen())),
+                      },
+                      {
+                        'icon': Icons.history_edu,
+                        'label': 'Riwayat',
+                        'color': Colors.purple[800],
+                        'onTap': () => _onItemTapped(1),
+                      },
+                      {
+                        'icon': Icons.more_time,
+                        'label': 'Lembur',
+                        'color': Colors.red[800],
+                        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => OvertimeScreen())),
+                      },
+                      {
+                        'icon': Icons.task,
+                        'label': 'Tugas',
+                        'color': Colors.teal[800],
+                        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => TaskScreen())),
+                      },
+                      {
+                        'icon': Icons.person,
+                        'label': 'Profil',
+                        'color': Colors.indigo[800],
+                        'onTap': () => _onItemTapped(2),
+                      },
+                      {
+                        'icon': Icons.logout,
+                        'label': 'Keluar',
+                        'color': Colors.grey[700],
+                        'onTap': _handleLogout,
+                      },
                     ];
+
                     var item = menuItems[index];
                     return _buildNavIcon(item['icon'] as IconData, item['label'] as String, item['color'] as Color, onTap: item['onTap'] as Function?);
                   },
@@ -288,34 +382,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ============================================
-  // TAB 3: SETTINGS (Placeholder)
-  // ============================================
-  Widget _buildSettingsContent() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.settings, size: 80, color: Colors.grey[300]),
-          SizedBox(height: 15),
-          Text("Pengaturan", style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text("Segera hadir...", style: TextStyle(color: Colors.grey[400])),
-          SizedBox(height: 30),
-          ElevatedButton.icon(
-            onPressed: _handleLogout,
-            icon: Icon(Icons.logout, color: Colors.white),
-            label: Text("Keluar Akun", style: TextStyle(color: Colors.white)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   // ============================================
   // WIDGETS PENDUKUNG

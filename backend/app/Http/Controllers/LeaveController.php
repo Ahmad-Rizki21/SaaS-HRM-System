@@ -56,7 +56,7 @@ class LeaveController extends Controller
 
         // Notify Admins and HR
         $admins = \App\Models\User::where('company_id', $request->user()->company_id)
-            ->whereIn('role_id', [1, 2, 4]) // Super Admin, HR, Manager
+            ->where('role_id', '>', 1) // Any role above Karyawan
             ->get();
             
         foreach ($admins as $admin) {
