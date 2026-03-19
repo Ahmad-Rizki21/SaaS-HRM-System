@@ -31,8 +31,12 @@ class AttendanceExport implements FromQuery, WithMapping, WithHeadings
             $query->where('user_id', $this->userId);
         }
 
-        if ($this->startDate && $this->endDate) {
-            $query->whereBetween('check_in', [$this->startDate, $this->endDate]);
+        if ($this->startDate) {
+            $query->whereDate('check_in', '>=', $this->startDate);
+        }
+
+        if ($this->endDate) {
+            $query->whereDate('check_in', '<=', $this->endDate);
         }
 
         return $query;

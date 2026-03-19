@@ -30,6 +30,7 @@ export default function ApprovalsPage() {
 
   const [actionModal, setActionModal] = useState<{isOpen: boolean, action: "approve" | "reject" | null, item: ApprovalItem | null}>({isOpen: false, action: null, item: null});
   const [remarkInput, setRemarkInput] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getStorageUrl = (path: string) => {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:8000";
@@ -121,14 +122,14 @@ export default function ApprovalsPage() {
 
   const executeAction = async () => {
     const { action, item } = actionModal;
-    if (!action || !item) return;
+    if (!action || !item || isSubmitting) return;
 
     if (action === 'reject' && !remarkInput.trim() && (item.type === 'reimbursement' || item.type === 'overtime')) {
         alert("Alasan penolakan WAJIB diisi!");
         return;
     }
     
-    setActionModal({ isOpen: false, action: null, item: null });
+    setIsSubmitting(true);
     setProcessingId(`${item.type}-${item.id}`);
     
     try {
@@ -142,11 +143,13 @@ export default function ApprovalsPage() {
       await axiosInstance.post(`${endpoint}/${item.id}/${action}`, { remark: remarkInput });
       
       alert(`Berhasil ${action === 'approve' ? 'menyetujui' : 'menolak'} pengajuan.`);
+      setActionModal({ isOpen: false, action: null, item: null });
       await fetchApprovals();
     } catch (e: any) {
       console.error("Error processing approval:", e);
       alert("Gagal memproses pengajuan: " + (e.response?.data?.message || "Terjadi kesalahan server"));
     } finally {
+      setIsSubmitting(false);
       setProcessingId(null);
     }
   };
@@ -363,6 +366,19 @@ export default function ApprovalsPage() {
               </button>
             </div>
             <div className="p-6">
+              {actionModal.item.attachment && (
+                <div className="mb-4 rounded-xl border overflow-hidden bg-gray-50">
+                  <p className="text-[10px] font-black text-gray-400 bg-gray-100/50 px-3 py-1 border-b">BUKTI LAMPIRAN</p>
+                  <img 
+                    src={getStorageUrl(actionModal.item.attachment)} 
+                    alt="Receipt" 
+                    className="w-full h-auto max-h-[250px] object-contain mx-auto"
+                    onError={(e) => {
+                        (e.target as any).src = 'https://placehold.co/600x400?text=Bukti+Gagal+Dimuat';
+                    }}
+                  />
+                </div>
+              )}
               <p className="text-sm text-gray-600 mb-4">
                 Tuliskan {actionModal.action === 'approve' ? 'catatan (opsional)' : 'alasan penolakan (WAJIB)'} untuk pengajuan ini.
               </p>
@@ -375,17 +391,19 @@ export default function ApprovalsPage() {
               />
             </div>
             <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex gap-3">
-               <button 
+                <button 
                   onClick={() => setActionModal({ isOpen: false, action: null, item: null })}
-                  className="flex-1 py-3 text-sm font-bold text-gray-500 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 text-sm font-bold text-gray-500 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button 
                   onClick={executeAction}
-                  className={`flex-1 py-3 text-sm font-bold text-white rounded-xl shadow-lg transition active:scale-95 ${actionModal.action === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/10' : 'bg-red-600 hover:bg-red-700 shadow-red-900/10'}`}
+                  disabled={isSubmitting}
+                  className={`flex-1 py-3 text-sm font-bold text-white rounded-xl shadow-lg transition active:scale-95 disabled:opacity-50 ${actionModal.action === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/10' : 'bg-red-600 hover:bg-red-700 shadow-red-900/10'}`}
                 >
-                  Konfirmasi
+                  {isSubmitting ? "Memproses..." : "Konfirmasi"}
                 </button>
             </div>
           </div>

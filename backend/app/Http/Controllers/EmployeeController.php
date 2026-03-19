@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use App\Imports\EmployeeImport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -44,7 +45,13 @@ class EmployeeController extends Controller
             'phone' => 'nullable|string',
             'address' => 'nullable|string',
             'join_date' => 'nullable|date',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
+
+        $path = null;
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('profile-photos', 'public');
+        }
 
         $employee = new User();
         $employee->name = $request->name;
@@ -56,6 +63,7 @@ class EmployeeController extends Controller
         $employee->phone = $request->phone;
         $employee->address = $request->address;
         $employee->join_date = $request->join_date;
+        $employee->profile_photo_path = $path;
         $employee->save();
 
         $this->logActivity('CREATE_EMPLOYEE', "Menambahkan karyawan baru: {$employee->name}", $employee);
@@ -79,9 +87,18 @@ class EmployeeController extends Controller
             'name' => 'sometimes|string',
             'email' => 'sometimes|email|unique:users,email,' . $id,
             'role_id' => 'sometimes|exists:roles,id',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $employee->update($request->all());
+        if ($request->hasFile('photo')) {
+            if ($employee->profile_photo_path) {
+                Storage::disk('public')->delete($employee->profile_photo_path);
+            }
+            $path = $request->file('photo')->store('profile-photos', 'public');
+            $employee->profile_photo_path = $path;
+        }
+
+        $employee->update($request->except(['photo', 'password']));
         
         if ($request->password) {
             $employee->update(['password' => Hash::make($request->password)]);
@@ -90,6 +107,23 @@ class EmployeeController extends Controller
         $this->logActivity('UPDATE_EMPLOYEE', "Memperbarui data karyawan: {$employee->name}", $employee);
 
         return $this->successResponse($employee, 'Data karyawan berhasil diupdate.');
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        abort_if(!$request->user()->hasPermission('delete-employees'), 403, 'Akses ditolak.');
+
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:users,id'
+        ]);
+
+        $idsCount = count($request->ids);
+        User::whereIn('id', $request->ids)->delete();
+
+        $this->logActivity('BULK_DELETE_EMPLOYEE', "Menghapus {$idsCount} data karyawan secara massal");
+
+        return $this->successResponse(null, "{$idsCount} karyawan berhasil dihapus.");
     }
 
     public function destroy(Request $request, $id)

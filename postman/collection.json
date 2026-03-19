@@ -178,6 +178,22 @@
 						},
 						"url": "{{base_url}}/api/employees/import"
 					}
+				},
+				{
+					"name": "Bulk Delete Employee",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ids\": [2, 3, 5]\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/employees/bulk-delete"
+					}
 				}
 			]
 		},

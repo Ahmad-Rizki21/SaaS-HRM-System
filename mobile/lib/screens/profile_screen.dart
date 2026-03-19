@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../api/api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -178,6 +180,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: Icon(Icons.photo_library, color: maroon),
+              title: Text('Galeri'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: Icon(Icons.camera_alt, color: maroon),
+              title: Text('Kamera'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      final XFile? pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() => _isSaving = true);
+        final result = await ApiService.uploadProfilePhoto(pickedFile.path);
+        setState(() => _isSaving = false);
+
+        if (result['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.green));
+          _loadProfile(); // Refresh for new URL
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message']), backgroundColor: Colors.red));
+        }
+      }
+    }
+  }
+
   String _fixPhotoUrl(String? url) {
     if (url == null) return '';
     if (!url.startsWith('http')) return 'http://192.168.1.9:8000/storage/$url';
@@ -219,13 +266,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 SizedBox(height: 10),
                 // Foto Profil
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: maroon,
-                  backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                  child: photoUrl.isEmpty
-                      ? Text(name[0].toUpperCase(), style: TextStyle(fontSize: 38, color: Colors.white, fontWeight: FontWeight.bold))
-                      : null,
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: maroon,
+                      backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                      child: photoUrl.isEmpty
+                          ? Text(name[0].toUpperCase(), style: TextStyle(fontSize: 38, color: Colors.white, fontWeight: FontWeight.bold))
+                          : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: _isSaving ? null : _pickImage,
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: maroon, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                          child: Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ),
+                    if (_isSaving)
+                       Positioned.fill(
+                         child: Container(
+                           decoration: BoxDecoration(color: Colors.black26, shape: BoxShape.circle),
+                           child: Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                         ),
+                       ),
+                  ],
                 ),
                 SizedBox(height: 12),
                 Text(name, style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),

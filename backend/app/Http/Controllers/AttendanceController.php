@@ -159,14 +159,25 @@ class AttendanceController extends Controller
     {
         $query = Attendance::with('user')->where('company_id', $request->user()->company_id);
 
-        // Karyawan hanya bisa melihat absensinya sendiri (Diasumsikan role_id 1 = Karyawan)
-        // Jika sistem role kompleks, bisa juga cek hasPermission('view-all-attendance')
-        if ($request->user()->role_id == 1) {
-            $query->where('user_id', $request->user()->id);
+        $user = $request->user();
+        
+        // Eager load role untuk pengecekan role name atau ID
+        if (!$user->relationLoaded('role')) {
+            $user->load('role');
+        }
+
+        // Hanya limit data sendiri jika role-nya adalah 'Karyawan' (ID 1 atau Nama 'Karyawan')
+        if ($user->role_id == 1 || ($user->role && strtolower($user->role->name) === 'karyawan')) {
+             $query->where('user_id', $user->id);
         }
 
         if ($request->start_date && $request->end_date) {
-            $query->whereBetween('check_in', [$request->start_date, $request->end_date]);
+            $query->whereDate('check_in', '>=', $request->start_date)
+                  ->whereDate('check_in', '<=', $request->end_date);
+        }
+
+        if ($request->user_id) { // Tambahan filter ID karyawan jika dikirim
+            $query->where('user_id', $request->user_id);
         }
             
         $history = $query->orderBy('id', 'desc')->paginate(10);

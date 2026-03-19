@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as p;
 
 class ApiService {
   static const String baseUrl = 'http://192.168.1.9:8000/api';
@@ -92,6 +94,39 @@ class ApiService {
       }
     } catch (e) {
       return {'success': false, 'needs_approval': false, 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> uploadProfilePhoto(String filePath) async {
+    try {
+      final headers = await getHeaders();
+      final uri = Uri.parse('$baseUrl/profile/upload-photo');
+      
+      var request = http.MultipartRequest('POST', uri);
+      request.headers.addAll(headers);
+
+      final extension = p.extension(filePath).toLowerCase();
+      String mimeType = 'image/jpeg';
+      if (extension == '.png') mimeType = 'image/png';
+      if (extension == '.webp') mimeType = 'image/webp';
+      
+      request.files.add(await http.MultipartFile.fromPath(
+        'photo', 
+        filePath,
+        contentType: MediaType.parse(mimeType),
+      ));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': body['message'] ?? 'Foto berhasil diunggah.', 'url': body['data']['profile_photo_url']};
+      } else {
+        return {'success': false, 'message': body['message'] ?? 'Gagal mengunggah foto.'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi gagal: ${e.toString()}'};
     }
   }
 
@@ -201,6 +236,20 @@ class ApiService {
       };
     } catch (e) {
       return {'success': false, 'status': 0, 'error': e.toString()};
+    }
+  }
+
+  static Future<List<dynamic>?> getHolidays() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/holidays'), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data']['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -315,6 +364,55 @@ class ApiService {
       return jsonDecode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  // ============ REIMBURSEMENT ============
+  
+  static Future<List<dynamic>?> getReimbursements() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/reimbursements'), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data']['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitReimbursement(Map<String, String> data, {String? filePath}) async {
+    try {
+      final headers = await getHeaders();
+      final uri = Uri.parse('$baseUrl/reimbursements');
+      
+      var request = http.MultipartRequest('POST', uri);
+      request.headers.addAll(headers);
+      request.fields.addAll(data);
+
+
+      if (filePath != null) {
+        final extension = p.extension(filePath).toLowerCase();
+        String mimeType = 'image/jpeg';
+        if (extension == '.png') mimeType = 'image/png';
+        if (extension == '.webp') mimeType = 'image/webp';
+        
+        request.files.add(await http.MultipartFile.fromPath(
+          'attachment', 
+          filePath,
+          contentType: MediaType.parse(mimeType),
+          filename: 'receipt_${DateTime.now().millisecondsSinceEpoch}$extension',
+        ));
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal: ${e.toString()}'};
     }
   }
 

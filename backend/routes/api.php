@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\ProfileRequestController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OvertimeController;
+use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\TaskController;
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
@@ -97,6 +99,8 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::post('/employees/import', [EmployeeController::class, 'import']);
     Route::get('/employees/{id}', [EmployeeController::class, 'show']);
     Route::put('/employees/{id}', [EmployeeController::class, 'update']);
+    // Bulk Delete
+    Route::post('/employees/bulk-delete', [EmployeeController::class, 'bulkDestroy']);
     Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
 
     // Roles & Permissions
@@ -121,11 +125,11 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::post('/notifications-clear', [NotificationController::class, 'destroyAll']);
 
     // Salary (Gaji)
-    Route::get('/salary', [\App\Http\Controllers\SalaryController::class, 'index']);
+    Route::get('/salary', [SalaryController::class, 'index']);
 
     // Tasks (Tugas)
-    Route::get('/tasks', [\App\Http\Controllers\TaskController::class, 'index']);
-    Route::post('/tasks/{id}/status', [\App\Http\Controllers\TaskController::class, 'updateStatus']);
+    Route::get('/tasks', [TaskController::class, 'index']);
+    Route::post('/tasks/{id}/status', [TaskController::class, 'updateStatus']);
 
     // Profile Settings
     Route::post('/profile/update', [ProfileController::class, 'update']);

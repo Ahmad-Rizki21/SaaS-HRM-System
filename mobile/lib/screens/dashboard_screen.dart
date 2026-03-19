@@ -13,6 +13,9 @@ import 'leave_screen.dart';
 import 'overtime_screen.dart';
 import 'salary_screen.dart';
 import 'task_screen.dart';
+import 'reimbursement_screen.dart';
+import 'holiday_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class DashboardScreen extends StatefulWidget {
@@ -25,6 +28,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _userName = "Memuat...";
   String _userRole = "";
   String? _profilePhotoUrl;
+  
+  // Custom Menu
+  List<String> _pinnedMenuIds = ['absen', 'cuti', 'klaim', 'lembur'];
+  bool _isMenuExpanded = false;
   Map<String, dynamic>? _attendanceData;
 
   final Color primaryColor = Color(0xFF800000);
@@ -35,7 +42,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _fetchProfile();
     _fetchAttendance();
+    _loadPinnedMenus();
     NotificationService().startPolling(); // Mulai cek notifikasi
+  }
+
+  Future<void> _loadPinnedMenus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('pinned_menus');
+    if (saved != null && saved.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _pinnedMenuIds = List.from(saved);
+        });
+      }
+    }
   }
 
   Future<void> _fetchAttendance() async {
@@ -119,6 +139,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return "Selamat Malam,";
   }
 
+  DateTime? _lastPressedAt;
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -126,21 +148,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
       ),
-      child: Scaffold(
-        backgroundColor: Color(0xFFFBFBFB),
-        body: SafeArea(
-          child: _getBody(),
-        ),
-        floatingActionButton: _selectedIndex == 0
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          
+          if (_selectedIndex != 0) {
+            setState(() => _selectedIndex = 0);
+            return;
+          }
+
+          final now = DateTime.now();
+          if (_lastPressedAt == null || now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+            _lastPressedAt = now;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Tekan sekali lagi untuk keluar"), duration: Duration(seconds: 2))
+            );
+            return;
+          }
+          
+          Navigator.of(context).pop(); // Actually pop/exit
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xFFFBFBFB),
+          body: SafeArea(
+            child: _getBody(),
+          ),
+        floatingActionButton: (_selectedIndex == 0 && _attendanceData?['check_out'] == null)
             ? FloatingActionButton.extended(
                 onPressed: _onAbsenTapped,
                 backgroundColor: primaryColor,
                 elevation: 10,
                 label: Text(
-                  _attendanceData?['check_in'] == null ? "ABSEN SEKARANG" : (_attendanceData?['check_out'] == null ? "ABSEN PULANG" : "SUDAH ABSEN"),
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1),
+                  _attendanceData?['check_in'] == null ? "ABSEN SEKARANG" : "ABSEN PULANG",
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1),
                 ),
-                icon: Icon(Icons.camera_front, color: Colors.white),
+                icon: const Icon(Icons.camera_front, color: Colors.white),
               )
             : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -152,13 +195,170 @@ class _DashboardScreenState extends State<DashboardScreen> {
           showUnselectedLabels: true,
           type: BottomNavigationBarType.fixed,
           items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: "Beranda"),
-            BottomNavigationBarItem(icon: Icon(Icons.list_alt_outlined), activeIcon: Icon(Icons.list_alt), label: "Riwayat"),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: "Profil"),
-            BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), activeIcon: Icon(Icons.settings), label: "Setting"),
+            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: "Beranda"),
+            BottomNavigationBarItem(icon: const Icon(Icons.list_alt_outlined), activeIcon: const Icon(Icons.list_alt), label: "Riwayat"),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), activeIcon: const Icon(Icons.person), label: "Profil"),
+            BottomNavigationBarItem(icon: const Icon(Icons.settings_outlined), activeIcon: const Icon(Icons.settings), label: "Setting"),
           ],
         ),
       ),
+    ),
+  );
+}
+
+  Map<String, Map<String, dynamic>> _getMenuItems() {
+    return {
+      'absen': {
+        'icon': Icons.camera_front,
+        'label': 'Absen',
+        'color': primaryColor,
+        'onTap': () => _onAbsenTapped(),
+      },
+      'cuti': {
+        'icon': Icons.calendar_month,
+        'label': 'Cuti',
+        'color': Colors.orange[800],
+        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => LeaveScreen())),
+      },
+      'klaim': {
+        'icon': Icons.payments_outlined,
+        'label': 'Klaim',
+        'color': Colors.blue[800],
+        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReimbursementScreen())),
+      },
+      'lembur': {
+        'icon': Icons.more_time,
+        'label': 'Lembur',
+        'color': Colors.red[800],
+        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => OvertimeScreen())),
+      },
+      'profile': {
+        'icon': Icons.person,
+        'label': 'Profil',
+        'color': Colors.indigo[800],
+        'onTap': () => _onItemTapped(2),
+      },
+      'gaji': {
+        'icon': Icons.receipt_long,
+        'label': 'Gaji',
+        'color': Colors.green[800],
+        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => SalaryScreen())),
+      },
+      'tugas': {
+        'icon': Icons.task,
+        'label': 'Tugas',
+        'color': Colors.teal[800],
+        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => TaskScreen())),
+      },
+      'libur': {
+        'icon': Icons.event_available,
+        'label': 'Libur',
+        'color': Colors.deepOrange[800],
+        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => HolidayScreen())),
+      },
+      'riwayat': {
+        'icon': Icons.history_edu,
+        'label': 'Riwayat',
+        'color': Colors.purple[800],
+        'onTap': () => _onItemTapped(1),
+      },
+      'setting': {
+        'icon': Icons.settings,
+        'label': 'Setting',
+        'color': Colors.blueGrey,
+        'onTap': () => _onItemTapped(3),
+      },
+    };
+  }
+
+  void _showAturModal() {
+    final allItems = _getMenuItems();
+    // Gunakan list lokal agar perubahan hanya tersimpan saat klik "Simpan"
+    List<String> tempPinned = List.from(_pinnedMenuIds);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+              padding: const EdgeInsets.all(25),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Atur Akses Cepat", style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Text("Pilih maksimal 4 menu favorit Anda.", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                  const SizedBox(height: 25),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: allItems.keys.map((id) {
+                      final isSelected = tempPinned.contains(id);
+                      final item = allItems[id]!;
+                      return FilterChip(
+                        selected: isSelected,
+                        label: Text(item['label']),
+                        selectedColor: primaryColor.withOpacity(0.2),
+                        checkmarkColor: primaryColor,
+                        onSelected: (selected) {
+                          setModalState(() {
+                            if (selected) {
+                              if (tempPinned.length < 4) {
+                                tempPinned.add(id);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Maksimal 4 menu"), behavior: SnackBarBehavior.floating)
+                                );
+                              }
+                            } else {
+                              tempPinned.remove(id);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (tempPinned.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pilih minimal 1 menu")));
+                          return;
+                        }
+                        
+                        // Update Main State
+                        setState(() {
+                          _pinnedMenuIds = List.from(tempPinned);
+                        });
+
+                        // Persist to SharedPreferences
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setStringList('pinned_menus', _pinnedMenuIds);
+                        
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      ),
+                      child: const Text("Simpan Perubahan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          }
+        );
+      },
     );
   }
 
@@ -184,6 +384,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // TAB 0: HOME CONTENT
   // ============================================
   Widget _buildHomeContent() {
+    final allItems = _getMenuItems();
+    final pinnedItems = _pinnedMenuIds.map((id) => allItems[id]!).toList();
+    final otherItems = allItems.keys
+        .where((id) => !_pinnedMenuIds.contains(id))
+        .map((id) => allItems[id]!)
+        .toList();
+    
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,89 +482,87 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
 
-          // MENU UTAMA
+          // AKSES CEPAT (Quick Access Row)
           Padding(
-            padding: const EdgeInsets.all(25.0),
+            padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 25),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Menu Utama", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 15),
-                GridView.builder(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Akses Cepat", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+                    GestureDetector(
+                      onTap: () => _showAturModal(),
+                      child: Text("Atur", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                GridView.count(
                   shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    mainAxisExtent: 90,
-                  ),
-                  itemCount: 8,
-                  itemBuilder: (context, index) {
-                    final menuItems = [
-                      {
-                        'icon': Icons.camera_front,
-                        'label': 'Absen',
-                        'color': primaryColor,
-                        'onTap': () => _onAbsenTapped(),
-                      },
-                      {
-                        'icon': Icons.calendar_month,
-                        'label': 'Cuti',
-                        'color': Colors.orange[800],
-                        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => LeaveScreen())),
-                      },
-                      {
-                        'icon': Icons.receipt_long,
-                        'label': 'Gaji',
-                        'color': Colors.green[800],
-                        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => SalaryScreen())),
-                      },
-                      {
-                        'icon': Icons.history_edu,
-                        'label': 'Riwayat',
-                        'color': Colors.purple[800],
-                        'onTap': () => _onItemTapped(1),
-                      },
-                      {
-                        'icon': Icons.more_time,
-                        'label': 'Lembur',
-                        'color': Colors.red[800],
-                        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => OvertimeScreen())),
-                      },
-                      {
-                        'icon': Icons.task,
-                        'label': 'Tugas',
-                        'color': Colors.teal[800],
-                        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => TaskScreen())),
-                      },
-                      {
-                        'icon': Icons.person,
-                        'label': 'Profil',
-                        'color': Colors.indigo[800],
-                        'onTap': () => _onItemTapped(2),
-                      },
-                      {
-                        'icon': Icons.logout,
-                        'label': 'Keluar',
-                        'color': Colors.grey[700],
-                        'onTap': _handleLogout,
-                      },
-                    ];
-
-                    var item = menuItems[index];
-                    return _buildNavIcon(item['icon'] as IconData, item['label'] as String, item['color'] as Color, onTap: item['onTap'] as Function?);
-                  },
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 5,
+                  mainAxisSpacing: 0,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 0.7,
+                  children: [
+                    ...pinnedItems.map((item) => _buildQuickAction(item['icon'], item['label'], item['color'], item['onTap'])),
+                    // Lainnya Button
+                    GestureDetector(
+                      onTap: () => setState(() => _isMenuExpanded = !_isMenuExpanded),
+                      child: Column(
+                        children: [
+                           Container(
+                             padding: const EdgeInsets.all(12),
+                             decoration: BoxDecoration(
+                               color: _isMenuExpanded ? primaryColor : Colors.white,
+                               shape: BoxShape.circle,
+                               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+                             ),
+                             child: Icon(_isMenuExpanded ? Icons.close : Icons.apps, color: _isMenuExpanded ? Colors.white : primaryColor, size: 28),
+                           ),
+                           const SizedBox(height: 8),
+                           Text("Lainnya", style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
 
+          // MENU LAINNYA (Expanded)
+          if (_isMenuExpanded)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
+                ),
+                child: GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 20,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.8,
+                  children: otherItems.map((item) => _buildNavIcon(item['icon'], item['label'], item['color'], onTap: item['onTap'])).toList() 
+                  ..add(_buildNavIcon(Icons.logout, "Keluar", Colors.grey[700]!, onTap: _handleLogout)),
+                ),
+              ),
+            ),
+
           // BANNER INFO
+          const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25.0),
             child: Container(
-              padding: EdgeInsets.all(15),
+              padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
@@ -394,6 +599,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
         SizedBox(height: 3),
         Text(time, style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
       ],
+    );
+  }
+
+  Widget _buildQuickAction(IconData icon, String label, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+            ),
+            child: Icon(icon, color: color, size: 28),
+          ),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(label, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87)),
+          ),
+        ],
+      ),
     );
   }
 

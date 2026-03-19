@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown, User as UserIcon, Camera } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import Pagination from "@/components/Pagination";
 import { TableSkeleton } from "@/components/Skeleton";
 import { useSearchParams } from "next/navigation";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface Role {
   id: number;
@@ -25,6 +26,20 @@ interface Employee {
   join_date?: string;
   role?: Role;
   role_id: number;
+  profile_photo_url?: string;
+}
+
+interface EmployeeFormData {
+  id?: number;
+  name?: string;
+  email?: string;
+  nik?: string;
+  phone?: string;
+  address?: string;
+  join_date?: string;
+  role_id?: number;
+  password?: string;
+  photo?: File | null;
 }
 
 interface PaginationData {
@@ -50,14 +65,17 @@ export default function EmployeesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<Partial<Employee> & { password?: string }>({
+  const [formData, setFormData] = useState<EmployeeFormData>({
     role_id: 3 // Default Employee
   });
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   // Delete modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     fetchEmployees(page);
@@ -117,6 +135,14 @@ export default function EmployeesPage() {
     XLSX.writeFile(workbook, "Template_Import_Karyawan.xlsx");
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({ ...formData, photo: file });
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -171,6 +197,20 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(filteredEmployees.map(emp => emp.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   const handleOpenAddModal = () => {
     setModalMode("add");
     setFormData({ role_id: 3 }); // Reset
@@ -189,23 +229,43 @@ export default function EmployeesPage() {
       address: emp.address || "",
       join_date: emp.join_date || "",
     });
+    setPhotoPreview(emp.profile_photo_url || null);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setFormData({});
+    setPhotoPreview(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const data = new FormData();
+      Object.keys(formData).forEach(key => {
+        const val = (formData as any)[key];
+        if (val !== undefined && val !== null) {
+          if (key === 'photo') {
+            data.append('photo', val);
+          } else {
+            data.append(key, val.toString());
+          }
+        }
+      });
+
       if (modalMode === "add") {
-        await axiosInstance.post("/employees", formData);
+        await axiosInstance.post("/employees", data, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
         alert("Berhasil menambah karyawan baru!");
       } else {
-        await axiosInstance.put(`/employees/${formData.id}`, formData);
+        // Laravel PUT doesn't support FormData file upload easily, so we use POST with _method=PUT
+        data.append('_method', 'PUT');
+        await axiosInstance.post(`/employees/${formData.id}`, data, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
         alert("Berhasil memperbarui data karyawan!");
       }
       handleCloseModal();
@@ -229,6 +289,23 @@ export default function EmployeesPage() {
     } catch (e) {
       console.error(e);
       alert("Gagal menghapus data karyawan.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setIsSubmitting(true);
+    try {
+      await axiosInstance.post("/employees/bulk-delete", { ids: selectedIds });
+      alert(`${selectedIds.length} karyawan berhasil dihapus.`);
+      setBulkDeleteModalOpen(false);
+      setSelectedIds([]);
+      fetchEmployees(pagination?.current_page || 1);
+    } catch (e) {
+      console.error(e);
+      alert("Gagal menghapus data karyawan secara massal.");
     } finally {
       setIsSubmitting(false);
     }
@@ -300,15 +377,26 @@ export default function EmployeesPage() {
 
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-4 bg-white p-3 border border-[#ebedf0] rounded-lg">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-          <input
-            type="text"
-            placeholder="Cari nama atau email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-9 pl-9 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
-          />
+        <div className="flex items-center gap-3 flex-1">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Cari nama atau email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-9 pl-9 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
+            />
+          </div>
+          {selectedIds.length > 0 && hasPermission('delete-employees') && (
+            <button 
+              onClick={() => setBulkDeleteModalOpen(true)}
+              className="dash-btn bg-red-50 text-red-600 border-red-100 hover:bg-red-100 h-9 px-3 text-xs"
+            >
+              <Trash2 size={14} className="mr-1.5" />
+              Hapus ({selectedIds.length})
+            </button>
+          )}
         </div>
       </div>
 
@@ -325,6 +413,14 @@ export default function EmployeesPage() {
             <table className="dash-table">
               <thead>
                 <tr>
+                  <th className="w-10">
+                    <input 
+                      type="checkbox" 
+                      onChange={handleSelectAll}
+                      checked={selectedIds.length === filteredEmployees.length && filteredEmployees.length > 0}
+                      className="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                    />
+                  </th>
                   <th>Info Pekerja</th>
                   {hasPermission('edit-employees') && <th>NIK</th>}
                   <th>Posisi/Peran</th>
@@ -334,11 +430,27 @@ export default function EmployeesPage() {
               </thead>
               <tbody>
                 {filteredEmployees.map((emp) => (
-                  <tr key={emp.id}>
+                  <tr key={emp.id} className={selectedIds.includes(emp.id) ? "bg-red-50/10" : ""}>
                     <td>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-gray-900">{emp.name}</span>
-                        <span className="text-[10px] text-gray-400 font-medium">EMP-{emp.id.toString().padStart(4, '0')}</span>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.includes(emp.id)}
+                        onChange={() => handleSelectRow(emp.id)}
+                        className="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                      />
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="size-9 border border-gray-100">
+                          <AvatarImage src={emp.profile_photo_url} alt={emp.name} />
+                          <AvatarFallback className="bg-gray-100 text-gray-500 font-bold uppercase text-[10px]">
+                            {emp.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-900 leading-tight">{emp.name}</span>
+                          <span className="text-[10px] text-gray-400 font-medium">EMP-{emp.id.toString().padStart(4, '0')}</span>
+                        </div>
                       </div>
                     </td>
                     {hasPermission('edit-employees') && (
@@ -423,6 +535,26 @@ export default function EmployeesPage() {
               <form onSubmit={handleSubmit}>
                 <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
                   
+                  {/* Photo Profile Section */}
+                  <div className="flex flex-col items-center gap-3 mb-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <div className="relative group">
+                      <Avatar className="size-20 border-2 border-white shadow-md">
+                        <AvatarImage src={photoPreview || undefined} />
+                        <AvatarFallback className="bg-white text-gray-300">
+                          <UserIcon size={32} />
+                        </AvatarFallback>
+                      </Avatar>
+                      <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <Camera size={18} />
+                        <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                      </label>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-xs font-semibold text-gray-600">Foto Profil</span>
+                      <p className="text-[10px] text-gray-400 mt-0.5">Format JPG/PNG, Max 2MB</p>
+                    </div>
+                  </div>
+
                   {/* Grid fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -579,6 +711,36 @@ export default function EmployeesPage() {
                 className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
               >
                 {isSubmitting ? "Proses..." : "Ya, Hapus!"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete confirmation Modal */}
+      {bulkDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <Trash2 className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Hapus Massal?</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Peringatan: Kamu akan menghapus **{selectedIds.length}** data karyawan sekaligus. Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="flex gap-3 w-full">
+              <button 
+                onClick={() => setBulkDeleteModalOpen(false)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handleBulkDelete}
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {isSubmitting ? "Menghapus..." : "Ya, Hapus Semua"}
               </button>
             </div>
           </div>

@@ -20,11 +20,14 @@ void main() async {
   languageNotifier.value = prefs.getString('language') ?? 'ID';
   
   await NotificationService().init();
-  runApp(const MyApp());
+  
+  String? token = prefs.getString('token');
+  runApp(MyApp(initialToken: token));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String? initialToken;
+  const MyApp({super.key, this.initialToken});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +43,7 @@ class MyApp extends StatelessWidget {
               themeMode: currentMode,
               theme: _buildLightTheme(context),
               darkTheme: _buildDarkTheme(context),
-              home: LoginScreen(),
+              home: initialToken != null ? DashboardScreen() : LoginScreen(),
               routes: {
                 '/dashboard': (context) => DashboardScreen(),
                 '/notifications': (context) => NotificationScreen(),

@@ -307,7 +307,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await axiosInstance.put('/notifications/read-all');
+      await axiosInstance.post('/notifications/read-all');
       setNotifications(notifications.map(n => ({ ...n, is_read: true })));
       setInboxMessages(inboxMessages.map(m => ({ ...m, is_read: true })));
     } catch (error) {
