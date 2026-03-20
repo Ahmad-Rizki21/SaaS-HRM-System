@@ -57,6 +57,9 @@ export const translations = {
     applications: "Pengajuan",
     overtime: "Lembur",
     communication: "Komunikasi",
+    kpi_reviews: "Manajemen KPI Karyawan",
+    performance: "KPI & Review",
+    attendance_map: "Peta Kehadiran",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -121,6 +124,9 @@ export const translations = {
     applications: "Applications",
     overtime: "Overtime",
     communication: "Communication",
+    kpi_reviews: "Employee KPI Reviews",
+    performance: "KPI & Review",
+    attendance_map: "Attendance Map",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

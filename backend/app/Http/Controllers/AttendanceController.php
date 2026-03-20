@@ -11,6 +11,8 @@ use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Traits\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Illuminate\Support\Str;
 
 class AttendanceController extends Controller
@@ -182,6 +184,25 @@ class AttendanceController extends Controller
             
         $history = $query->orderBy('id', 'desc')->paginate(10);
         return $this->successResponse($history, 'Riwayat absensi berhasil diambil.');
+    }
+
+    public function heatmap(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        // Security check: Only Admin, HR, or Owner can see the map
+        $userRoleName = $user->role ? strtolower($user->role->name) : '';
+        if (str_contains($userRoleName, 'karyawan') && !str_contains($userRoleName, 'admin') && !str_contains($userRoleName, 'hr')) {
+             return $this->errorResponse('Akses ditolak. Fitur ini hanya untuk Admin/HR.', 403);
+        }
+
+        $attendances = Attendance::with('user')
+            ->where('company_id', $user->company_id)
+            ->whereDate('check_in', Carbon::today())
+            ->get();
+
+        return $this->successResponse($attendances, 'Data heatmap absensi hari ini berhasil diambil.');
     }
 
     public function export(Request $request)

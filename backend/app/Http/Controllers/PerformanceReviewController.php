@@ -1,0 +1,117 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\PerformanceReview;
+use App\Models\User;
+use Illuminate\Http\Request;
+
+class PerformanceReviewController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = PerformanceReview::with(['user', 'reviewer'])
+            ->where('company_id', $request->user()->company_id);
+
+        if ($request->user_id) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->period) {
+            $query->where('period', $request->period);
+        }
+
+        // Karyawan only see their own PUBLISHED reviews
+        $userRoleName = $request->user()->role ? strtolower($request->user()->role->name) : '';
+        if (str_contains($userRoleName, 'karyawan') && !str_contains($userRoleName, 'admin') && !str_contains($userRoleName, 'hr')) {
+            $query->where('user_id', $request->user()->id)
+                  ->where('status', 'published');
+        }
+
+        $reviews = $query->orderBy('period', 'desc')->paginate(10);
+        return $this->successResponse($reviews, 'Data review performa berhasil diambil.');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'period' => 'required|string',
+            'score_discipline' => 'required|integer|min:0|max:100',
+            'score_technical' => 'required|integer|min:0|max:100',
+            'score_cooperation' => 'required|integer|min:0|max:100',
+            'score_attitude' => 'required|integer|min:0|max:100',
+            'status' => 'sometimes|string|in:draft,published',
+        ]);
+
+        $score_total = ($request->score_discipline + $request->score_technical + $request->score_cooperation + $request->score_attitude) / 4;
+
+        $review = PerformanceReview::create([
+            'company_id' => $request->user()->company_id,
+            'user_id' => $request->user_id,
+            'reviewer_id' => $request->user()->id,
+            'period' => $request->period,
+            'score_discipline' => $request->score_discipline,
+            'score_technical' => $request->score_technical,
+            'score_cooperation' => $request->score_cooperation,
+            'score_attitude' => $request->score_attitude,
+            'score_total' => $score_total,
+            'achievements' => $request->achievements,
+            'improvements' => $request->improvements,
+            'comments' => $request->comments,
+            'status' => $request->status ?? 'draft',
+        ]);
+
+        $this->logActivity('CREATE_PERFORMANCE_REVIEW', "Membuat review performa untuk karyawan ID: {$request->user_id}", $review);
+
+        return $this->successResponse($review, 'Review performa berhasil dibuat.', 201);
+    }
+
+    public function show($id, Request $request)
+    {
+        $review = PerformanceReview::with(['user', 'reviewer'])
+            ->where('company_id', $request->user()->company_id)
+            ->findOrFail($id);
+            
+        return $this->successResponse($review, 'Detail review performa.');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $review = PerformanceReview::where('company_id', $request->user()->company_id)->findOrFail($id);
+
+        $request->validate([
+            'score_discipline' => 'sometimes|integer|min:0|max:100',
+            'score_technical' => 'sometimes|integer|min:0|max:100',
+            'score_cooperation' => 'sometimes|integer|min:0|max:100',
+            'score_attitude' => 'sometimes|integer|min:0|max:100',
+            'status' => 'sometimes|string|in:draft,published',
+        ]);
+
+        $data = $request->all();
+        
+        if ($request->hasAny(['score_discipline', 'score_technical', 'score_cooperation', 'score_attitude'])) {
+             $sd = $request->score_discipline ?? $review->score_discipline;
+             $st = $request->score_technical ?? $review->score_technical;
+             $sc = $request->score_cooperation ?? $review->score_cooperation;
+             $sa = $request->score_attitude ?? $review->score_attitude;
+             $data['score_total'] = ($sd + $st + $sc + $sa) / 4;
+        }
+
+        $review->update($data);
+        
+        $this->logActivity('UPDATE_PERFORMANCE_REVIEW', "Memperbarui review performa ID: {$id}", $review);
+
+        return $this->successResponse($review, 'Review performa berhasil diperbarui.');
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $review = PerformanceReview::where('company_id', $request->user()->company_id)->findOrFail($id);
+        $review->delete();
+
+        $this->logActivity('DELETE_PERFORMANCE_REVIEW', "Menghapus review performa ID: {$id}");
+
+        return $this->successResponse(null, 'Review performa berhasil dihapus.');
+    }
+}

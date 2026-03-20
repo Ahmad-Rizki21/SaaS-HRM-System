@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 
 class ApiService {
   static const String baseUrl = 'http://192.168.1.9:8000/api';
@@ -460,6 +461,32 @@ class ApiService {
       }
     } catch (e) {
       return {'success': false, 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  // ============ KPI REVIEWS ============
+
+  static Future<List<dynamic>?> getKpis() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/kpi-reviews'), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data']['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<void> launchPdf(String type, int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    final url = Uri.parse('$baseUrl/export/$type/$id?token=$token');
+    
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
     }
   }
 }

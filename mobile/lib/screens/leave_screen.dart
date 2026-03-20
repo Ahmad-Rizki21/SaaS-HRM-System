@@ -257,10 +257,22 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                                child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                                    child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ),
+                                  if (status != 'rejected')
+                                    IconButton(
+                                      constraints: BoxConstraints(),
+                                      padding: EdgeInsets.only(top: 8),
+                                      icon: Icon(Icons.picture_as_pdf, color: primaryColor, size: 20), 
+                                      onPressed: () => ApiService.launchPdf('leave', leave['id']),
+                                    ),
+                                ],
                               ),
                             ],
                           ),

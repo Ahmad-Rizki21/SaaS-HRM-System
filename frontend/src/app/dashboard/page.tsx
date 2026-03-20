@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardSkeleton } from "@/components/Skeleton";
 import { useRouter } from "next/navigation";
+import AttendanceMap from "@/components/AttendanceMap";
 
 interface DashboardData {
   summary: {
@@ -361,7 +362,10 @@ export default function DashboardPage() {
 
         {/* 3. Donut Chart (Col 4) */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col shadow-sm">
-           <h3 className="font-bold text-gray-900 mb-6">Employee Distribution</h3>
+           <h3 className="font-bold text-gray-900 mb-6 text-sm flex items-center gap-2">
+             <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+             Employee Distribution
+           </h3>
            <div className="h-[200px] w-full relative mb-6">
              <ResponsiveContainer width="100%" height="100%">
                <PieChart>
@@ -394,6 +398,27 @@ export default function DashboardPage() {
            </div>
         </div>
 
+      </div>
+
+      {/* REAL-TIME ACTIVITY SECTION */}
+      <div className="grid grid-cols-1 mb-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm overflow-hidden">
+           <div className="flex items-center justify-between mb-6">
+             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+               <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+               Real-time Live Location
+             </h3>
+             <button 
+              onClick={() => router.push('/dashboard/attendance/map')} 
+              className="text-[10px] font-black text-[#8B0000] hover:underline uppercase tracking-widest"
+             >
+               View Full Map
+             </button>
+           </div>
+           <div className="h-[400px] w-full rounded-xl overflow-hidden border border-gray-50">
+              <AttendanceMap />
+           </div>
+        </div>
       </div>
 
       {/* BOTTOM ROW GRID */}

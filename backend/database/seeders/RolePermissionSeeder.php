@@ -35,6 +35,13 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Kelola Hari Libur', 'slug' => 'manage-holidays', 'group' => 'Operasional'],
             ['name' => 'Kelola Pengumuman', 'slug' => 'manage-announcements', 'group' => 'Operasional'],
 
+            // KPI & Performa
+            ['name' => 'Lihat KPI', 'slug' => 'view-kpis', 'group' => 'Performa'],
+            ['name' => 'Kelola KPI', 'slug' => 'manage-kpis', 'group' => 'Performa'],
+            
+            // Peta Kehadiran
+            ['name' => 'Lihat Map Absensi', 'slug' => 'view-attendance-map', 'group' => 'Kehadiran'],
+
             // Pengaturan
             ['name' => 'Pengaturan Perusahaan', 'slug' => 'manage-company', 'group' => 'Pengaturan'],
             ['name' => 'Manajemen Role', 'slug' => 'manage-roles', 'group' => 'Pengaturan'],
@@ -53,9 +60,9 @@ class RolePermissionSeeder extends Seeder
         // Sync all to Super Admin
         $admin->permissions()->sync(Permission::all()->pluck('id'));
         
-        // HRD Manager: Manage Employees, Leaves, Reimbursements, and Operations
+        // HRD Manager: Manage Employees, Leaves, Reimbursements, Operations, KPI, & Map
         $hrdPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Operasional'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Operasional', 'Performa', 'Kehadiran'
         ])->pluck('id');
         $hrd->permissions()->sync($hrdPermissions);
 

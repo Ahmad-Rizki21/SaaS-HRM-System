@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import '../api/api_service.dart';
+import '../../api/api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override

@@ -21,9 +21,11 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ProfileRequestController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\PerformanceReviewController;
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
@@ -61,6 +63,7 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
     Route::get('/attendance/today', [AttendanceController::class, 'today']);
     Route::get('/attendance/history', [AttendanceController::class, 'history']);
+    Route::get('/attendance/heatmap', [AttendanceController::class, 'heatmap']);
     Route::get('/attendance/export', [AttendanceController::class, 'export']);
 
     // Leave
@@ -131,8 +134,21 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::get('/tasks', [TaskController::class, 'index']);
     Route::post('/tasks/{id}/status', [TaskController::class, 'updateStatus']);
 
+    // KPI Reviews (Previously Performance)
+    Route::get('/kpi-reviews', [PerformanceReviewController::class, 'index']);
+    Route::post('/kpi-reviews', [PerformanceReviewController::class, 'store']);
+    Route::get('/kpi-reviews/{id}', [PerformanceReviewController::class, 'show']);
+    Route::put('/kpi-reviews/{id}', [PerformanceReviewController::class, 'update']);
+    Route::delete('/kpi-reviews/{id}', [PerformanceReviewController::class, 'destroy']);
+
     // Profile Settings
     Route::post('/profile/update', [ProfileController::class, 'update']);
     Route::post('/profile/upload-photo', [ProfileController::class, 'uploadPhoto']);
     Route::post('/user/change-password', [AuthController::class, 'changePassword']);
 });
+
+// Exports (Authenticated via query token or header inside controller)
+Route::get('/export/kpi/{id}', [ExportController::class, 'kpiPdf']);
+Route::get('/export/leave/{id}', [ExportController::class, 'leavePdf']);
+Route::get('/export/reimbursement/{id}', [ExportController::class, 'reimbursementPdf']);
+Route::get('/export/overtime/{id}', [ExportController::class, 'overtimePdf']);

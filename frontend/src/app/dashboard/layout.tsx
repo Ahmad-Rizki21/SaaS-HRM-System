@@ -64,6 +64,7 @@ const sidebarLinks: SidebarLink[] = [
     submenus: [
       { name: "employees", href: "/dashboard/employees", permission: 'view-employees' },
       { name: "company_profile", href: "/dashboard/company", permission: 'manage-company' },
+      { name: "kpi_reviews", href: "/dashboard/performance", permission: 'view-kpis' },
     ]
   },
   { 
@@ -72,6 +73,7 @@ const sidebarLinks: SidebarLink[] = [
     submenus: [
       { name: "Live Attendance", href: "/dashboard/live-attendance" },
       { name: "attendance_history", href: "/dashboard/attendance" },
+      { name: "attendance_map", href: "/dashboard/attendance/map", permission: 'view-attendance-map' },
       { name: "schedules", href: "/dashboard/schedules", permission: 'manage-schedules' },
       { name: "holidays", href: "/dashboard/holidays", permission: 'manage-holidays' },
     ]

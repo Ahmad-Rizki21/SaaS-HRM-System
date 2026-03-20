@@ -265,10 +265,21 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                 DateFormat('dd MMM yyyy').format(DateTime.parse(claim['created_at'])),
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  if (status != 'rejected')
+                    IconButton(
+                        constraints: BoxConstraints(),
+                        padding: EdgeInsets.zero,
+                        icon: Icon(Icons.picture_as_pdf, color: primaryColor, size: 20),
+                        onPressed: () => ApiService.launchPdf('reimbursement', claim['id'])),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                    child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
             ],
           ),
