@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Download, Search, Calendar, User, Clock, Filter, Eye, XCircle, FileSpreadsheet } from "lucide-react";
+import { 
+  Download, Search, Calendar, User, Clock, Filter, Eye, 
+  XCircle, FileSpreadsheet, CheckSquare, Square 
+} from "lucide-react";
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function OvertimeReportsPage() {
   const [data, setData] = useState<any[]>([]);
@@ -12,6 +17,7 @@ export default function OvertimeReportsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -31,10 +37,10 @@ export default function OvertimeReportsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending': return <span className="dash-badge dash-badge-warning">Menunggu</span>;
-      case 'approved': return <span className="dash-badge dash-badge-success">Disetujui</span>;
-      case 'rejected': return <span className="dash-badge dash-badge-danger">Ditolak</span>;
-      default: return <span className="dash-badge dash-badge-neutral">{status}</span>;
+      case 'pending': return <span className="dash-badge dash-badge-warning italic">Menunggu</span>;
+      case 'approved': return <span className="dash-badge dash-badge-success italic">Disetujui</span>;
+      case 'rejected': return <span className="dash-badge dash-badge-danger italic">Ditolak</span>;
+      default: return <span className="dash-badge dash-badge-neutral italic">{status}</span>;
     }
   };
 
@@ -45,13 +51,31 @@ export default function OvertimeReportsPage() {
     return matchSearch && matchStatus;
   });
 
+  const selectedData = filteredData.filter(item => selectedIds.includes(item.id));
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredData.length && filteredData.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredData.map(item => item.id));
+    }
+  };
+
   const exportToExcel = () => {
-    if (filteredData.length === 0) {
+    const dataToExport = selectedIds.length > 0 ? selectedData : filteredData;
+
+    if (dataToExport.length === 0) {
       alert("Tidak ada data untuk diexport!");
       return;
     }
 
-    const exportData = filteredData.map((item, index) => ({
+    const exportData = dataToExport.map((item, index) => ({
       "No": index + 1,
       "Nama Karyawan": item.user?.name || "Karyawan",
       "Tanggal Lembur": item.date,
@@ -73,6 +97,92 @@ export default function OvertimeReportsPage() {
     XLSX.writeFile(workbook, `Laporan_Lembur_${new Date().getTime()}.xlsx`);
   };
 
+  const generatePDF = async () => {
+    const dataToPrint = selectedIds.length > 0 ? selectedData : filteredData;
+
+    if (dataToPrint.length === 0) {
+      alert("Tidak ada data untuk dicetak!");
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Header Logic
+    try {
+        const logoImg = new Image();
+        logoImg.src = '/logo.png';
+        await new Promise((resolve) => {
+            logoImg.onload = resolve;
+            logoImg.onerror = resolve;
+        });
+        if (logoImg.complete && logoImg.naturalWidth !== 0) {
+            doc.addImage(logoImg, 'PNG', 15, 10, 25, 25);
+        }
+    } catch (e) {
+        console.error("Logo fails", e);
+    }
+
+    doc.setFontSize(18);
+    doc.setTextColor(139, 0, 0); // #8B0000
+    doc.setFont("helvetica", "bold");
+    doc.text("NARWASTHU GROUP", 45, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text("LAPORAN REKAPITULASI LEMBUR KARYAWAN", 45, 26);
+    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 45, 31);
+
+    doc.setDrawColor(139, 0, 0);
+    doc.setLineWidth(0.5);
+    doc.line(15, 38, 195, 38);
+
+    doc.setFontSize(9);
+    doc.setTextColor(50);
+    doc.text(`Status Filter: ${statusFilter.toUpperCase()}`, 15, 45);
+    doc.text(`Total Baris: ${dataToPrint.length}`, 170, 45);
+
+    // Table
+    const tableData = dataToPrint.map((item, index) => [
+      index + 1,
+      item.user?.name || "Karyawan",
+      item.date,
+      `${item.start_time.substring(0,5)} - ${item.end_time.substring(0,5)}`,
+      item.reason || "-",
+      item.status?.toUpperCase()
+    ]);
+
+    autoTable(doc, {
+      startY: 50,
+      head: [['NO', 'KARYAWAN', 'TANGGAL', 'JAM LEMBUR', 'ALASAN', 'STATUS']],
+      body: tableData,
+      headStyles: { 
+        fillColor: [139, 0, 0], 
+        textColor: [255, 255, 255], 
+        fontSize: 9, 
+        halign: 'center' 
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },
+        2: { halign: 'center', cellWidth: 25 },
+        3: { halign: 'center', cellWidth: 35 },
+        5: { halign: 'center' }
+      },
+      styles: { fontSize: 8, cellPadding: 3 },
+      alternateRowStyles: { fillColor: [252, 252, 252] },
+    });
+
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Halaman ${i} dari ${pageCount} | HRM Narwasthu System`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: "center" });
+    }
+
+    doc.save(`Laporan_Lembur_${new Date().getTime()}.pdf`);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="dash-page-header">
@@ -81,11 +191,19 @@ export default function OvertimeReportsPage() {
           <p className="dash-page-desc">Data komprehensif riwayat pengajuan lembur seluruh karyawan.</p>
         </div>
         <div className="dash-page-actions">
+           <div className="bg-gray-100 px-4 py-2 rounded-xl flex items-center gap-2">
+              <span className="text-[10px] font-black text-gray-400 uppercase">
+                {selectedIds.length > 0 ? `${selectedIds.length} Terpilih` : 'Total Data:'}
+              </span>
+              <span className="text-sm font-bold text-[#8B0000]">
+                {selectedIds.length > 0 ? selectedIds.length : filteredData.length} Baris
+              </span>
+           </div>
           <button className="dash-btn dash-btn-primary bg-[#107c41] hover:bg-[#0c6130] text-white!" onClick={exportToExcel}>
             <FileSpreadsheet size={15} />
             Export Excel
           </button>
-          <button className="dash-btn" onClick={() => window.print()}>
+          <button className="dash-btn" onClick={generatePDF}>
             <Download size={15} />
             Cetak PDF
           </button>
@@ -108,7 +226,7 @@ export default function OvertimeReportsPage() {
                 title="Status Filter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-12 bg-gray-50 border-none rounded-xl text-sm px-4 focus:ring-2 focus:ring-[#8B0000]/20 font-bold text-gray-600"
+                className="h-12 bg-gray-50 border-none rounded-xl text-sm px-4 focus:ring-2 focus:ring-[#8B0000]/20 font-bold text-gray-600 appearance-none min-w-[140px]"
             >
                 <option value="all">Semua Status</option>
                 <option value="pending">Menunggu</option>
@@ -123,6 +241,15 @@ export default function OvertimeReportsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="px-4 py-4 w-10">
+                   <button 
+                      title="Select All"
+                      onClick={toggleSelectAll}
+                      className="text-gray-400 hover:text-[#8B0000] transition-colors"
+                   >
+                     {selectedIds.length === filteredData.length && filteredData.length > 0 ? <CheckSquare size={18} /> : <Square size={18} />}
+                   </button>
+                </th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Karyawan</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tanggal</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Waktu</th>
@@ -133,13 +260,22 @@ export default function OvertimeReportsPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                  <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-bold italic">Memuat data laporan...</td></tr>
+                  <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-400 font-bold italic">Memuat data laporan...</td></tr>
               ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-20 text-center text-gray-400 font-bold">Tidak ada riwayat lembur yang ditemukan.</td>
+                    <td colSpan={7} className="px-6 py-20 text-center text-gray-400 font-bold">Tidak ada riwayat lembur yang ditemukan.</td>
                   </tr>
               ) : filteredData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
+                <tr key={item.id} className={`hover:bg-gray-50/50 transition-colors group ${selectedIds.includes(item.id) ? 'bg-red-50/30' : ''}`}>
+                  <td className="px-4 py-5">
+                    <button 
+                      title="Select Row"
+                      onClick={() => toggleSelect(item.id)}
+                      className={`${selectedIds.includes(item.id) ? 'text-[#8B0000]' : 'text-gray-300'} hover:text-[#8B0000] transition-colors`}
+                    >
+                      {selectedIds.includes(item.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                    </button>
+                  </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-[#8B0000]/5 text-[#8B0000] flex items-center justify-center text-xs font-black shadow-sm uppercase italic">
@@ -224,7 +360,7 @@ export default function OvertimeReportsPage() {
               </div>
             </div>
 
-            <div className="p-6 bg-gray-50/50 border-t border-gray-100">
+            <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex gap-3">
                <button 
                   onClick={() => setIsDetailModalOpen(false)}
                   className="w-full py-3.5 text-sm font-bold text-white bg-gray-900 rounded-xl hover:bg-black transition shadow-lg active:scale-95"

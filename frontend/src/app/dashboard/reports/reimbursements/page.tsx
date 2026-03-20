@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Download, Search, Calendar, User, ReceiptCent, Filter, Eye, XCircle, ExternalLink, FileSpreadsheet } from "lucide-react";
+import { 
+  Download, Search, Calendar, User, ReceiptCent, Filter, Eye, 
+  XCircle, ExternalLink, FileSpreadsheet, CheckSquare, Square
+} from "lucide-react";
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function ReimbursementReportsPage() {
   const [data, setData] = useState<any[]>([]);
@@ -12,6 +17,7 @@ export default function ReimbursementReportsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const getStorageUrl = (path: string) => {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:8000";
@@ -50,15 +56,33 @@ export default function ReimbursementReportsPage() {
     return matchSearch && matchStatus;
   });
 
+  const selectedData = filteredData.filter(item => selectedIds.includes(item.id));
+
   const totalAmount = filteredData.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
 
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredData.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredData.map(item => item.id));
+    }
+  };
+
   const exportToExcel = () => {
-    if (filteredData.length === 0) {
+    const dataToExport = selectedIds.length > 0 ? selectedData : filteredData;
+    
+    if (dataToExport.length === 0) {
       alert("Tidak ada data untuk diexport!");
       return;
     }
 
-    const exportData = filteredData.map((item, index) => ({
+    const exportData = dataToExport.map((item, index) => ({
       "No": index + 1,
       "Nama Karyawan": item.user?.name || "Karyawan",
       "Tanggal Pengajuan": new Date(item.created_at).toLocaleDateString('id-ID'),
@@ -80,6 +104,100 @@ export default function ReimbursementReportsPage() {
     XLSX.writeFile(workbook, `Laporan_Reimbursement_${new Date().getTime()}.xlsx`);
   };
 
+  const generatePDF = async () => {
+    const dataToPrint = selectedIds.length > 0 ? selectedData : filteredData;
+
+    if (dataToPrint.length === 0) {
+      alert("Tidak ada data untuk dicetak!");
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Add Logo
+    try {
+        const logoImg = new Image();
+        logoImg.src = '/logo.png';
+        await new Promise((resolve) => {
+            logoImg.onload = resolve;
+            logoImg.onerror = resolve; // Continue anyway if logo fails
+        });
+        if (logoImg.complete && logoImg.naturalWidth !== 0) {
+            doc.addImage(logoImg, 'PNG', 15, 10, 25, 25);
+        }
+    } catch (e) {
+        console.error("Logo failed to load", e);
+    }
+
+    // Header Text
+    doc.setFontSize(18);
+    doc.setTextColor(139, 0, 0); // #8B0000
+    doc.setFont("helvetica", "bold");
+    doc.text("NARWASTHU GROUP", 45, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text("LAPORAN REKAPITULASI REIMBURSEMENT KARYAWAN", 45, 26);
+    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 45, 31);
+
+    // Decorative Line
+    doc.setDrawColor(139, 0, 0);
+    doc.setLineWidth(0.5);
+    doc.line(15, 38, 195, 38);
+
+    // Summary Box
+    doc.setFillColor(248, 250, 252); // bg-slate-50
+    doc.roundedRect(15, 42, 180, 15, 2, 2, "F");
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    const total = dataToPrint.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+    doc.text(`TOTAL REKAPITULASI: Rp ${total.toLocaleString('id-ID')}`, 20, 51.5);
+    doc.setFontSize(9);
+    doc.text(`Jumlah Baris: ${dataToPrint.length}`, 160, 51.5);
+
+    // Table
+    const tableData = dataToPrint.map((item, index) => [
+      index + 1,
+      item.user?.name || "Karyawan",
+      new Date(item.created_at).toLocaleDateString('id-ID'),
+      item.title,
+      `Rp ${parseInt(item.amount).toLocaleString('id-ID')}`,
+      item.status?.toUpperCase()
+    ]);
+
+    autoTable(doc, {
+      startY: 62,
+      head: [['NO', 'KARYAWAN', 'TANGGAL', 'JUDUL KLAIM', 'NOMINAL', 'STATUS']],
+      body: tableData,
+      headStyles: { 
+        fillColor: [139, 0, 0], 
+        textColor: [255, 255, 255], 
+        fontSize: 9, 
+        halign: 'center' 
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },
+        4: { halign: 'right', fontStyle: 'bold' },
+        5: { halign: 'center' }
+      },
+      styles: { fontSize: 8, cellPadding: 3 },
+      alternateRowStyles: { fillColor: [252, 252, 252] },
+    });
+
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Halaman ${i} dari ${pageCount} | HRM Narwasthu System`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: "center" });
+    }
+
+    doc.save(`Laporan_Reimbursement_${new Date().getTime()}.pdf`);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="dash-page-header">
@@ -89,14 +207,18 @@ export default function ReimbursementReportsPage() {
         </div>
         <div className="dash-page-actions">
            <div className="bg-gray-100 px-4 py-2 rounded-xl flex items-center gap-2">
-              <span className="text-[10px] font-black text-gray-400 uppercase">Total Rekap:</span>
-              <span className="text-sm font-bold text-[#8B0000]">Rp {totalAmount.toLocaleString()}</span>
+              <span className="text-[10px] font-black text-gray-400 uppercase">
+                {selectedIds.length > 0 ? `${selectedIds.length} Terpilih:` : 'Total Rekap:'}
+              </span>
+              <span className="text-sm font-bold text-[#8B0000]">
+                Rp {(selectedIds.length > 0 ? selectedData.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0) : totalAmount).toLocaleString()}
+              </span>
            </div>
           <button className="dash-btn dash-btn-primary bg-[#107c41] hover:bg-[#0c6130] text-white!" onClick={exportToExcel}>
             <FileSpreadsheet size={15} />
             Export Excel
           </button>
-          <button className="dash-btn" onClick={() => window.print()}>
+          <button className="dash-btn" onClick={generatePDF}>
             <Download size={15} />
             Cetak PDF
           </button>
@@ -134,6 +256,15 @@ export default function ReimbursementReportsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="px-4 py-4 w-10">
+                   <button 
+                      title="Select All"
+                      onClick={toggleSelectAll}
+                      className="text-gray-400 hover:text-[#8B0000] transition-colors"
+                   >
+                     {selectedIds.length === filteredData.length && filteredData.length > 0 ? <CheckSquare size={18} /> : <Square size={18} />}
+                   </button>
+                </th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Karyawan</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tgl Pengajuan</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Keterangan</th>
@@ -144,13 +275,22 @@ export default function ReimbursementReportsPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                  <tr><td colSpan={6} className="px-6 py-4">{Array.from({length: 5}).map((_, i) => <div key={i} className="flex gap-4 py-3"><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 w-16" /><div className="animate-pulse bg-gray-200 rounded h-4 w-10" /></div>)}</td></tr>
+                  <tr><td colSpan={7} className="px-6 py-4">{Array.from({length: 5}).map((_, i) => <div key={i} className="flex gap-4 py-3"><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 flex-1" /><div className="animate-pulse bg-gray-200 rounded h-4 w-16" /><div className="animate-pulse bg-gray-200 rounded h-4 w-10" /></div>)}</td></tr>
               ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-20 text-center text-gray-400 font-bold">Tidak ada riwayat klaim yang ditemukan.</td>
+                    <td colSpan={7} className="px-6 py-20 text-center text-gray-400 font-bold">Tidak ada riwayat klaim yang ditemukan.</td>
                   </tr>
               ) : filteredData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
+                <tr key={item.id} className={`hover:bg-gray-50/50 transition-colors group ${selectedIds.includes(item.id) ? 'bg-red-50/30' : ''}`}>
+                  <td className="px-4 py-5">
+                    <button 
+                      title="Select Row"
+                      onClick={() => toggleSelect(item.id)}
+                      className={`${selectedIds.includes(item.id) ? 'text-[#8B0000]' : 'text-gray-300'} hover:text-[#8B0000] transition-colors`}
+                    >
+                      {selectedIds.includes(item.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                    </button>
+                  </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-[#8B0000]/10 text-[#8B0000] flex items-center justify-center text-xs font-black shadow-sm italic">

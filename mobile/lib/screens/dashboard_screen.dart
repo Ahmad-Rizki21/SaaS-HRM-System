@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import '../api/api_service.dart';
 import 'profile_screen.dart';
 import 'riwayat_screen.dart';
@@ -33,6 +34,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<String> _pinnedMenuIds = ['absen', 'cuti', 'klaim', 'lembur'];
   bool _isMenuExpanded = false;
   Map<String, dynamic>? _attendanceData;
+  List<dynamic> _announcements = [];
+  List<dynamic> _holidays = [];
+  bool _hasUnreadNotification = false;
+  bool _isLoadingContent = true;
 
   final Color primaryColor = Color(0xFF800000);
   final Color secondaryColor = Color(0xFFB00000);
@@ -40,10 +45,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
-    _fetchAttendance();
-    _loadPinnedMenus();
-    NotificationService().startPolling(); // Mulai cek notifikasi
+    _refreshData();
+    NotificationService().startPolling(); 
+  }
+
+  Future<void> _refreshData() async {
+    setState(() => _isLoadingContent = true);
+    await Future.wait([
+      _fetchProfile(),
+      _fetchAttendance(),
+      _loadPinnedMenus(),
+      _fetchDashboardContent(),
+      _fetchNotifications(),
+    ]);
+    if (mounted) setState(() => _isLoadingContent = false);
+  }
+
+  Future<void> _fetchNotifications() async {
+    try {
+      final notifs = await ApiService.getNotifications();
+      if (notifs != null && mounted) {
+        setState(() {
+          _hasUnreadNotification = notifs.any((n) => n['is_read'] == false || n['is_read'] == 0);
+        });
+      }
+    } catch (e) {
+      print("Error fetching notifications: $e");
+    }
+  }
+
+  Future<void> _fetchDashboardContent() async {
+    try {
+      final ann = await ApiService.getAnnouncements();
+      final hol = await ApiService.getHolidays();
+      if (mounted) {
+        setState(() {
+          _announcements = ann ?? [];
+          _holidays = hol ?? [];
+        });
+      }
+    } catch (e) {
+      print("Error fetching dash content: $e");
+    }
   }
 
   Future<void> _loadPinnedMenus() async {
@@ -79,17 +122,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
-    NotificationService().stopPolling(); // Stop saat keluar
+    NotificationService().stopPolling(); 
     super.dispose();
   }
 
-  void _fetchProfile() async {
+  Future<void> _fetchProfile() async {
     final userData = await ApiService.getProfile();
     if (userData != null && mounted) {
       String? rawUrl = userData['profile_photo_url'];
       if (rawUrl != null) {
         if (!rawUrl.startsWith('http')) {
-          rawUrl = 'http://192.168.1.9:8000/storage/$rawUrl';
+          rawUrl = '${ApiService.baseUrl.replaceFirst('/api', '')}/storage/$rawUrl';
         } else {
           rawUrl = rawUrl.replaceAll('localhost', '192.168.1.9').replaceAll('127.0.0.1', '192.168.1.9');
         }
@@ -110,10 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       MaterialPageRoute(builder: (c) => AttendanceScreen(isCheckIn: _attendanceData?['check_in'] == null))
     );
     if (res != null) {
-      setState(() {
-        _attendanceData = res;
-      });
-      _fetchAttendance(); // Sync final state
+      _refreshData(); // Refresh everything after check-in
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Absensi Berhasil Tercatat!"), backgroundColor: Colors.green)
       );
@@ -121,7 +161,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _onItemTapped(int index) {
-
     setState(() => _selectedIndex = index);
   }
 
@@ -167,12 +206,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return;
           }
           
-          Navigator.of(context).pop(); // Actually pop/exit
+          Navigator.of(context).pop(); 
         },
         child: Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
-          body: SafeArea(
-            child: _getBody(),
+          body: RefreshIndicator(
+            onRefresh: _refreshData,
+            color: primaryColor,
+            child: SafeArea(
+              child: Stack(
+                children: [
+                  _getBody(),
+                  if (_isLoadingContent)
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: LinearProgressIndicator(
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF800000)),
+                        minHeight: 2,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         floatingActionButton: (_selectedIndex == 0 && _attendanceData?['check_out'] == null)
             ? FloatingActionButton.extended(
@@ -183,7 +241,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _attendanceData?['check_in'] == null ? "ABSEN SEKARANG" : "ABSEN PULANG",
                   style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1),
                 ),
-                icon: const Icon(Icons.camera_front, color: Colors.white),
+                icon: const Icon(Icons.face_retouching_natural, color: Colors.white),
               )
             : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -273,7 +331,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _showAturModal() {
     final allItems = _getMenuItems();
-    // Gunakan list lokal agar perubahan hanya tersimpan saat klik "Simpan"
     List<String> tempPinned = List.from(_pinnedMenuIds);
 
     showModalBottomSheet(
@@ -333,16 +390,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pilih minimal 1 menu")));
                           return;
                         }
-                        
-                        // Update Main State
-                        setState(() {
-                          _pinnedMenuIds = List.from(tempPinned);
-                        });
-
-                        // Persist to SharedPreferences
+                        setState(() { _pinnedMenuIds = List.from(tempPinned); });
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.setStringList('pinned_menus', _pinnedMenuIds);
-                        
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
@@ -362,27 +412,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ============================================
-  // BODY SWITCHER
-  // ============================================
   Widget _getBody() {
     switch (_selectedIndex) {
-      case 0:
-        return _buildHomeContent();
-      case 1:
-        return RiwayatScreen();
-      case 2:
-        return ProfileScreen();
-      case 3:
-        return SettingsTab(onLogout: _handleLogout);
-      default:
-        return _buildHomeContent();
+      case 0: return _buildHomeContent();
+      case 1: return RiwayatScreen();
+      case 2: return ProfileScreen();
+      case 3: return SettingsTab(onLogout: _handleLogout);
+      default: return _buildHomeContent();
     }
   }
 
-  // ============================================
-  // TAB 0: HOME CONTENT
-  // ============================================
   Widget _buildHomeContent() {
     final allItems = _getMenuItems();
     final pinnedItems = _pinnedMenuIds.map((id) => allItems[id]!).toList();
@@ -392,6 +431,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .toList();
     
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -403,16 +443,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: primaryColor,
-                      backgroundImage: _profilePhotoUrl != null ? NetworkImage(_profilePhotoUrl!) : null,
-                      child: _profilePhotoUrl == null
-                          ? Text(
-                              _userName.isNotEmpty ? _userName[0].toUpperCase() : "U",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                            )
-                          : null,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: primaryColor, width: 2),
+                      ),
+                      child: CircleAvatar(
+                        radius: 25,
+                        backgroundColor: primaryColor.withOpacity(0.1),
+                        backgroundImage: _profilePhotoUrl != null ? NetworkImage(_profilePhotoUrl!) : null,
+                        child: _profilePhotoUrl == null
+                            ? Text(
+                                _userName.isNotEmpty ? _userName[0].toUpperCase() : "U",
+                                style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                              )
+                            : null,
+                      ),
                     ),
                     SizedBox(width: 15),
                     Column(
@@ -421,16 +467,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Text(_getGreeting(), style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600])),
                         Text(_userName, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
                         if (_userRole.isNotEmpty)
-                          Text(_userRole, style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[500])),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(5)),
+                            child: Text(_userRole, style: GoogleFonts.outfit(fontSize: 10, color: primaryColor, fontWeight: FontWeight.bold)),
+                          ),
                       ],
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: Icon(Icons.notifications_none_rounded, color: primaryColor, size: 28),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/notifications');
-                  },
+                Stack(
+                  alignment: Alignment.topRight,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.notifications_none_rounded, color: primaryColor, size: 30),
+                      onPressed: () async {
+                        await Navigator.pushNamed(context, '/notifications');
+                        _refreshData(); // Refresh dot when coming back
+                      },
+                    ),
+                    if (_hasUnreadNotification)
+                      Positioned(
+                        right: 12,
+                        top: 12,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -455,17 +521,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Absensi Hari Ini", style: TextStyle(color: Colors.white70, fontSize: 13)),
+                          Text("Absensi Hari Ini", style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
                           SizedBox(height: 5),
                           Text(
                             _attendanceData?['check_in'] != null 
                               ? (_attendanceData?['check_out'] != null ? "Selesai Kerja" : "Sudah Check-In")
-                              : "Klik Untuk Absen",
-                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                              : "Belum Absen",
+                            style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
-                      Icon(Icons.face_retouching_natural, color: Colors.white, size: 40),
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                        child: Icon(Icons.face_retouching_natural, color: Colors.white, size: 30),
+                      ),
                     ],
                   ),
                   SizedBox(height: 25),
@@ -482,7 +552,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
 
-          // AKSES CEPAT (Quick Access Row)
+          // ANNOUNCEMENTS CAROUSEL (NEW)
+          if (_announcements.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 25, right: 25, top: 30, bottom: 15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Pengumuman Terbaru", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                ],
+              ),
+            ),
+            CarouselSlider(
+              options: CarouselOptions(
+                height: 140.0,
+                autoPlay: true,
+                enlargeCenterPage: true,
+                autoPlayInterval: Duration(seconds: 5),
+                viewportFraction: 0.9,
+              ),
+              items: _announcements.map((ann) {
+                return Builder(
+                  builder: (BuildContext context) {
+                    return Container(
+                      width: MediaQuery.of(context).size.width,
+                      margin: EdgeInsets.symmetric(horizontal: 5.0),
+                      padding: EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(6),
+                                decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
+                                child: Icon(Icons.campaign, color: Colors.blue, size: 20),
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(child: Text(ann['title'] ?? "Pengumuman", style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            ],
+                          ),
+                          SizedBox(height: 10),
+                          Expanded(child: Text(ann['content'] ?? "", style: TextStyle(fontSize: 12, color: Colors.grey[700]), maxLines: 3, overflow: TextOverflow.ellipsis)),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: Text(
+                              DateFormat('dd MMM yyyy').format(DateTime.parse(ann['created_at'])),
+                              style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+
+          // AKSES CEPAT
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 25),
             child: Column(
@@ -508,7 +643,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   childAspectRatio: 0.7,
                   children: [
                     ...pinnedItems.map((item) => _buildQuickAction(item['icon'], item['label'], item['color'], item['onTap'])),
-                    // Lainnya Button
                     GestureDetector(
                       onTap: () => setState(() => _isMenuExpanded = !_isMenuExpanded),
                       child: Column(
@@ -533,10 +667,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
 
-          // MENU LAINNYA (Expanded)
           if (_isMenuExpanded)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+              padding: const EdgeInsets.only(left: 25, right: 25, bottom: 25),
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -551,53 +684,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   mainAxisSpacing: 20,
                   crossAxisSpacing: 10,
                   childAspectRatio: 0.8,
-                  children: otherItems.map((item) => _buildNavIcon(item['icon'], item['label'], item['color'], onTap: item['onTap'])).toList() 
-                  ..add(_buildNavIcon(Icons.logout, "Keluar", Colors.grey[700]!, onTap: _handleLogout)),
+                  children: [
+                    ...otherItems.map((item) => _buildNavIcon(
+                      item['icon'] as IconData, 
+                      item['label'] as String, 
+                      item['color'] as Color, 
+                      onTap: item['onTap'] as VoidCallback
+                    )),
+                    _buildNavIcon(Icons.logout, "Keluar", Colors.grey, onTap: _handleLogout),
+                  ],
                 ),
               ),
             ),
 
-          // BANNER INFO
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25.0),
-            child: Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.grey.withOpacity(0.1)),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
-              ),
+          // HOLIDAYS SECTION (NEW)
+          if (_holidays.isNotEmpty) ...[
+             Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.info_outline, color: primaryColor),
-                  SizedBox(width: 15),
-                  Expanded(
-                    child: Text("Informasi: Gaji bulan Maret sudah bisa dilihat di menu Slip Gaji.",
-                        style: TextStyle(color: Colors.black87, fontSize: 12)),
-                  ),
+                  Text("Hari Libur Terdekat", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: 15),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 25),
+                scrollDirection: Axis.horizontal,
+                itemCount: _holidays.length,
+                itemBuilder: (context, index) {
+                  final hol = _holidays[index];
+                  return Container(
+                    width: 250,
+                    margin: EdgeInsets.only(right: 15),
+                    padding: EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: Colors.orange.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                          child: Icon(Icons.event_note, color: Colors.orange[800], size: 24),
+                        ),
+                        SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(hol['name'] ?? "Libur", style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold), maxLines: 1),
+                              Text(
+                                DateFormat('dd MMM yyyy').format(DateTime.parse(hol['date'])),
+                                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+
           SizedBox(height: 120),
         ],
       ),
     );
   }
 
-
-
-  // ============================================
-  // WIDGETS PENDUKUNG
-  // ============================================
   Widget _buildAttendanceDetail(String label, String time) {
     return Column(
       children: [
         Text(label, style: TextStyle(color: Colors.white70, fontSize: 11)),
         SizedBox(height: 3),
-        Text(time, style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(time, style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -627,11 +796,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildNavIcon(IconData icon, String label, Color color, {Function? onTap}) {
+  Widget _buildNavIcon(IconData icon, String label, Color color, {VoidCallback? onTap}) {
     return GestureDetector(
-      onTap: () {
-        if (onTap != null) onTap();
-      },
+      onTap: onTap,
       child: Column(
         children: [
           Container(

@@ -253,6 +253,20 @@ class ApiService {
     }
   }
 
+  static Future<List<dynamic>?> getAnnouncements() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/announcements'), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   static Future<bool> clearNotifications() async {
     final res = await clearNotificationsWithStatus();
     return res['success'];
