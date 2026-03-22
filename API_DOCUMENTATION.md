@@ -47,7 +47,7 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/overtimes/{id}/approve` | Persetujuan lembur |
 | `POST` | `/api/overtimes/{id}/reject` | Penolakan lembur |
 | `GET` | `/api/reimbursements` | List klaim biaya |
-| `POST` | `/api/reimbursements` | Ajukan klaim baru |
+| `POST` | `/api/reimbursements` | Ajukan klaim baru (Support multiple `attachments[]` as files) |
 | `POST` | `/api/reimbursements/{id}/approve` | Persetujuan klaim biaya |
 
 ## 💰 Gaji & Tugas

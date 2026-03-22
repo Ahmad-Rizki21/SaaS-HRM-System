@@ -696,12 +696,17 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
+							{ "key": "Authorization", "value": "Bearer {{token}}" },
+							{ "key": "Accept", "value": "application/json" }
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"title\": \"Bensin Perjalanan Dinas\",\n    \"amount\": 50000,\n    \"description\": \"Tes klaim\"\n}",
-							"options": { "raw": { "language": "json" } }
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "title", "value": "Bensin Perjalanan Dinas", "type": "text" },
+								{ "key": "amount", "value": "50000", "type": "text" },
+								{ "key": "description", "value": "Klaim bensin kunjungan klien", "type": "text" },
+								{ "key": "attachments[]", "type": "file", "src": [] }
+							]
 						},
 						"url": "{{base_url}}/api/reimbursements"
 					}

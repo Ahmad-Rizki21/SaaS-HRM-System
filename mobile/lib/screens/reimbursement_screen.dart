@@ -37,8 +37,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     final titleController = TextEditingController();
     final amountController = TextEditingController();
     final descController = TextEditingController();
-    XFile? pickedFile;
-
+    List<XFile> pickedFiles = [];
     bool isSubmitting = false;
 
     showModalBottomSheet(
@@ -99,11 +98,20 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
 
                     if (source != null) {
                       final picker = ImagePicker();
-                      final image = await picker.pickImage(source: source, imageQuality: 50);
-                      if (image != null) {
-                      setModalState(() {
-                        pickedFile = image;
-                      });
+                      if (source == ImageSource.gallery) {
+                        final images = await picker.pickMultiImage(imageQuality: 50);
+                        if (images.isNotEmpty) {
+                          setModalState(() {
+                            pickedFiles = images;
+                          });
+                        }
+                      } else {
+                        final image = await picker.pickImage(source: source, imageQuality: 50);
+                        if (image != null) {
+                          setModalState(() {
+                            pickedFiles = [image];
+                          });
+                        }
                       }
                     }
                   },
@@ -115,8 +123,19 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                       borderRadius: BorderRadius.circular(15),
                       border: Border.all(color: Colors.grey[300]!, style: BorderStyle.none),
                     ),
-                    child: pickedFile != null 
-                        ? ClipRRect(borderRadius: BorderRadius.circular(15), child: Image.file(File(pickedFile!.path), fit: BoxFit.cover))
+                    child: pickedFiles.isNotEmpty 
+                        ? ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: pickedFiles.length,
+                            itemBuilder: (context, i) => Container(
+                              width: 150,
+                              margin: const EdgeInsets.only(right: 10),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(15), 
+                                child: Image.file(File(pickedFiles[i].path), fit: BoxFit.cover)
+                              ),
+                            ),
+                          )
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -145,7 +164,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                         'title': titleController.text,
                         'amount': amountController.text,
                         'description': descController.text,
-                      }, filePath: pickedFile?.path);
+                      }, filePaths: pickedFiles.map((e) => e.path).toList());
 
                       if (mounted) {
                         if (res['status'] == 'success') {
@@ -238,15 +257,6 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     if (status == 'approved') statusColor = Colors.green;
     if (status == 'rejected') statusColor = Colors.red;
 
-    String? imageUrl = claim['attachment'];
-    if (imageUrl != null) {
-      if (!imageUrl.startsWith('http')) {
-        imageUrl = 'http://192.168.1.9:8000/storage/$imageUrl';
-      } else {
-        imageUrl = imageUrl.replaceAll('localhost', '192.168.1.9').replaceAll('127.0.0.1', '192.168.1.9');
-      }
-    }
-
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(20),
@@ -288,16 +298,35 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
           const SizedBox(height: 5),
           Text(currencyFormatter.format(double.parse(claim['amount'].toString())), style: GoogleFonts.outfit(fontSize: 18, color: primaryColor, fontWeight: FontWeight.bold)),
           
-          if (imageUrl != null) ...[
+          if (claim['attachment'] != null) ...[
             const SizedBox(height: 15),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                imageUrl, 
-                height: 150, 
-                width: double.infinity, 
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(height: 50, color: Colors.grey[100], child: const Center(child: Text("Foto tidak tersedia", style: TextStyle(fontSize: 10)))),
+            SizedBox(
+              height: 150,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: (claim['attachment'] is List) ? claim['attachment'].length : 1,
+                itemBuilder: (context, i) {
+                  String? path = (claim['attachment'] is List) ? claim['attachment'][i] : claim['attachment'];
+                  String imageUrl = path!;
+                  if (!imageUrl.startsWith('http')) {
+                    imageUrl = 'http://192.168.1.9:8000/storage/$imageUrl';
+                  } else {
+                    imageUrl = imageUrl.replaceAll('localhost', '192.168.1.9').replaceAll('127.0.0.1', '192.168.1.9');
+                  }
+                  
+                  return Container(
+                    width: 250,
+                    margin: const EdgeInsets.only(right: 10),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        imageUrl, 
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Container(color: Colors.grey[100], child: const Center(child: Icon(Icons.broken_image, size: 20))),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],

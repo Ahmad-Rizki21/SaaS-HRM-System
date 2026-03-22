@@ -304,7 +304,13 @@ class __AddSwapModalState extends State<_AddSwapModal> {
     final mySched = await ApiService.getSchedules(userId: widget.currentUserId);
     if (mounted) {
       setState(() {
-        _employees = (emp ?? []).where((e) => e['id'] != widget.currentUserId).toList();
+        _employees = (emp ?? []).where((e) {
+          if (e['id'] == widget.currentUserId) return false;
+          final roleName = (e['role'] != null && e['role']['name'] != null) 
+              ? e['role']['name'].toString().toLowerCase() 
+              : '';
+          return roleName.contains('karyawan') || roleName.contains('staff') || roleName.contains('noc');
+        }).toList();
         _mySchedules = mySched ?? [];
         _loadingData = false;
       });
@@ -344,7 +350,15 @@ class __AddSwapModalState extends State<_AddSwapModal> {
               DropdownButtonFormField<int>(
                 value: _selectedEmployeeId,
                 decoration: _fieldDeco("Cari Karyawan..."),
-                items: _employees.map((e) => DropdownMenuItem(value: e['id'] as int, child: Text(e['name']))).toList(),
+                items: _employees.map((e) {
+                  final roleText = (e['role'] != null && e['role']['name'] != null) 
+                      ? " (${e['role']['name']})" 
+                      : "";
+                  return DropdownMenuItem(
+                    value: e['id'] as int, 
+                    child: Text("${e['name']}$roleText")
+                  );
+                }).toList(),
                 onChanged: (val) {
                    setState(() {
                      _selectedEmployeeId = val;

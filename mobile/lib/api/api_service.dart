@@ -444,7 +444,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> submitReimbursement(Map<String, String> data, {String? filePath}) async {
+  static Future<Map<String, dynamic>> submitReimbursement(Map<String, String> data, {List<String>? filePaths}) async {
     try {
       final headers = await getHeaders();
       final uri = Uri.parse('$baseUrl/reimbursements');
@@ -453,19 +453,20 @@ class ApiService {
       request.headers.addAll(headers);
       request.fields.addAll(data);
 
-
-      if (filePath != null) {
-        final extension = p.extension(filePath).toLowerCase();
-        String mimeType = 'image/jpeg';
-        if (extension == '.png') mimeType = 'image/png';
-        if (extension == '.webp') mimeType = 'image/webp';
-        
-        request.files.add(await http.MultipartFile.fromPath(
-          'attachment', 
-          filePath,
-          contentType: MediaType.parse(mimeType),
-          filename: 'receipt_${DateTime.now().millisecondsSinceEpoch}$extension',
-        ));
+      if (filePaths != null && filePaths.isNotEmpty) {
+        for (var filePath in filePaths) {
+          final extension = p.extension(filePath).toLowerCase();
+          String mimeType = 'image/jpeg';
+          if (extension == '.png') mimeType = 'image/png';
+          if (extension == '.webp') mimeType = 'image/webp';
+          
+          request.files.add(await http.MultipartFile.fromPath(
+            'attachments[]', 
+            filePath,
+            contentType: MediaType.parse(mimeType),
+            filename: 'receipt_${DateTime.now().millisecondsSinceEpoch}_${filePaths.indexOf(filePath)}$extension',
+          ));
+        }
       }
 
       final streamedResponse = await request.send();

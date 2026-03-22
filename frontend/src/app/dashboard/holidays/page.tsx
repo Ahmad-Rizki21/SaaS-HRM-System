@@ -39,7 +39,8 @@ export default function HolidaysPage() {
     try {
       setLoading(true);
       const response = await axiosInstance.get("/holidays");
-      setHolidays(response.data.data || []);
+      const resData = response.data.data;
+      setHolidays(Array.isArray(resData) ? resData : (resData?.data || []));
     } catch (e) {
       console.error("Gagal mengambil data hari libur", e);
     } finally {

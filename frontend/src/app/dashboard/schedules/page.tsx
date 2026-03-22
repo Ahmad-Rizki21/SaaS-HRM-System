@@ -40,6 +40,7 @@ interface Shift {
 interface User {
   id: number;
   name: string;
+  role?: { name: string };
 }
 
 export default function SchedulesPage() {
@@ -77,7 +78,8 @@ export default function SchedulesPage() {
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
       const response = await axiosInstance.get(`/schedules?month=${month}&year=${year}&per_page=100`);
-      setSchedules(response.data.data?.data || response.data.data || []);
+      const resData = response.data.data;
+      setSchedules(Array.isArray(resData) ? resData : (resData?.data || []));
     } catch (e) {
       console.error("Gagal mengambil data jadwal", e);
     } finally {
@@ -88,7 +90,8 @@ export default function SchedulesPage() {
   const fetchShifts = async () => {
     try {
       const response = await axiosInstance.get("/shifts");
-      setShifts(response.data.data);
+      const resData = response.data.data;
+      setShifts(Array.isArray(resData) ? resData : (resData?.data || []));
     } catch (e) {
       console.error("Gagal ambil data shift", e);
     }
@@ -97,7 +100,8 @@ export default function SchedulesPage() {
   const fetchEmployees = async () => {
     try {
       const response = await axiosInstance.get("/employees");
-      setEmployees(response.data.data?.data || []);
+      const resData = response.data.data;
+      setEmployees(Array.isArray(resData) ? resData : (resData?.data || []));
     } catch (e) {
       console.error("Gagal ambil data karyawan", e);
     }
@@ -410,7 +414,16 @@ export default function SchedulesPage() {
                   required
                 >
                   <option value="">Pilih Karyawan</option>
-                  {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+                  {employees
+                    .filter(emp => {
+                       const roleName = emp.role?.name?.toLowerCase() || '';
+                       // Hanya role yang mengandung Karyawan, Staff, atau NOC yang masuk Shift (karena Direktur dsb tak harus di-shift)
+                       return roleName.includes('karyawan') || roleName.includes('staff') || roleName.includes('noc');
+                    })
+                    .map(emp => {
+                       const roleDisplay = emp.role?.name ? ` (${emp.role.name})` : '';
+                       return <option key={emp.id} value={emp.id}>{emp.name}{roleDisplay}</option>;
+                    })}
                 </select>
               </div>
               <div className="space-y-2">

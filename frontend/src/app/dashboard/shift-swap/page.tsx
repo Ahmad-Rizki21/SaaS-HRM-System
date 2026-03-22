@@ -40,6 +40,7 @@ interface ShiftSwap {
 interface WebUser {
   id: number;
   name: string;
+  role?: { name: string };
 }
 
 interface Schedule {
@@ -103,12 +104,14 @@ export default function ShiftSwapPage() {
     try {
       // Ambil daftar karyawan (untuk tujuan tukar)
       const usersRes = await axiosInstance.get("/employees");
-      setUsers(usersRes.data.data.data || []);
+      const uData = usersRes.data.data;
+      setUsers(Array.isArray(uData) ? uData : (uData?.data || []));
 
       // Ambil jadwal saya
       const mySchedRes = await axiosInstance.get("/schedules");
+      const schedData = mySchedRes.data.data;
       // Filter schedules to be future-ish or simple list
-      setMySchedules(mySchedRes.data.data || []);
+      setMySchedules(Array.isArray(schedData) ? schedData : (schedData?.data || []));
     } catch (e) {
       console.error("Gagal ambil data pendukung", e);
     }
@@ -118,7 +121,8 @@ export default function ShiftSwapPage() {
     if (!receiverId) return;
     try {
       const res = await axiosInstance.get(`/schedules?user_id=${receiverId}`);
-      setReceiverSchedules(res.data.data || []);
+      const resData = res.data.data;
+      setReceiverSchedules(Array.isArray(resData) ? resData : (resData?.data || []));
     } catch (e) {
       console.error("Gagal ambil jadwal penerima", e);
     }
@@ -413,9 +417,20 @@ export default function ShiftSwapPage() {
                             required
                           >
                              <option value="">Pilih Teman Kerja...</option>
-                             {users.filter(u => u.id !== user?.id).map(u => (
-                               <option key={u.id} value={u.id}>{u.name}</option>
-                             ))}
+                             {users
+                              .filter((u) => {
+                                if (u.id === user?.id) return false;
+                                const roleName = u.role?.name?.toLowerCase() || "";
+                                return roleName.includes("karyawan") || roleName.includes("staff") || roleName.includes("noc");
+                              })
+                              .map((u) => {
+                                const roleDisplay = u.role?.name ? ` (${u.role.name})` : "";
+                                return (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}{roleDisplay}
+                                  </option>
+                                );
+                              })}
                           </select>
                        </div>
                     </div>

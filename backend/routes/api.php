@@ -157,8 +157,9 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::post('/profile/upload-photo', [ProfileController::class, 'uploadPhoto']);
     Route::post('/user/change-password', [AuthController::class, 'changePassword']);
 
-    // Employee Directory
+    // Employee Directory & Org Chart
     Route::get('/directory', [EmployeeController::class, 'directory']);
+    Route::get('/organization-chart', [\App\Http\Controllers\OrganizationController::class, 'getChart']);
 
     // Shift Swap (Tukar Shift)
     Route::get('/shift-swap', [ShiftSwapController::class, 'index']);

@@ -63,6 +63,7 @@ export const translations = {
     employee_directory: "Direktori Karyawan",
     shift_swap: "Tukar Shift",
     shift_swap_report: "Laporan Tukar Shift",
+    organization_chart: "Bagan Organisasi",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -133,6 +134,7 @@ export const translations = {
     employee_directory: "Employee Directory",
     shift_swap: "Shift Swap",
     shift_swap_report: "Shift Swap Report",
+    organization_chart: "Organization Chart",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

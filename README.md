@@ -19,7 +19,8 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 *   **Hierarki Atasan (Supervisor)**: Fitur penunjukan atasan langsung untuk alur persetujuan (approval flow) yang lebih tertata dan otomatis.
 *   **Enterprise Audit & Reporting**: Laporan audit lengkap untuk aktivitas pertukaran shift dengan filter periode dan fitur Export Excel.
 *   **Pengajuan Cuti & Lembur**: Workflow pengajuan cuti & lembur, approval/rejection oleh atasan, dan history lengkap.
-*   **Reimbursement**: Pengajuan klaim biaya dengan sistem approval bertingkat.
+*   **Reimbursement**: Pengajuan klaim biaya dengan sistem multiple attachments / lampiran foto sekaligus dan approval bertingkat.
+*   **Performance & Pagination**: Penanganan data skala besar dengan pagination di seluruh API dan proteksi error frontend (Array.isArray).
 *   **Manajemen Tugas (Tasks)**: Pembagian tugas ke karyawan melalui dashboard admin/mobile.
 *   **Slip Gaji (Salary)**: Akses slip gaji digital bulanan secara aman.
 *   **Komunikasi & Pengumuman**: Broadcast pengumuman melalui Dashboard (Kotak Pesan) dan Email Premium (HTML).

@@ -42,7 +42,8 @@ export default function ReportsShiftSwapPage() {
   const fetchEmployees = async () => {
     try {
       const res = await axiosInstance.get("/employees?per_page=100");
-      setEmployees(res.data.data.data || []);
+      const rawData = res.data.data;
+      setEmployees(Array.isArray(rawData) ? rawData : (rawData?.data || []));
     } catch (e) {
       console.error("Gagal mengambil data karyawan", e);
     }
@@ -52,8 +53,9 @@ export default function ReportsShiftSwapPage() {
     try {
       setFetchingPreview(true);
       const res = await axiosInstance.get(`/shift-swap/report?page=${pageNumber}&start_date=${startDate}&end_date=${endDate}${selectedUser ? `&user_id=${selectedUser}` : ""}${selectedStatus ? `&status=${selectedStatus}` : ""}`);
-      setReportData(res.data.data.data || []);
-      setPagination(res.data.data);
+      const rawData = res.data.data;
+      setReportData(Array.isArray(rawData) ? rawData : (rawData?.data || []));
+      setPagination(rawData);
       setLoading(false);
     } catch (e) {
       console.error("Gagal mengambil preview report", e);

@@ -153,6 +153,7 @@ export default function LoginPage() {
               type="submit"
               className="login-submit-btn"
               disabled={loading}
+              suppressHydrationWarning
             >
               {loading ? (
                 <>

@@ -39,12 +39,15 @@ class ReimbursementController extends Controller
             'title' => 'required|string',
             'amount' => 'required|numeric',
             'description' => 'required|string',
-            'attachment' => 'nullable|image|max:10240',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'image|max:10240',
         ]);
 
-        $path = null;
-        if ($request->hasFile('attachment')) {
-            $path = $request->file('attachment')->store('reimbursements', 'public');
+        $paths = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $paths[] = $file->store('reimbursements', 'public');
+            }
         }
 
         $reimbursement = Reimbursement::create([
@@ -53,7 +56,7 @@ class ReimbursementController extends Controller
             'title' => $request->title,
             'amount' => $request->amount,
             'description' => $request->description,
-            'attachment' => $path,
+            'attachment' => $paths,
             'status' => 'pending',
         ]);
 

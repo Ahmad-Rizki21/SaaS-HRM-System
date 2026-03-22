@@ -14,6 +14,10 @@ class Reimbursement extends Model
         'description', 'status', 'approved_by', 'attachment', 'remark'
     ];
 
+    protected $casts = [
+        'attachment' => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -61,8 +61,9 @@ export default function PerformanceReviewsPage() {
     setLoading(true);
     try {
       const res = await axiosInstance.get(`/kpi-reviews?page=${page}&search=${search}`);
-      setReviews(res.data.data.data);
-      setTotalPages(res.data.data.last_page);
+      const rawData = res.data.data;
+      setReviews(Array.isArray(rawData) ? rawData : (rawData?.data || []));
+      setTotalPages(rawData?.last_page || 1);
     } catch (e) {
       console.error("Gagal memuat data", e);
     } finally {
@@ -73,7 +74,8 @@ export default function PerformanceReviewsPage() {
   const fetchEmployees = async () => {
     try {
       const res = await axiosInstance.get('/employees?per_page=100');
-      setEmployees(res.data.data.data);
+      const rawData = res.data.data;
+      setEmployees(Array.isArray(rawData) ? rawData : (rawData?.data || []));
     } catch (e) { console.error(e); }
   };
 

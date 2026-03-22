@@ -53,7 +53,8 @@ export default function ApprovalsPage() {
         axiosInstance.get("/overtimes?status=pending")
       ]);
 
-      const leaves = (leaveRes.data.data.data || []).map((l: any) => ({
+      const lData = leaveRes.data.data;
+      const leaves = (Array.isArray(lData) ? lData : (lData?.data || [])).map((l: any) => ({
         id: l.id,
         type: "leave",
         user_name: l.user?.name || "Karyawan",
@@ -66,7 +67,8 @@ export default function ApprovalsPage() {
         created_at: l.created_at
       }));
 
-      const reimbursements = (reimRes.data.data.data || []).map((r: any) => ({
+      const rData = reimRes.data.data;
+      const reimbursements = (Array.isArray(rData) ? rData : (rData?.data || [])).map((r: any) => ({
         id: r.id,
         type: "reimbursement",
         user_name: r.user?.name || "Karyawan",
@@ -78,8 +80,8 @@ export default function ApprovalsPage() {
         created_at: r.created_at
       }));
 
-      const overtimeData = overtimeRes.data.data?.data || overtimeRes.data.data || [];
-      const overtimes = overtimeData.map((o: any) => ({
+      const oData = overtimeRes.data.data;
+      const overtimes = (Array.isArray(oData) ? oData : (oData?.data || [])).map((o: any) => ({
         id: o.id,
         type: "overtime",
         user_name: o.user?.name || "Karyawan",
@@ -92,7 +94,8 @@ export default function ApprovalsPage() {
         created_at: o.created_at
       }));
 
-      const profiles = (profileRes.data.data || []).map((p: any) => ({
+      const pData = profileRes.data.data;
+      const profiles = (Array.isArray(pData) ? pData : (pData?.data || [])).map((p: any) => ({
         id: p.id,
         type: "profile",
         user_name: p.user?.name || "Karyawan",

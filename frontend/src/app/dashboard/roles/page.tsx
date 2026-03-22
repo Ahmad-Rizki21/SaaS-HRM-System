@@ -40,8 +40,9 @@ export default function RolesPage() {
   const fetchRoles = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/roles");
-      setRoles(response.data.data);
+      const res = await axiosInstance.get("/roles");
+      const rawData = res.data.data;
+      setRoles(Array.isArray(rawData) ? rawData : (rawData?.data || []));
     } catch (e) {
       console.error("Gagal ambil role", e);
     } finally {
@@ -51,8 +52,9 @@ export default function RolesPage() {
 
   const fetchPermissions = async () => {
     try {
-      const response = await axiosInstance.get("/permissions");
-      setAllPermissions(response.data.data);
+      const res = await axiosInstance.get("/permissions");
+      const rawData = res.data.data;
+      setAllPermissions(Array.isArray(rawData) ? {} : (rawData?.data || rawData || {}));
     } catch (e) {
       console.error("Gagal ambil permission", e);
     }

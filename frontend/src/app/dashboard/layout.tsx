@@ -97,6 +97,7 @@ const sidebarLinks: SidebarLink[] = [
     submenus: [
       { name: "announcements", href: "/dashboard/announcements", permission: 'view-leaves' },
       { name: "employee_directory", href: "/dashboard/directory" },
+      { name: "organization_chart", href: "/dashboard/organization" },
     ]
   },
   {
@@ -227,9 +228,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const fetchNotifications = async () => {
     try {
       const res = await axiosInstance.get('/notifications');
-      // If backend returns paginated (length > 1), take the 'data' array,
-      // otherwise fallback to the response object itself.
-      const allData = res.data.data?.data || res.data.data || [];
+      const rawData = res.data.data;
+      const allData = Array.isArray(rawData) ? rawData : (rawData?.data || []);
       
       // Split by category
       setNotifications(allData.filter((n: any) => n.category === 'notif' || !n.category));

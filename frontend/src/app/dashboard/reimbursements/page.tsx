@@ -24,7 +24,7 @@ export default function ReimbursementsPage() {
     title: "",
     amount: "",
     description: "",
-    attachment: null,
+    attachments: [],
   });
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -102,8 +102,10 @@ export default function ReimbursementsPage() {
     data.append("title", formData.title);
     data.append("amount", formData.amount);
     data.append("description", formData.description);
-    if (formData.attachment) {
-      data.append("attachment", formData.attachment);
+    if (formData.attachments && formData.attachments.length > 0) {
+      formData.attachments.forEach((file: File) => {
+        data.append("attachments[]", file);
+      });
     }
 
     try {
@@ -112,7 +114,7 @@ export default function ReimbursementsPage() {
       });
       alert("Klaim berhasil diajukan! Menunggu persetujuan admin.");
       setIsModalOpen(false);
-      setFormData({ title: "", amount: "", description: "", attachment: null });
+      setFormData({ title: "", amount: "", description: "", attachments: [] });
       fetchReimbursements(page);
     } catch (e: any) {
       if (e.response?.status === 422 && e.response?.data?.errors) {
@@ -325,25 +327,30 @@ export default function ReimbursementsPage() {
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
                     id="attachment-upload"
-                    onChange={(e) => setFormData({ ...formData, attachment: e.target.files?.[0] || null })}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      setFormData({ ...formData, attachments: files });
+                    }}
                   />
                   <label 
                     htmlFor="attachment-upload"
                     className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
-                      formData.attachment ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:border-blue-400'
+                      formData.attachments.length > 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:border-blue-400'
                     }`}
                   >
-                    {formData.attachment ? (
-                      <div className="flex items-center gap-2 text-blue-600 font-medium text-sm">
+                    {formData.attachments.length > 0 ? (
+                      <div className="flex flex-col items-center gap-1 text-blue-600 font-medium text-xs text-center px-4">
                         <Check size={18} />
-                        {formData.attachment.name}
+                        <span className="truncate max-w-full">{formData.attachments.length} File terpilih</span>
+                        <span className="text-[10px] opacity-70">Klik lagi untuk ganti</span>
                       </div>
                     ) : (
                       <>
                         <Upload size={20} className="text-gray-400 mb-1" />
-                        <span className="text-xs text-gray-500">Klik untuk upload foto bukti</span>
+                        <span className="text-xs text-gray-500">Klik untuk upload (bisa lebih dari 1)</span>
                       </>
                     )}
                   </label>
@@ -431,26 +438,30 @@ export default function ReimbursementsPage() {
 
                 {selectedItem.attachment && (
                   <div>
-                    <p className="text-[10px] uppercase font-black text-gray-400 mb-2 px-1">BUKTI STRUK / NOTA</p>
-                    <div className="rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden bg-gray-50 group relative">
-                        <img 
-                            src={getStorageUrl(selectedItem.attachment)} 
-                            alt="Bukti Struk" 
-                            className="w-full h-auto max-h-[400px] object-contain mx-auto transition-transform duration-500 group-hover:scale-105"
-                            onError={(e) => {
-                                (e.target as any).src = 'https://placehold.co/600x400?text=Gambar+Gagal+Dimuat';
-                            }}
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                           <a 
-                             href={getStorageUrl(selectedItem.attachment)} 
-                             target="_blank" 
-                             className="bg-white text-gray-900 px-4 py-2 rounded-lg font-bold text-xs"
-                             rel="noopener noreferrer"
-                           >
-                             Buka Ukuran Penuh
-                           </a>
-                        </div>
+                    <p className="text-[10px] uppercase font-black text-gray-400 mb-2 px-1">BUKTI STRUK / NOTA ({Array.isArray(selectedItem.attachment) ? selectedItem.attachment.length : 1})</p>
+                    <div className="grid grid-cols-1 gap-4">
+                        {(Array.isArray(selectedItem.attachment) ? selectedItem.attachment : [selectedItem.attachment]).map((path: string, idx: number) => (
+                          <div key={idx} className="rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden bg-gray-50 group relative">
+                              <img 
+                                  src={getStorageUrl(path)} 
+                                  alt={`Bukti Struk ${idx + 1}`} 
+                                  className="w-full h-auto max-h-[400px] object-contain mx-auto transition-transform duration-500 group-hover:scale-105"
+                                  onError={(e) => {
+                                      (e.target as any).src = 'https://placehold.co/600x400?text=Gambar+Gagal+Dimuat';
+                                  }}
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                 <a 
+                                   href={getStorageUrl(path)} 
+                                   target="_blank" 
+                                   className="bg-white text-gray-900 px-4 py-2 rounded-lg font-bold text-xs"
+                                   rel="noopener noreferrer"
+                                 >
+                                   Buka Full Size
+                                 </a>
+                              </div>
+                          </div>
+                        ))}
                     </div>
                   </div>
                 )}
