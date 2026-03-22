@@ -12,7 +12,7 @@ class HolidayController extends Controller
         $holidays = Holiday::where(function($q) use ($request) {
             $q->whereNull('company_id') // National
               ->orWhere('company_id', $request->user()->company_id);
-        })->orderBy('date', 'asc')->get();
+        })->orderBy('date', 'asc')->paginate(10);
 
         return $this->successResponse($holidays, 'Daftar hari libur berhasil diambil.');
     }

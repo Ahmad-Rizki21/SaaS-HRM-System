@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Megaphone, Calendar, User, Trash2, Edit2, Loader2, Info, X } from "lucide-react";
+import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Announcement {
@@ -19,6 +20,12 @@ export default function AnnouncementsPage() {
   const { hasPermission } = useAuth();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    last_page: 1,
+    total: 0
+  });
   
   // Modal states Add/Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,14 +42,21 @@ export default function AnnouncementsPage() {
   const [idToDelete, setIdToDelete] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchAnnouncements();
-  }, []);
+    fetchAnnouncements(page);
+  }, [page]);
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = async (pageNumber: number) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/announcements");
-      setAnnouncements(response.data.data || []);
+      const response = await axiosInstance.get(`/announcements?page=${pageNumber}`);
+      setAnnouncements(response.data.data?.data || []);
+      if (response.data.data && response.data.data.current_page) {
+        setPagination({
+          current_page: response.data.data.current_page,
+          last_page: response.data.data.last_page,
+          total: response.data.data.total
+        });
+      }
     } catch (e) {
       console.error("Gagal mengambil data pengumuman", e);
     } finally {
@@ -73,7 +87,7 @@ export default function AnnouncementsPage() {
         await axiosInstance.put(`/announcements/${selectedId}`, formData);
       }
       setIsModalOpen(false);
-      fetchAnnouncements();
+      fetchAnnouncements(page);
     } catch (e) {
       alert("Gagal menyimpan pengumuman.");
     } finally {
@@ -93,7 +107,7 @@ export default function AnnouncementsPage() {
       await axiosInstance.delete(`/announcements/${idToDelete}`);
       setIsDeleteModalOpen(false);
       setIdToDelete(null);
-      fetchAnnouncements();
+      fetchAnnouncements(page);
     } catch (e) {
       alert("Gagal menghapus pengumuman.");
     } finally {
@@ -204,6 +218,15 @@ export default function AnnouncementsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {pagination.last_page > 1 && (
+        <Pagination 
+          currentPage={pagination.current_page} 
+          lastPage={pagination.last_page} 
+          total={pagination.total} 
+          onPageChange={setPage} 
+        />
       )}
 
       {/* CRUD Modal Add/Edit */}

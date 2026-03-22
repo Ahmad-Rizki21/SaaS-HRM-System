@@ -33,7 +33,7 @@ class ShiftSwapController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $query->orderBy('created_at', 'desc')->get()
+            'data' => $query->orderBy('created_at', 'desc')->paginate(10)
         ]);
     }
 

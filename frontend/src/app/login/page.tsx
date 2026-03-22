@@ -142,6 +142,7 @@ export default function LoginPage() {
                   className="login-password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
+                  suppressHydrationWarning
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>

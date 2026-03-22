@@ -14,7 +14,7 @@ class SalaryController extends Controller
             ->where('company_id', $request->user()->company_id)
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
-            ->get();
+            ->paginate(10);
 
         return $this->successResponse($salaries, 'Data gaji berhasil diambil.');
     }

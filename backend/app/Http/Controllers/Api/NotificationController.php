@@ -14,7 +14,7 @@ class NotificationController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-        $notifications = $user->notifications()->latest()->limit(20)->get();
+        $notifications = $user->notifications()->orderBy('id', 'desc')->paginate(10);
         
         return response()->json([
             'status' => 'success',

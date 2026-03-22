@@ -76,7 +76,7 @@ export default function SchedulesPage() {
       setLoading(true);
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
-      const response = await axiosInstance.get(`/schedules?month=${month}&year=${year}`);
+      const response = await axiosInstance.get(`/schedules?month=${month}&year=${year}&per_page=100`);
       setSchedules(response.data.data?.data || response.data.data || []);
     } catch (e) {
       console.error("Gagal mengambil data jadwal", e);

@@ -13,7 +13,7 @@ class TaskController extends Controller
             ->where('user_id', $request->user()->id)
             ->where('company_id', $request->user()->company_id)
             ->orderBy('deadline', 'asc')
-            ->get();
+            ->paginate(10);
 
         return $this->successResponse($tasks, 'Data tugas berhasil diambil.');
     }

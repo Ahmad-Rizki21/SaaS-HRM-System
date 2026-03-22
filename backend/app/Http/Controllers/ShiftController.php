@@ -16,7 +16,7 @@ class ShiftController extends Controller
             $query->where('company_id', $user->company_id);
         }
         
-        $shifts = $query->get();
+        $shifts = $query->paginate(10);
         return $this->successResponse($shifts, 'Daftar shift berhasil diambil.');
     }
 

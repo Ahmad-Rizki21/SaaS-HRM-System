@@ -36,7 +36,7 @@ class ScheduleController extends Controller
             $query->whereYear('date', '>=', now()->year);
         }
 
-        return $this->successResponse($query->get(), 'Daftar jadwal berhasil diambil.');
+        return $this->successResponse($query->paginate($request->per_page ?? 10), 'Daftar jadwal berhasil diambil.');
     }
 
     public function store(Request $request)

@@ -227,7 +227,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const fetchNotifications = async () => {
     try {
       const res = await axiosInstance.get('/notifications');
-      const allData = res.data.data || [];
+      // If backend returns paginated (length > 1), take the 'data' array,
+      // otherwise fallback to the response object itself.
+      const allData = res.data.data?.data || res.data.data || [];
       
       // Split by category
       setNotifications(allData.filter((n: any) => n.category === 'notif' || !n.category));

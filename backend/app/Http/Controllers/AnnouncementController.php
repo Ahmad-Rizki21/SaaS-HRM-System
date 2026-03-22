@@ -18,7 +18,7 @@ class AnnouncementController extends Controller
         $announcements = Announcement::where('company_id', $request->user()->company_id)
             ->with('user')
             ->orderBy('id', 'desc')
-            ->get();
+            ->paginate(10);
             
         return $this->successResponse($announcements, 'Daftar pengumuman berhasil diambil.');
     }

@@ -61,7 +61,7 @@ class ManagerController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $query->orderBy('created_at', 'desc')->get()
+            'data' => $query->orderBy('created_at', 'desc')->paginate($request->per_page ?? 10)
         ]);
     }
 

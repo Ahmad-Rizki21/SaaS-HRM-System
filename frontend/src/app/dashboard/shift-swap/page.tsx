@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ListPageSkeleton } from "@/components/Skeleton";
+import Pagination from "@/components/Pagination";
 
 interface ShiftSwap {
   id: number;
@@ -51,6 +52,9 @@ export default function ShiftSwapPage() {
   const { user, hasPermission } = useAuth();
   const [swaps, setSwaps] = useState<ShiftSwap[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
@@ -69,15 +73,25 @@ export default function ShiftSwapPage() {
   const [activeTab, setActiveTab] = useState<'my_requests' | 'to_review'>('my_requests');
 
   useEffect(() => {
-    fetchSwaps();
+    fetchSwaps(currentPage);
     fetchInitialData();
-  }, []);
+  }, [currentPage]);
 
-  const fetchSwaps = async () => {
+  const fetchSwaps = async (page = 1) => {
     try {
       setLoading(true);
-      const res = await axiosInstance.get("/shift-swap");
-      setSwaps(res.data.data || []);
+      const res = await axiosInstance.get(`/shift-swap?page=${page}`);
+      
+      if (res.data.data.data) {
+        setSwaps(res.data.data.data || []);
+        setCurrentPage(res.data.data.current_page);
+        setLastPage(res.data.data.last_page);
+        setTotal(res.data.data.total);
+      } else {
+        setSwaps(res.data.data || []);
+        setLastPage(1);
+        setTotal((res.data.data || []).length);
+      }
     } catch (e) {
       console.error("Gagal ambil data tukar shift", e);
     } finally {
@@ -123,7 +137,7 @@ export default function ShiftSwapPage() {
       alert("Permintaan tukar shift berhasil dikirim!");
       setIsModalOpen(false);
       setFormData({ receiver_id: "", requester_schedule_id: "", receiver_schedule_id: "", reason: "" });
-      fetchSwaps();
+      fetchSwaps(1);
     } catch (e: any) {
       alert(e.response?.data?.message || "Gagal mengirim permintaan.");
     } finally {
@@ -136,7 +150,7 @@ export default function ShiftSwapPage() {
     try {
       await axiosInstance.post(`/shift-swap/${id}/respond`, { status, remark });
       alert("Respon berhasil dikirim.");
-      fetchSwaps();
+      fetchSwaps(currentPage);
     } catch (e: any) {
       alert(e.response?.data?.message || "Gagal memproses respon.");
     }
@@ -147,7 +161,7 @@ export default function ShiftSwapPage() {
     try {
       await axiosInstance.post(`/shift-swap/${id}/approve`, { status });
       alert(`Berhasil ${status === 'approved' ? 'menyetujui' : 'menolak'} pengajuan.`);
-      fetchSwaps();
+      fetchSwaps(currentPage);
     } catch (e: any) {
       alert(e.response?.data?.message || "Gagal memproses approval.");
     }
@@ -355,6 +369,13 @@ export default function ShiftSwapPage() {
             ))
           )}
         </div>
+        
+        <Pagination 
+          currentPage={currentPage}
+          lastPage={lastPage}
+          total={total}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
       </div>
 
       {/* CREATE MODAL */}

@@ -17,7 +17,7 @@ class ProfileRequestController extends Controller
     {
         $requests = ProfileRequest::with('user')->where('status', 'pending')
             ->where('company_id', $request->user()->company_id)
-            ->get();
+            ->paginate(10);
         return response()->json([
             'success' => true,
             'data' => $requests

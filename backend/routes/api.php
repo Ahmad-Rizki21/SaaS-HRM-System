@@ -25,6 +25,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\ShiftSwapController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PerformanceReviewController;
 
@@ -160,12 +161,12 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::get('/directory', [EmployeeController::class, 'directory']);
 
     // Shift Swap (Tukar Shift)
-    Route::get('/shift-swap', [\App\Http\Controllers\ShiftSwapController::class, 'index']);
-    Route::post('/shift-swap', [\App\Http\Controllers\ShiftSwapController::class, 'store']);
-    Route::post('/shift-swap/{id}/respond', [\App\Http\Controllers\ShiftSwapController::class, 'respond']);
-    Route::post('/shift-swap/{id}/approve', [\App\Http\Controllers\ShiftSwapController::class, 'approve']);
-    Route::get('/shift-swap/report', [\App\Http\Controllers\ShiftSwapController::class, 'report']);
-    Route::get('/shift-swap/export', [\App\Http\Controllers\ShiftSwapController::class, 'export']);
+    Route::get('/shift-swap', [ShiftSwapController::class, 'index']);
+    Route::post('/shift-swap', [ShiftSwapController::class, 'store']);
+    Route::post('/shift-swap/{id}/respond', [ShiftSwapController::class, 'respond']);
+    Route::post('/shift-swap/{id}/approve', [ShiftSwapController::class, 'approve']);
+    Route::get('/shift-swap/report', [ShiftSwapController::class, 'report']);
+    Route::get('/shift-swap/export', [ShiftSwapController::class, 'export']);
 });
 
 // Exports (Authenticated via query token or header inside controller)
