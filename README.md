@@ -15,6 +15,9 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 *   **Authentication & Security**: Multi-tenant login, Role-based Access Control (RBAC), hash password, dan session management.
 *   **Manajemen SDM**: Data karyawan lengkap, request perubahan profil, upload foto, dan manajemen jabatan (Role).
 *   **Kehadiran & Shift**: Check-in/out dengan GPS & Selfie, manajemen shift kerja, jadwal mingguan, dan laporan absensi (Export Excel).
+*   **Tukar Shift (Shift Swap)**: Workflow pertukaran jadwal antar rekan kerja dengan notifikasi real-time (FCM) & sistem approval atasan.
+*   **Hierarki Atasan (Supervisor)**: Fitur penunjukan atasan langsung untuk alur persetujuan (approval flow) yang lebih tertata dan otomatis.
+*   **Enterprise Audit & Reporting**: Laporan audit lengkap untuk aktivitas pertukaran shift dengan filter periode dan fitur Export Excel.
 *   **Pengajuan Cuti & Lembur**: Workflow pengajuan cuti & lembur, approval/rejection oleh atasan, dan history lengkap.
 *   **Reimbursement**: Pengajuan klaim biaya dengan sistem approval bertingkat.
 *   **Manajemen Tugas (Tasks)**: Pembagian tugas ke karyawan melalui dashboard admin/mobile.
