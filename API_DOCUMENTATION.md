@@ -28,6 +28,12 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `GET` | `/api/attendance/export` | Export laporan absensi ke Excel |
 | `GET` | `/api/shifts` | List semua jam kerja/shift |
 | `POST` | `/api/shifts` | Buat master shift baru |
+| `GET` | `/api/shift-swap` | List riwayat tukar shift user |
+| `POST` | `/api/shift-swap` | Ajukan pertukaran shift baru |
+| `POST` | `/api/shift-swap/{id}/respond` | Respon rekan (Terima/Tolak) |
+| `POST` | `/api/shift-swap/{id}/approve` | Approval akhir Manager/Atasan |
+| `GET` | `/api/shift-swap/report` | Laporan audit semua tukar shift |
+| `GET` | `/api/shift-swap/export` | Export laporan tukar shift ke Excel |
 
 ## 📅 Cuti, Lembur & Reimbursement
 | Method | Endpoint | Deskripsi |

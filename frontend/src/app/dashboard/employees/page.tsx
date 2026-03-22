@@ -27,6 +27,8 @@ interface Employee {
   role?: Role;
   role_id: number;
   profile_photo_url?: string;
+  supervisor_id?: number;
+  supervisor?: { id: number; name: string };
 }
 
 interface EmployeeFormData {
@@ -40,6 +42,7 @@ interface EmployeeFormData {
   role_id?: number;
   password?: string;
   photo?: File | null;
+  supervisor_id?: number | null;
 }
 
 interface PaginationData {
@@ -228,6 +231,7 @@ export default function EmployeesPage() {
       phone: emp.phone || "",
       address: emp.address || "",
       join_date: emp.join_date || "",
+      supervisor_id: emp.supervisor_id || null,
     });
     setPhotoPreview(emp.profile_photo_url || null);
     setIsModalOpen(true);
@@ -316,6 +320,7 @@ export default function EmployeesPage() {
     const name = roleName.toLowerCase();
     if (name.includes("hr") || name.includes("admin") || name.includes("superdmin")) return "dash-badge-warning";
     if (name.includes("manager")) return "dash-badge-success";
+    if (name.includes("supervisor")) return "dash-badge-info";
     return "dash-badge-neutral";
   };
 
@@ -466,9 +471,14 @@ export default function EmployeesPage() {
                       </span>
                     </td>
                     <td>
-                      <span className="text-sm text-gray-600">
-                        {formatDate(emp.join_date)}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-gray-600">
+                          {formatDate(emp.join_date)}
+                        </span>
+                        {emp.supervisor && (
+                          <span className="text-[9px] text-gray-400 mt-0.5">Atasan: {emp.supervisor.name}</span>
+                        )}
+                      </div>
                     </td>
                     {(hasPermission('edit-employees') || hasPermission('delete-employees')) && (
                       <td className="text-right">
@@ -624,6 +634,23 @@ export default function EmployeesPage() {
                         onChange={(e) => setFormData({...formData, join_date: e.target.value})}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Supervisor / Atasan Langsung</label>
+                    <select 
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.supervisor_id || ""}
+                      onChange={(e) => setFormData({...formData, supervisor_id: e.target.value ? parseInt(e.target.value) : null})}
+                    >
+                      <option value="">Tanpa Atasan (Management Pusat)</option>
+                      {employees
+                        .filter(e => e.id !== formData.id) // Jangan jadi atasan sendiri
+                        .map(e => (
+                          <option key={e.id} value={e.id}>{e.name} ({e.role?.name})</option>
+                        ))}
+                    </select>
+                    <p className="text-[10px] text-gray-400">Atasan akan menerima notifikasi jika karyawan ini mengajukan Cuti, Lembur, atau Tukar Shift.</p>
                   </div>
 
                   <div className="space-y-1.5">

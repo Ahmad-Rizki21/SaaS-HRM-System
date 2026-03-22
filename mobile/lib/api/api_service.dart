@@ -599,4 +599,99 @@ class ApiService {
       throw Exception('Could not launch $url');
     }
   }
+
+  // ============ SHIFT SWAP ============
+
+  static Future<List<dynamic>?> getShiftSwaps() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/shift-swap'), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitShiftSwap(Map<String, dynamic> data) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/shift-swap'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> respondShiftSwap(int id, String status, {String? remark}) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/shift-swap/$id/respond'),
+        headers: headers,
+        body: jsonEncode({'status': status, 'remark': remark}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> approveShiftSwap(int id, String status) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/shift-swap/$id/approve'),
+        headers: headers,
+        body: jsonEncode({'status': status}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<List<dynamic>?> getSchedules({int? userId}) async {
+    try {
+      final headers = await getHeaders();
+      String url = '$baseUrl/schedules';
+      if (userId != null) url += '?user_id=$userId';
+      final response = await http.get(Uri.parse(url), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<List<dynamic>?> getEmployees() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/employees'), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        // It could be directly 'data' or 'data.data' depending on API
+        if (body['data'] != null && body['data']['data'] != null) {
+          return body['data']['data'];
+        }
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }

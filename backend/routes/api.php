@@ -158,6 +158,14 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
 
     // Employee Directory
     Route::get('/directory', [EmployeeController::class, 'directory']);
+
+    // Shift Swap (Tukar Shift)
+    Route::get('/shift-swap', [\App\Http\Controllers\ShiftSwapController::class, 'index']);
+    Route::post('/shift-swap', [\App\Http\Controllers\ShiftSwapController::class, 'store']);
+    Route::post('/shift-swap/{id}/respond', [\App\Http\Controllers\ShiftSwapController::class, 'respond']);
+    Route::post('/shift-swap/{id}/approve', [\App\Http\Controllers\ShiftSwapController::class, 'approve']);
+    Route::get('/shift-swap/report', [\App\Http\Controllers\ShiftSwapController::class, 'report']);
+    Route::get('/shift-swap/export', [\App\Http\Controllers\ShiftSwapController::class, 'export']);
 });
 
 // Exports (Authenticated via query token or header inside controller)

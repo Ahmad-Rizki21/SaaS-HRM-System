@@ -73,6 +73,7 @@ const sidebarLinks: SidebarLink[] = [
     submenus: [
       { name: "Live Attendance", href: "/dashboard/live-attendance" },
       { name: "attendance_history", href: "/dashboard/attendance" },
+      { name: "shift_swap", href: "/dashboard/shift-swap", permission: 'view-shift-swaps' },
       { name: "attendance_map", href: "/dashboard/attendance/map", permission: 'view-attendance-map' },
       { name: "schedules", href: "/dashboard/schedules", permission: 'manage-schedules' },
       { name: "holidays", href: "/dashboard/holidays", permission: 'manage-holidays' },
@@ -107,6 +108,7 @@ const sidebarLinks: SidebarLink[] = [
       { name: "reimbursement_report", href: "/dashboard/reports/reimbursements", permission: 'view-employees' },
       { name: "leave_report", href: "/dashboard/reports/leaves", permission: 'view-employees' },
       { name: "overtime_report", href: "/dashboard/reports/overtimes", permission: 'view-employees' },
+      { name: "shift_swap_report", href: "/dashboard/reports/shift-swap", permission: 'view-shift-swap-reports' },
       { name: "payroll_report", href: "/dashboard/reports/payroll", permission: 'view-employees' },
     ]
   },

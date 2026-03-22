@@ -862,6 +862,105 @@
 			]
 		},
 		{
+			"name": "Shift Swap",
+			"description": "Employee shift exchange requests and management.",
+			"item": [
+				{
+					"name": "Get Swap List (User)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/shift-swap"
+					}
+				},
+				{
+					"name": "Submit Swap Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"receiver_id\": 2,\n    \"requester_schedule_id\": 10,\n    \"receiver_schedule_id\": 15,\n    \"reason\": \"Ada urusan mendadak\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/shift-swap"
+					}
+				},
+				{
+					"name": "Respond to Swap (Receiver)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"approved_by_receiver\",\n    \"remark\": \"Oke saya setuju\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/shift-swap/1/respond"
+					}
+				},
+				{
+					"name": "Approve Swap (Manager)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"approved\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/shift-swap/1/approve"
+					}
+				},
+				{
+					"name": "Get Audit Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/shift-swap/report?start_date=2024-03-01&end_date=2024-03-31",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shift-swap", "report"],
+							"query": [
+								{ "key": "start_date", "value": "2024-03-01" },
+								{ "key": "end_date", "value": "2024-03-31" },
+								{ "key": "user_id", "value": "1", "disabled": true },
+								{ "key": "status", "value": "approved", "disabled": true }
+							]
+						}
+					}
+				},
+				{
+					"name": "Export Audit (Excel)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/shift-swap/export?start_date=2024-03-01&end_date=2024-03-31",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shift-swap", "export"],
+							"query": [
+								{ "key": "start_date", "value": "2024-03-01" },
+								{ "key": "end_date", "value": "2024-03-31" }
+							]
+						}
+					}
+				}
+			]
+		},
+		{
 			"name": "Notifications",
 			"description": "User notification management.",
 			"item": [

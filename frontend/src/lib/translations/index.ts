@@ -61,6 +61,8 @@ export const translations = {
     performance: "KPI & Review",
     attendance_map: "Peta Kehadiran",
     employee_directory: "Direktori Karyawan",
+    shift_swap: "Tukar Shift",
+    shift_swap_report: "Laporan Tukar Shift",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -129,6 +131,8 @@ export const translations = {
     performance: "KPI & Review",
     attendance_map: "Attendance Map",
     employee_directory: "Employee Directory",
+    shift_swap: "Shift Swap",
+    shift_swap_report: "Shift Swap Report",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

@@ -20,6 +20,10 @@ class ScheduleController extends Controller
             });
         }
 
+        if ($request->user_id) {
+            $query->where('user_id', $request->user_id);
+        }
+
         if ($request->date) {
             $query->where('date', $request->date);
         } elseif ($request->month && $request->year) {
@@ -27,8 +31,9 @@ class ScheduleController extends Controller
                   ->whereYear('date', $request->year);
         } else {
             // Default: Show only current month to prevent loading thousands of records
-            $query->whereMonth('date', now()->month)
-                  ->whereYear('date', now()->year);
+            // Remove month filter if user_id is specified? Or keep it?
+            // Usually we want the future/current schedules of that user.
+            $query->whereYear('date', '>=', now()->year);
         }
 
         return $this->successResponse($query->get(), 'Daftar jadwal berhasil diambil.');

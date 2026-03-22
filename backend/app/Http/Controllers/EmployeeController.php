@@ -32,7 +32,7 @@ class EmployeeController extends Controller
             ->when($request->id, function($q) use ($request) {
                 $q->where('id', $request->id);
             })
-            ->with('role')
+            ->with(['role', 'supervisor'])
             ->orderBy('name', 'asc')
             ->paginate($request->per_page ?? 10);
             
@@ -53,6 +53,7 @@ class EmployeeController extends Controller
             'address' => 'nullable|string',
             'join_date' => 'nullable|date',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'supervisor_id' => 'nullable|exists:users,id',
         ]);
 
         $path = null;
@@ -71,6 +72,7 @@ class EmployeeController extends Controller
         $employee->address = $request->address;
         $employee->join_date = $request->join_date;
         $employee->profile_photo_path = $path;
+        $employee->supervisor_id = $request->supervisor_id;
         $employee->save();
 
         $this->logActivity('CREATE_EMPLOYEE', "Menambahkan karyawan baru: {$employee->name}", $employee);

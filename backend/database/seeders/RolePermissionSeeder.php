@@ -50,6 +50,13 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Lihat Laporan Absensi', 'slug' => 'view-attendance-reports', 'group' => 'Kehadiran'],
             ['name' => 'Export Laporan Absensi', 'slug' => 'export-attendance', 'group' => 'Kehadiran'],
 
+            // Tukar Shift
+            ['name' => 'Lihat Tukar Shift', 'slug' => 'view-shift-swaps', 'group' => 'Tukar Shift'],
+            ['name' => 'Ajukan Tukar Shift', 'slug' => 'apply-shift-swaps', 'group' => 'Tukar Shift'],
+            ['name' => 'Setujui Tukar Shift', 'slug' => 'approve-shift-swaps', 'group' => 'Tukar Shift'],
+            ['name' => 'Lihat Laporan Tukar Shift', 'slug' => 'view-shift-swap-reports', 'group' => 'Tukar Shift'],
+            ['name' => 'Export Laporan Tukar Shift', 'slug' => 'export-shift-swaps', 'group' => 'Tukar Shift'],
+
             // Pengaturan
             ['name' => 'Pengaturan Perusahaan', 'slug' => 'manage-company', 'group' => 'Pengaturan'],
             ['name' => 'Manajemen Role', 'slug' => 'manage-roles', 'group' => 'Pengaturan'],
@@ -71,9 +78,9 @@ class RolePermissionSeeder extends Seeder
         $admin->permissions()->sync($allPermissions);
         $direktur->permissions()->sync($allPermissions);
         
-        // Manager: View Employees, Approvals, KPI, Map, Schedules, Overtimes, Reports
+        // Manager: View Employees, Approvals, KPI, Map, Schedules, Overtimes, Reports, Shift Swaps
         $managerPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift'
         ])->whereNotIn('slug', ['delete-employees', 'manage-roles', 'manage-company'])->pluck('id');
         $manager->permissions()->sync($managerPermissions);
 
@@ -84,13 +91,14 @@ class RolePermissionSeeder extends Seeder
             'view-reimbursements', 'approve-reimbursements', 
             'view-overtimes', 'approve-overtimes',
             'view-kpis', 'view-attendance-map', 'view-attendance-reports',
-            'manage-shifts', 'manage-schedules'
+            'manage-shifts', 'manage-schedules',
+            'view-shift-swaps', 'approve-shift-swaps', 'view-shift-swap-reports', 'export-shift-swaps'
         ])->pluck('id');
         $supervisor->permissions()->sync($supervisorPermissions);
 
-        // HRD Manager: Manage Employees, Leaves, Reimbursements, Overtime, Operations, KPI, & Map
+        // HRD Manager: Manage Employees, Leaves, Reimbursements, Overtime, Operations, KPI, & Map, Shift Swaps
         $hrdPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift'
         ])->pluck('id');
         $hrd->permissions()->sync($hrdPermissions);
 
@@ -100,6 +108,7 @@ class RolePermissionSeeder extends Seeder
             'view-leaves', 'apply-leaves', 
             'view-reimbursements', 'apply-reimbursements',
             'view-overtimes', 'apply-overtimes',
+            'view-shift-swaps', 'apply-shift-swaps'
         ])->pluck('id');
         $staff->permissions()->sync($staffPermissions);
     }

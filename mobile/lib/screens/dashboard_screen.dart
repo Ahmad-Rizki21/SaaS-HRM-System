@@ -18,6 +18,7 @@ import 'reimbursement_screen.dart';
 import 'holiday_screen.dart';
 import 'kpi_screen.dart';
 import 'manager_screen.dart';
+import 'shift_swap_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
@@ -339,6 +340,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'label': 'Review KPI',
         'color': Color(0xFF8B0000),
         'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => KpiScreen())),
+      },
+      'swap': {
+        'icon': Icons.swap_horizontal_circle,
+        'label': 'Tukar Shift',
+        'color': primaryColor,
+        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => ShiftSwapScreen())),
       },
     };
   }

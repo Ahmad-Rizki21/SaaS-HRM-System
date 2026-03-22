@@ -12,6 +12,7 @@ interface User {
   email: string;
   role_id: number;
   profile_photo_url?: string;
+  is_manager?: boolean;
   role?: {
     id: number;
     name: string;

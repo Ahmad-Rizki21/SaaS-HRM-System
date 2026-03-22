@@ -26,7 +26,18 @@ trait Notifiable
             'link' => $link
         ]);
 
-        // 2. Send email if email is present and not skipped
+        // 2. Send push notification via FCM
+        try {
+            \App\Services\FCMService::sendNotification($user, $title, $message, [
+                'type' => $type,
+                'category' => $category,
+                'link' => $link
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("FCM push failed for user {$user->id}: " . $e->getMessage());
+        }
+
+        // 3. Send email if email is present and not skipped
         if ($user->email && $sendEmail) {
             try {
                 Mail::to($user->email)->send(new UserNotification($user, $title, $message));
