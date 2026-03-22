@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/api_service.dart';
+import '../services/fcm_service.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -58,6 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
+      await FcmService.init(); // Send FCM token to server
       Navigator.pushReplacementNamed(context, '/dashboard');
     } else {
       _showSnackBar(result['message']);

@@ -17,15 +17,16 @@ class ReimbursementController extends Controller
 
         $user = $request->user();
 
-        // Roles that can see all data in their company:
-        // 7: Super Admin, 2: HRD, 10: Finance, 3: Management, 8: HRD Manager
-        $approver_roles = [7, 2, 10, 3, 8];
-
-        if (!in_array($user->role_id, $approver_roles)) {
-            $query->where('user_id', $user->id);
+        // Logic for Data Isolation:
+        // 1. Managers/Admin see all company data by default.
+        // 2. Staff (non-manager) only sees their own data.
+        
+        if ($user->is_manager) {
+            if ($user->company_id && !$user->canAccessAllCompanies()) {
+                $query->where('company_id', $user->company_id);
+            }
         } else {
-            // Admins should still only see data from their own company
-            $query->where('company_id', $user->company_id);
+            $query->where('user_id', $user->id);
         }
 
         $reimbursements = $query->orderBy('id', 'desc')->paginate(10);
@@ -65,17 +66,32 @@ class ReimbursementController extends Controller
             '/dashboard/reimbursements'
         );
 
-        // 2. Notify Admins/Approvers/Finance in the same company
+        // 2. Notify User's Supervisor
+        if ($request->user()->supervisor_id) {
+            $supervisor = $request->user()->supervisor;
+            if ($supervisor) {
+                $this->notify(
+                    $supervisor,
+                    'KLAIM REIMBURSEMENT BAWAHAN',
+                    "Karyawan {$request->user()->name} mengajukan klaim '{$request->title}' sebesar Rp " . number_format($request->amount, 0, ',', '.') . ". Mohon segera tinjau.",
+                    'warning',
+                    '/dashboard/approvals'
+                );
+            }
+        }
+
+        // 3. Notify Admins/Approvers/Finance in the same company
         // Approver roles: Super Admin (7), HRD (2), Finance (10), HRD Manager (8)
         $admins = \App\Models\User::where('company_id', $request->user()->company_id)
             ->whereIn('role_id', [7, 2, 10, 8]) 
             ->where('id', '!=', $request->user()->id)
+            ->where('id', '!=', $request->user()->supervisor_id) // Don't notify twice
             ->get();
-
+            
         foreach ($admins as $admin) {
             $this->notify(
                 $admin,
-                'KLAIM REIMBURSEMENT BARU',
+                'KLAIM REIMBURSEMENT BARU (ADMIN)',
                 "Karyawan {$request->user()->name} mengajukan klaim '{$request->title}' sebesar Rp " . number_format($request->amount, 0, ',', '.') . ".",
                 'warning',
                 '/dashboard/approvals'
@@ -89,6 +105,7 @@ class ReimbursementController extends Controller
 
     public function approve(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('approve-reimbursements'), 403, 'Akses ditolak.');
         $reimbursement = Reimbursement::findOrFail($id);
         
         $reimbursement->update([
@@ -116,6 +133,7 @@ class ReimbursementController extends Controller
 
     public function reject(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('approve-reimbursements'), 403, 'Akses ditolak.');
         $reimbursement = Reimbursement::findOrFail($id);
         
         $reimbursement->update([
@@ -143,6 +161,7 @@ class ReimbursementController extends Controller
 
     public function destroy(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('delete-reimbursements'), 403, 'Akses ditolak.');
         $reimbursement = Reimbursement::findOrFail($id);
 
         if ($reimbursement->status !== 'pending') {

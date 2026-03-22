@@ -10,8 +10,11 @@ trait BelongsToCompany
     protected static function bootBelongsToCompany()
     {
         static::addGlobalScope('company', function (Builder $builder) {
-            if (Auth::check() && Auth::user()->company_id) {
-                $builder->where('company_id', Auth::user()->company_id);
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            // Cek apakah user sudah login, punya company_id, puny method canAccessAllCompanies, dan bukan Super Admin
+            if ($user && isset($user->company_id) && method_exists($user, 'canAccessAllCompanies') && !$user->canAccessAllCompanies()) {
+                $builder->where('company_id', $user->company_id);
             }
         });
 

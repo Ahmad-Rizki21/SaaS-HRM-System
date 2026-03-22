@@ -58,4 +58,20 @@ class NotificationController extends Controller
             'message' => 'All notifications deleted'
         ]);
     }
+
+    public function updateFCMToken(Request $request)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string'
+        ]);
+
+        /** @var User $user */
+        $user = Auth::user();
+        $user->update(['fcm_token' => $request->fcm_token]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'FCM Token updated successfully'
+        ]);
+    }
 }

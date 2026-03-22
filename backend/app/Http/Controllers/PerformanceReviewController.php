@@ -5,13 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\PerformanceReview;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Traits\Notifiable;
 
 class PerformanceReviewController extends Controller
 {
+    use Notifiable;
+
     public function index(Request $request)
     {
-        $query = PerformanceReview::with(['user', 'reviewer'])
-            ->where('company_id', $request->user()->company_id);
+        $query = PerformanceReview::with(['user', 'reviewer']);
+        if ($request->user()->company_id && !$request->user()->canAccessAllCompanies()) {
+            $query->where('company_id', $request->user()->company_id);
+        }
 
         if ($request->user_id) {
             $query->where('user_id', $request->user_id);
@@ -34,6 +39,7 @@ class PerformanceReviewController extends Controller
 
     public function store(Request $request)
     {
+        abort_if(!$request->user()->hasPermission('manage-kpis'), 403, 'Akses ditolak.');
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'period' => 'required|string',
@@ -62,6 +68,16 @@ class PerformanceReviewController extends Controller
             'status' => $request->status ?? 'draft',
         ]);
 
+        if ($review->status === 'published') {
+            $this->notify(
+                $review->user,
+                'REVIEW PERFORMA BARU',
+                "Review performa Anda untuk periode {$review->period} telah dipublish. Skor Total: {$review->score_total}",
+                'success',
+                '/dashboard/performance'
+            );
+        }
+
         $this->logActivity('CREATE_PERFORMANCE_REVIEW', "Membuat review performa untuk karyawan ID: {$request->user_id}", $review);
 
         return $this->successResponse($review, 'Review performa berhasil dibuat.', 201);
@@ -78,6 +94,7 @@ class PerformanceReviewController extends Controller
 
     public function update(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('manage-kpis'), 403, 'Akses ditolak.');
         $review = PerformanceReview::where('company_id', $request->user()->company_id)->findOrFail($id);
 
         $request->validate([
@@ -100,6 +117,16 @@ class PerformanceReviewController extends Controller
 
         $review->update($data);
         
+        if ($review->wasChanged('status') && $review->status === 'published') {
+            $this->notify(
+                $review->user,
+                'REVIEW PERFORMA DIPUBLISH',
+                "Review performa Anda untuk periode {$review->period} telah tersedia. Skor Total: {$review->score_total}",
+                'success',
+                '/dashboard/performance'
+            );
+        }
+        
         $this->logActivity('UPDATE_PERFORMANCE_REVIEW', "Memperbarui review performa ID: {$id}", $review);
 
         return $this->successResponse($review, 'Review performa berhasil diperbarui.');
@@ -107,6 +134,7 @@ class PerformanceReviewController extends Controller
 
     public function destroy(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('manage-kpis'), 403, 'Akses ditolak.');
         $review = PerformanceReview::where('company_id', $request->user()->company_id)->findOrFail($id);
         $review->delete();
 

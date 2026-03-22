@@ -29,6 +29,12 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Setujui Klaim', 'slug' => 'approve-reimbursements', 'group' => 'Reimbursement'],
             ['name' => 'Hapus Klaim', 'slug' => 'delete-reimbursements', 'group' => 'Reimbursement'],
             
+            // Lembur
+            ['name' => 'Lihat Lembur', 'slug' => 'view-overtimes', 'group' => 'Lembur'],
+            ['name' => 'Ajukan Lembur', 'slug' => 'apply-overtimes', 'group' => 'Lembur'],
+            ['name' => 'Setujui Lembur', 'slug' => 'approve-overtimes', 'group' => 'Lembur'],
+            ['name' => 'Hapus Lembur', 'slug' => 'delete-overtimes', 'group' => 'Lembur'],
+            
             // Operational
             ['name' => 'Kelola Shift', 'slug' => 'manage-shifts', 'group' => 'Operasional'],
             ['name' => 'Kelola Jadwal', 'slug' => 'manage-schedules', 'group' => 'Operasional'],
@@ -39,8 +45,10 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Lihat KPI', 'slug' => 'view-kpis', 'group' => 'Performa'],
             ['name' => 'Kelola KPI', 'slug' => 'manage-kpis', 'group' => 'Performa'],
             
-            // Peta Kehadiran
+            // Peta Kehadiran & Laporan
             ['name' => 'Lihat Map Absensi', 'slug' => 'view-attendance-map', 'group' => 'Kehadiran'],
+            ['name' => 'Lihat Laporan Absensi', 'slug' => 'view-attendance-reports', 'group' => 'Kehadiran'],
+            ['name' => 'Export Laporan Absensi', 'slug' => 'export-attendance', 'group' => 'Kehadiran'],
 
             // Pengaturan
             ['name' => 'Pengaturan Perusahaan', 'slug' => 'manage-company', 'group' => 'Pengaturan'],
@@ -52,26 +60,46 @@ class RolePermissionSeeder extends Seeder
             Permission::updateOrCreate(['slug' => $p['slug']], $p);
         }
 
-        // Roles
         $admin = Role::updateOrCreate(['name' => 'Super Admin']);
         $hrd = Role::updateOrCreate(['name' => 'HRD Manager']);
         $staff = Role::updateOrCreate(['name' => 'Staff Karyawan']);
-
-        // Sync all to Super Admin
-        $admin->permissions()->sync(Permission::all()->pluck('id'));
+        $direktur = Role::updateOrCreate(['name' => 'Direktur']);
+        $manager = Role::updateOrCreate(['name' => 'Manager']);
+        $supervisor = Role::updateOrCreate(['name' => 'Supervisor']);
         
-        // HRD Manager: Manage Employees, Leaves, Reimbursements, Operations, KPI, & Map
+        $allPermissions = Permission::all()->pluck('id');
+        $admin->permissions()->sync($allPermissions);
+        $direktur->permissions()->sync($allPermissions);
+        
+        // Manager: View Employees, Approvals, KPI, Map, Schedules, Overtimes, Reports
+        $managerPermissions = Permission::whereIn('group', [
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran'
+        ])->whereNotIn('slug', ['delete-employees', 'manage-roles', 'manage-company'])->pluck('id');
+        $manager->permissions()->sync($managerPermissions);
+
+        // Supervisor: Approvals and Viewing
+        $supervisorPermissions = Permission::whereIn('slug', [
+            'view-employees', 
+            'view-leaves', 'approve-leaves', 
+            'view-reimbursements', 'approve-reimbursements', 
+            'view-overtimes', 'approve-overtimes',
+            'view-kpis', 'view-attendance-map', 'view-attendance-reports',
+            'manage-shifts', 'manage-schedules'
+        ])->pluck('id');
+        $supervisor->permissions()->sync($supervisorPermissions);
+
+        // HRD Manager: Manage Employees, Leaves, Reimbursements, Overtime, Operations, KPI, & Map
         $hrdPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Operasional', 'Performa', 'Kehadiran'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran'
         ])->pluck('id');
         $hrd->permissions()->sync($hrdPermissions);
 
-        // Staff Karyawan: Apply Leaves/Reimbursement & View basic records
+        // Staff Karyawan: Apply Leaves/Reimbursement/Overtime & View basic records
         $staffPermissions = Permission::whereIn('slug', [
             'view-employees', 
             'view-leaves', 'apply-leaves', 
             'view-reimbursements', 'apply-reimbursements',
-            'view-announcements' // If added later
+            'view-overtimes', 'apply-overtimes',
         ])->pluck('id');
         $staff->permissions()->sync($staffPermissions);
     }

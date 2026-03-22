@@ -22,6 +22,24 @@ class AuthController extends Controller
             return $this->errorResponse('Kredensial login Anda salah.', 401);
         }
 
+        // --- Device Binding & FCM Token ---
+        $updateData = [];
+        if ($request->device_id) {
+            if (!$user->device_id) {
+                $updateData['device_id'] = $request->device_id;
+            } elseif ($user->device_id !== $request->device_id) {
+                return $this->errorResponse('Akun Anda terkunci pada perangkat lain. Silakan hubungi Admin untuk reset Device ID Anda.', 403);
+            }
+        }
+        
+        if ($request->fcm_token) {
+            $updateData['fcm_token'] = $request->fcm_token;
+        }
+
+        if (!empty($updateData)) {
+            $user->update($updateData);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         \App\Models\ActivityLog::create([
@@ -40,8 +58,13 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $this->logActivity('LOGOUT', "User {$request->user()->name} keluar dari sistem.");
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        $this->logActivity('LOGOUT', "User {$user->name} keluar dari sistem.");
+        
+        // Clear FCM token on logout for security
+        $user->update(['fcm_token' => null]);
+        
+        $user->currentAccessToken()->delete();
 
         return $this->successResponse(null, 'Logged out successfully');
     }

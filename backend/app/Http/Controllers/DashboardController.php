@@ -76,7 +76,7 @@ class DashboardController extends Controller
 
         // --- 5. Recent Activity ---
         $recentActivities = ActivityLog::where('company_id', $companyId)
-            ->with('user:id,name,profile_photo_path')
+            ->with('user:id,role_id,name,profile_photo_path')
             ->latest()
             ->limit(10)
             ->get()
@@ -92,7 +92,8 @@ class DashboardController extends Controller
             });
 
         // --- 6. Employee Distribution by Role ---
-        $roleDistribution = User::where('company_id', $companyId)
+        $roleDistribution = DB::table('users')
+            ->where('users.company_id', $companyId)
             ->join('roles', 'users.role_id', '=', 'roles.id')
             ->select('roles.name as role', DB::raw('count(*) as count'))
             ->groupBy('roles.name')
@@ -101,7 +102,7 @@ class DashboardController extends Controller
         // --- 7. Today's Attendance List ---
         $todayAttendance = Attendance::where('company_id', $companyId)
             ->whereDate('check_in', $today)
-            ->with('user:id,name,nik,profile_photo_path')
+            ->with('user:id,role_id,name,nik,profile_photo_path')
             ->latest('check_in')
             ->limit(10)
             ->get()
@@ -115,6 +116,47 @@ class DashboardController extends Controller
                     'photo_url' => $attendance->user->profile_photo_url
                 ];
             });
+
+        // --- 8. Monthly Attendance Stats ---
+        $monthStart = Carbon::now()->startOfMonth();
+        $monthEnd = Carbon::now()->endOfMonth();
+        $totalWorkDays = $monthStart->diffInDaysFiltered(function(Carbon $date) {
+            return !$date->isWeekend();
+        }, $monthEnd);
+
+        $monthlyAttendance = Attendance::where('company_id', $companyId)
+            ->whereBetween('check_in', [$monthStart, $monthEnd]);
+
+        $totalPresentMonth = (clone $monthlyAttendance)->distinct('user_id')->count('user_id');
+        $totalLateMonth = (clone $monthlyAttendance)->where('status', 'late')->count();
+        
+        // Calculate Total Hours (Simple calculation for demo)
+        $totalHours = (clone $monthlyAttendance)->sum(DB::raw('TIMESTAMPDIFF(HOUR, check_in, check_out)'));
+
+        $attendanceStats = [
+            'percentage' => $totalEmployees > 0 ? round(($totalPresentMonth / ($totalEmployees * $totalWorkDays ?: 1)) * 100, 1) : 0,
+            'late_count' => $totalLateMonth,
+            'total_hours' => $totalHours,
+            'work_days' => $totalWorkDays
+        ];
+
+        // --- 9. Calendar Events (Current Month) ---
+        $calendarHolidays = Holiday::where('company_id', $companyId)
+            ->whereBetween('date', [$monthStart, $monthEnd])
+            ->get()
+            ->map(fn($h) => ['type' => 'holiday', 'title' => $h->name, 'date' => $h->date]);
+
+        $calendarLeaves = Leave::where('company_id', $companyId)
+            ->where('status', 'approved')
+            ->where(function($q) use ($monthStart, $monthEnd) {
+                $q->whereBetween('start_date', [$monthStart, $monthEnd])
+                  ->orWhereBetween('end_date', [$monthStart, $monthEnd]);
+            })
+            ->with('user:id,name')
+            ->get()
+            ->map(fn($l) => ['type' => 'leave', 'title' => $l->user->name . ' (Cuti)', 'date' => $l->start_date]);
+
+        $calendarEvents = $calendarHolidays->concat($calendarLeaves);
 
         return $this->successResponse([
             'summary' => [
@@ -130,6 +172,8 @@ class DashboardController extends Controller
                 'reimbursements' => $pendingReimbursements,
             ],
             'attendance_trends' => $last7Days,
+            'attendance_stats' => $attendanceStats,
+            'calendar_events' => $calendarEvents,
             'upcoming_holidays' => $upcomingHolidays,
             'recent_announcements' => $recentAnnouncements,
             'recent_activities' => $recentActivities,

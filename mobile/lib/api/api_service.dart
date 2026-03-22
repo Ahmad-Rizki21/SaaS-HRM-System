@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiService {
   static const String baseUrl = 'http://192.168.1.9:8000/api';
@@ -19,14 +21,31 @@ class ApiService {
     };
   }
 
+  static Future<String> getDeviceId() async {
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      return androidInfo.id; // Unique ID on Android
+    } else if (Platform.isIOS) {
+      IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+      return iosInfo.identifierForVendor ?? 'unknown_ios';
+    }
+    return 'unknown_device';
+  }
+
   // ============ AUTH ============
 
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
+      String deviceId = await getDeviceId();
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
         headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({
+          'email': email, 
+          'password': password,
+          'device_id': deviceId,
+        }),
       );
 
       final data = jsonDecode(response.body);
@@ -169,14 +188,20 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>?> checkIn(double lat, double lng, {String? image}) async {
+  static Future<Map<String, dynamic>?> checkIn(double lat, double lng, {String? image, String? deviceId, bool isMocked = false}) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
       final response = await http.post(
         Uri.parse('$baseUrl/attendance/check-in'),
         headers: headers,
-        body: jsonEncode({'latitude': lat, 'longitude': lng, 'image': image}),
+        body: jsonEncode({
+          'latitude': lat, 
+          'longitude': lng, 
+          'image': image,
+          'device_id': deviceId,
+          'is_mocked': isMocked,
+        }),
       );
       return jsonDecode(response.body);
     } catch (e) {
@@ -184,14 +209,20 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>?> checkOut(double lat, double lng, {String? image}) async {
+  static Future<Map<String, dynamic>?> checkOut(double lat, double lng, {String? image, String? deviceId, bool isMocked = false}) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
       final response = await http.post(
         Uri.parse('$baseUrl/attendance/check-out'),
         headers: headers,
-        body: jsonEncode({'latitude': lat, 'longitude': lng, 'image': image}),
+        body: jsonEncode({
+          'latitude': lat, 
+          'longitude': lng, 
+          'image': image,
+          'device_id': deviceId,
+          'is_mocked': isMocked,
+        }),
       );
       return jsonDecode(response.body);
     } catch (e) {
@@ -271,6 +302,21 @@ class ApiService {
   static Future<bool> clearNotifications() async {
     final res = await clearNotificationsWithStatus();
     return res['success'];
+  }
+
+  static Future<Map<String, dynamic>> updateFcmToken(String token) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/notifications/fcm-token'),
+        headers: headers,
+        body: jsonEncode({'fcm_token': token}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': e.toString()};
+    }
   }
 
   // ============ LEAVE (CUTI) ============
@@ -473,6 +519,70 @@ class ApiService {
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data']['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ============ MANAGER ============
+
+  static Future<Map<String, dynamic>?> getManagerPendingCount() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/manager/pending-count'), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<List<dynamic>?> getManagerPendingRequests(String type) async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/manager/pending-requests?type=$type'), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateManagerRequestStatus(String type, int id, String status, {String? remark}) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/manager/update-status'),
+        headers: headers,
+        body: jsonEncode({
+          'type': type,
+          'id': id,
+          'status': status,
+          'remark': remark,
+        }),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<List<dynamic>?> getTeamAttendance() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(Uri.parse('$baseUrl/manager/team-attendance'), headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
       }
       return null;
     } catch (e) {

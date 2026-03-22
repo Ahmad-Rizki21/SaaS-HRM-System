@@ -6,12 +6,22 @@ import 'screens/notification_screen.dart';
 import 'services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'services/fcm_service.dart';
+
 // Global Notifiers
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 final ValueNotifier<String> languageNotifier = ValueNotifier('ID');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await Firebase.initializeApp();
+    await FcmService.init();
+  } catch (e) {
+    print("Firebase initialization error: $e");
+  }
   
   // Load Settings
   final prefs = await SharedPreferences.getInstance();
@@ -45,6 +55,7 @@ class MyApp extends StatelessWidget {
               darkTheme: _buildDarkTheme(context),
               home: initialToken != null ? DashboardScreen() : LoginScreen(),
               routes: {
+                '/login': (context) => LoginScreen(),
                 '/dashboard': (context) => DashboardScreen(),
                 '/notifications': (context) => NotificationScreen(),
               },

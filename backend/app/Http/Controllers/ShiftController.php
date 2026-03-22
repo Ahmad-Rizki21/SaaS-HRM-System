@@ -9,8 +9,14 @@ class ShiftController extends Controller
 {
     public function index(Request $request)
     {
-        abort_if(!$request->user()->hasPermission('manage-shifts'), 403, 'Akses ditolak.');
-        $shifts = Shift::where('company_id', $request->user()->company_id)->get();
+        $query = Shift::query();
+        $user = $request->user();
+        
+        if ($user->company_id && !$user->canAccessAllCompanies()) {
+            $query->where('company_id', $user->company_id);
+        }
+        
+        $shifts = $query->get();
         return $this->successResponse($shifts, 'Daftar shift berhasil diambil.');
     }
 

@@ -95,6 +95,7 @@ const sidebarLinks: SidebarLink[] = [
     icon: Mail,
     submenus: [
       { name: "announcements", href: "/dashboard/announcements", permission: 'view-leaves' },
+      { name: "employee_directory", href: "/dashboard/directory" },
     ]
   },
   {

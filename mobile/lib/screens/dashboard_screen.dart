@@ -17,6 +17,7 @@ import 'task_screen.dart';
 import 'reimbursement_screen.dart';
 import 'holiday_screen.dart';
 import 'kpi_screen.dart';
+import 'manager_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
@@ -30,6 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _userName = "Memuat...";
   String _userRole = "";
   String? _profilePhotoUrl;
+  bool _isManager = false;
   
   // Custom Menu
   List<String> _pinnedMenuIds = ['absen', 'cuti', 'klaim', 'lembur'];
@@ -144,6 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _userRole = userData['role']['name'] ?? "";
         }
         _profilePhotoUrl = rawUrl;
+        _isManager = userData['is_manager'] ?? false;
       });
     }
   }
@@ -168,7 +171,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _handleLogout() async {
     NotificationService().stopPolling(); 
     await ApiService.logout();
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    if (mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    }
   }
 
   String _getGreeting() {
@@ -257,6 +262,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: "Beranda"),
             BottomNavigationBarItem(icon: const Icon(Icons.list_alt_outlined), activeIcon: const Icon(Icons.list_alt), label: "Riwayat"),
             BottomNavigationBarItem(icon: const Icon(Icons.person_outline), activeIcon: const Icon(Icons.person), label: "Profil"),
+            if (_isManager)
+              BottomNavigationBarItem(icon: const Icon(Icons.admin_panel_settings_outlined), activeIcon: const Icon(Icons.admin_panel_settings), label: "Manager"),
             BottomNavigationBarItem(icon: const Icon(Icons.settings_outlined), activeIcon: const Icon(Icons.settings), label: "Setting"),
           ],
         ),
@@ -424,7 +431,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 0: return _buildHomeContent();
       case 1: return RiwayatScreen();
       case 2: return ProfileScreen();
-      case 3: return SettingsTab(onLogout: _handleLogout);
+      case 3:
+        if (_isManager) return ManagerScreen();
+        return SettingsTab(onLogout: _handleLogout);
+      case 4:
+        return SettingsTab(onLogout: _handleLogout);
       default: return _buildHomeContent();
     }
   }

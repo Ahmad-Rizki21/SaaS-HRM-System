@@ -27,16 +27,27 @@ export default function AttendancePage() {
     try {
       setLoading(true);
       const response = await axiosInstance.get(`/attendance/history?page=${pageNumber}`);
-      setAttendance(response.data.data?.data || response.data.data || []);
+      const data = response.data.data?.data || response.data.data || [];
+      setAttendance(data);
       if (response.data.data && response.data.data.current_page) {
         setPagination({
           current_page: response.data.data.current_page,
           last_page: response.data.data.last_page,
           total: response.data.data.total
         });
+        
+        // Cache first page for offline mode
+        if (pageNumber === 1) {
+          localStorage.setItem('cached_attendance', JSON.stringify(data));
+        }
       }
     } catch (e) {
       console.error("Gagal mengambil data absensi", e);
+      // Fallback
+      if (pageNumber === 1) {
+        const cached = localStorage.getItem('cached_attendance');
+        if (cached) setAttendance(JSON.parse(cached));
+      }
     } finally {
       setLoading(false);
     }

@@ -50,7 +50,7 @@ export default function SchedulesPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"table" | "calendar">("calendar");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
 
   // Modals
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -63,17 +63,20 @@ export default function SchedulesPage() {
   const [editingShiftId, setEditingShiftId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchSchedules();
-    if (hasPermission('manage-company')) {
+    fetchSchedules(currentDate);
+    // Fetch shifts & employees if user is a manager (Admin/Manager/Supervisor/HR)
+    if (user && (hasPermission('manage-schedules') || hasPermission('manage-shifts'))) {
        fetchShifts();
        fetchEmployees();
     }
-  }, []);
+  }, [currentDate, user]); 
 
-  const fetchSchedules = async () => {
+  const fetchSchedules = async (date: Date) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get("/schedules");
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const response = await axiosInstance.get(`/schedules?month=${month}&year=${year}`);
       setSchedules(response.data.data?.data || response.data.data || []);
     } catch (e) {
       console.error("Gagal mengambil data jadwal", e);
@@ -106,7 +109,7 @@ export default function SchedulesPage() {
     try {
       await axiosInstance.post("/schedules", scheduleData);
       setIsScheduleModalOpen(false);
-      fetchSchedules();
+      fetchSchedules(currentDate);
     } catch (e) {
       alert("Gagal membuat jadwal");
     } finally {
@@ -118,7 +121,7 @@ export default function SchedulesPage() {
     if (!confirm("Hapus jadwal ini?")) return;
     try {
       await axiosInstance.delete(`/schedules/${id}`);
-      fetchSchedules();
+      fetchSchedules(currentDate);
     } catch (e) {
       alert("Gagal menghapus jadwal");
     }
@@ -196,7 +199,7 @@ export default function SchedulesPage() {
               <div 
                 key={idx} 
                 className="text-[10px] px-2 py-1.5 rounded-lg bg-white border border-gray-100 shadow-sm flex items-center gap-2 group/item hover:border-[#8B0000]/30 transition-all cursor-pointer"
-                onClick={() => { if(hasPermission('manage-company')) handleDeleteSchedule(s.id); }}
+                onClick={() => { if(hasPermission('manage-schedules')) handleDeleteSchedule(s.id); }}
               >
                 <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.shift?.name?.toLowerCase().includes('noc') ? 'bg-blue-500' : 'bg-orange-500'}`}></div>
                 <div className="flex-1 min-w-0">
@@ -206,7 +209,7 @@ export default function SchedulesPage() {
               </div>
             ))}
           </div>
-          <PermissionGuard slug="manage-company">
+          <PermissionGuard slug="manage-schedules">
             <button 
               onClick={() => handleOpenAddSchedule(dateStr)}
               className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 w-7 h-7 bg-[#8B0000] text-white rounded-full flex items-center justify-center shadow-lg transition-all transform scale-75 group-hover:scale-100 active:scale-90"
@@ -249,7 +252,7 @@ export default function SchedulesPage() {
                 <List size={18} />
               </button>
            </div>
-          <PermissionGuard slug="manage-company">
+          <PermissionGuard slug="manage-schedules">
             <button 
               onClick={() => setIsShiftModalOpen(true)}
               className="dash-btn dash-btn-outline group"
@@ -341,7 +344,7 @@ export default function SchedulesPage() {
                     <th>Tanggal</th>
                     <th>Shift</th>
                     <th>Waktu</th>
-                    <PermissionGuard slug="manage-company">
+                    <PermissionGuard slug="manage-schedules">
                        <th className="text-right">Aksi</th>
                     </PermissionGuard>
                   </tr>
@@ -371,7 +374,7 @@ export default function SchedulesPage() {
                       <td className="text-xs text-gray-500 font-medium">
                         {s.shift?.start_time} - {s.shift?.end_time}
                       </td>
-                      <PermissionGuard slug="manage-company">
+                      <PermissionGuard slug="manage-schedules">
                         <td className="text-right">
                            <div className="flex items-center justify-end gap-1">
                               <button onClick={() => handleDeleteSchedule(s.id)} className="dash-action-btn delete"><Trash2 size={14}/></button>

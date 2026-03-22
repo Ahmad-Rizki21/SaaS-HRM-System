@@ -64,6 +64,17 @@ interface DashboardData {
     status: string;
     photo_url: string | null;
   }>;
+  attendance_stats: {
+    percentage: number;
+    late_count: number;
+    total_hours: number;
+    work_days: number;
+  };
+  calendar_events: Array<{
+    type: 'holiday' | 'leave' | 'shift';
+    title: string;
+    date: string;
+  }>;
 }
 
 export default function DashboardPage() {
@@ -111,6 +122,8 @@ export default function DashboardPage() {
   const recentActivities = data?.recent_activities || [];
   const roleDistribution = data?.role_distribution || [];
   const todayAttendance = data?.today_attendance || [];
+  const attendanceStats = data?.attendance_stats || { percentage: 0, late_count: 0, total_hours: 0, work_days: 0 };
+  const calendarEvents = data?.calendar_events || [];
 
   // Colors for charts
   const COLORS = ['#8B0000', '#991b1b', '#b91c1c', '#dc2626', '#fca5a5', '#ef4444', '#f87171'];
@@ -274,93 +287,81 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* 2. Center Panel (Stats + Line Chart) (Col 2 & 3) */}
-        <div className="xl:col-span-2 flex flex-col gap-6">
-          {/* Top 3 Stat Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-center justify-between shadow-sm">
-              <div>
-                <div className="text-[28px] font-bold text-gray-900 leading-none mb-1">{summary.present_today}</div>
-                <div className="text-xs font-medium text-gray-500 uppercase">Hadir</div>
+        {/* 2. Monthly Performance (UX) */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col gap-6">
+           <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+             <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+             Monthly Performance
+           </h3>
+           <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="relative w-32 h-32 mb-4">
+                 <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                       <Pie
+                          data={[
+                            { name: 'Present', value: attendanceStats.percentage },
+                            { name: 'Absent', value: 100 - attendanceStats.percentage }
+                          ]}
+                          innerRadius={45}
+                          outerRadius={60}
+                          startAngle={90}
+                          endAngle={450}
+                          dataKey="value"
+                       >
+                          <Cell fill="#8B0000" />
+                          <Cell fill="#f3f4f6" />
+                       </Pie>
+                    </PieChart>
+                 </ResponsiveContainer>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-black text-gray-900">{attendanceStats.percentage}%</span>
+                    <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Hadir</span>
+                 </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                <UserCheck size={20} />
+              <div className="grid grid-cols-2 w-full gap-3 mt-2">
+                 <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Terlambat</p>
+                    <p className="text-lg font-black text-red-600">{attendanceStats.late_count}</p>
+                 </div>
+                 <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Jam</p>
+                    <p className="text-lg font-black text-gray-900">{attendanceStats.total_hours}h</p>
+                 </div>
               </div>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-center justify-between shadow-sm">
-              <div>
-                <div className="text-[28px] font-bold text-gray-900 leading-none mb-1">{summary.absent_today}</div>
-                <div className="text-xs font-medium text-gray-500 uppercase">Absen</div>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                <UserX size={20} />
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-center justify-between shadow-sm">
-              <div>
-                <div className="text-[28px] font-bold text-gray-900 leading-none mb-1">{summary.on_leave_today}</div>
-                <div className="text-xs font-medium text-gray-500 uppercase">Cuti</div>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                <Users size={20} />
-              </div>
-            </div>
-            
-            <div className="bg-linear-to-br from-[#8B0000] to-[#500000] rounded-xl p-5 flex items-center justify-between shadow-lg shadow-red-900/10 relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-12 translate-x-12 blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-               <div className="relative z-10">
-                 <div className="text-[28px] font-black text-white leading-none mb-1">{pendingApprovals.leaves + pendingApprovals.overtimes + pendingApprovals.reimbursements}</div>
-                 <div className="text-xs font-black text-white/70 uppercase tracking-widest">Persetujuan</div>
-               </div>
-               <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white backdrop-blur-sm relative z-10">
-                 <Clock size={24} className="animate-pulse" />
-               </div>
-            </div>
-          </div>
-
-          {/* Line Chart Area */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 flex-1 shadow-sm flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-gray-900">Attendance Trends</h3>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-                   <span className="w-2 h-2 rounded-full bg-[#8B0000]"></span> Kehadiran Harian
-                </div>
-              </div>
-            </div>
-            
-            <div className="w-full flex-1 min-h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={attendanceTrends} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                  <XAxis 
-                    dataKey="day" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 12, fill: '#9ca3af' }} 
-                    dy={10}
-                  />
-                  <Tooltip 
-                    labelFormatter={(value) => {
-                      const item = attendanceTrends.find(t => t.day === value);
-                      return item ? item.date : value;
-                    }}
-                    contentStyle={{ borderRadius: '8px', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="count" 
-                    stroke="#8B0000" 
-                    strokeWidth={3} 
-                    dot={{ r: 4, fill: '#8B0000', stroke: '#fff', strokeWidth: 2 }}
-                    activeDot={{ r: 6, fill: '#8B0000', stroke: '#fff', strokeWidth: 2 }} 
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+           </div>
         </div>
 
-        {/* 3. Donut Chart (Col 4) */}
+        {/* 3. Work Calendar & Events (UX) */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col overflow-hidden">
+           <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
+             <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+             Work Calendar
+           </h3>
+           <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide">
+              {calendarEvents.length > 0 ? (
+                calendarEvents.map((evt, idx) => (
+                  <div key={idx} className={`p-3 rounded-xl border flex items-center gap-3 ${evt.type === 'holiday' ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'}`}>
+                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${evt.type === 'holiday' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                        <CalendarIcon size={14} />
+                     </div>
+                     <div className="min-w-0">
+                        <p className="text-xs font-bold text-gray-900 truncate">{evt.title}</p>
+                        <p className="text-[10px] font-medium text-gray-500">{new Date(evt.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</p>
+                     </div>
+                  </div>
+                ))
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                   <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 mb-2">
+                      <CalendarIcon size={24} />
+                   </div>
+                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No Events This Month</p>
+                </div>
+              )}
+           </div>
+        </div>
+
+        {/* 4. Donut Chart (Distribution) */}
         <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col shadow-sm">
            <h3 className="font-bold text-gray-900 mb-6 text-sm flex items-center gap-2">
              <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
@@ -370,11 +371,11 @@ export default function DashboardPage() {
              <ResponsiveContainer width="100%" height="100%">
                <PieChart>
                  <Pie
-                   data={roleDistribution}
-                   innerRadius={65}
-                   outerRadius={90}
-                   paddingAngle={5}
-                   dataKey="count"
+                    data={roleDistribution}
+                    innerRadius={65}
+                    outerRadius={90}
+                    paddingAngle={5}
+                    dataKey="count"
                  >
                    {roleDistribution.map((entry, index) => (
                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

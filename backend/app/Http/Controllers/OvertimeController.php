@@ -17,9 +17,18 @@ class OvertimeController extends Controller
     {
         $query = Overtime::with(['user', 'approver']);
 
-        // Employees see only their requests, Admin/HR see all in company
-        if ($request->user()->role_id == 1) { // 1 = Karyawan
-            $query->where('user_id', $request->user()->id);
+        $user = $request->user();
+        
+        // Logic for Data Isolation:
+        // 1. Managers/Admin see all company data by default.
+        // 2. Staff (non-manager) only sees their own data.
+        
+        if ($user->is_manager) {
+            if ($user->company_id && !$user->canAccessAllCompanies()) {
+                $query->where('company_id', $user->company_id);
+            }
+        } else {
+            $query->where('user_id', $user->id);
         }
 
         $overtimes = $query->orderBy('id', 'desc')->paginate(10);
@@ -56,15 +65,30 @@ class OvertimeController extends Controller
             'model_id' => $overtime->id
         ]);
 
-        // Notify Admins, HR, and Super Admin
+        // 1. Notify the User's Immediate Supervisor
+        if ($request->user()->supervisor_id) {
+            $supervisor = $request->user()->supervisor;
+            if ($supervisor) {
+                $this->notify(
+                    $supervisor,
+                    'PENGAJUAN LEMBUR BAWAHAN',
+                    "{$request->user()->name} telah mengajukan lembur pada tanggal {$request->date}. Mohon segera tinjau.",
+                    'warning',
+                    '/dashboard/approvals'
+                );
+            }
+        }
+
+        // 2. Notify Admins and HR (Fallback or Additional)
         $admins = User::where('company_id', $request->user()->company_id)
             ->where('role_id', '>', 1) // Any role above Karyawan
+            ->where('id', '!=', $request->user()->supervisor_id) // Don't notify twice
             ->get();
             
         foreach ($admins as $admin) {
             $this->notify(
                 $admin,
-                'PENGAJUAN LEMBUR BARU',
+                'PENGAJUAN LEMBUR BARU (ADMIN)',
                 "{$request->user()->name} telah mengajukan lembur pada tanggal {$request->date}.",
                 'warning'
             );
@@ -82,6 +106,7 @@ class OvertimeController extends Controller
 
     public function approve(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('approve-overtimes'), 403, 'Akses ditolak.');
         $overtime = Overtime::findOrFail($id);
         
         $overtime->update([
@@ -112,6 +137,7 @@ class OvertimeController extends Controller
 
     public function reject(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('approve-overtimes'), 403, 'Akses ditolak.');
         $overtime = Overtime::findOrFail($id);
         
         $overtime->update([
@@ -142,6 +168,7 @@ class OvertimeController extends Controller
 
     public function destroy(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('delete-overtimes'), 403, 'Akses ditolak.');
         $overtime = Overtime::findOrFail($id);
 
         if ($overtime->status !== 'pending') {

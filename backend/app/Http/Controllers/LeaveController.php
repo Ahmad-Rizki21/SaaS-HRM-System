@@ -16,9 +16,18 @@ class LeaveController extends Controller
     {
         $query = Leave::with('user');
 
-        // Admin, HRD, Direktur, etc. see all in company. Karyawan sees only theirs.
-        if ($request->user()->role_id == 1) { // Karyawan
-            $query->where('user_id', $request->user()->id);
+        $user = $request->user();
+        
+        // Logic for Data Isolation:
+        // 1. Managers/Admin see all company data by default.
+        // 2. Staff (non-manager) only sees their own data.
+        
+        if ($user->is_manager) {
+            if ($user->company_id && !$user->canAccessAllCompanies()) {
+                $query->where('company_id', $user->company_id);
+            }
+        } else {
+            $query->where('user_id', $user->id);
         }
 
         $leaves = $query->orderBy('id', 'desc')->paginate(10);
@@ -54,15 +63,30 @@ class LeaveController extends Controller
             'info'
         );
 
-        // Notify Admins and HR
+        // 1. Notify the User's Immediate Supervisor
+        if ($request->user()->supervisor_id) {
+            $supervisor = $request->user()->supervisor;
+            if ($supervisor) {
+                $this->notify(
+                    $supervisor,
+                    'PENGAJUAN CUTI BAWAHAN',
+                    "{$request->user()->name} telah mengajukan cuti ({$request->type}) pada {$request->start_date}. Mohon segera tinjau.",
+                    'warning',
+                    '/dashboard/approvals'
+                );
+            }
+        }
+
+        // 2. Notify Admins and HR (Fallback or Additional)
         $admins = \App\Models\User::where('company_id', $request->user()->company_id)
             ->where('role_id', '>', 1) // Any role above Karyawan
+            ->where('id', '!=', $request->user()->supervisor_id) // Don't notify twice if supervisor is also admin
             ->get();
             
         foreach ($admins as $admin) {
             $this->notify(
                 $admin,
-                'PENGAJUAN CUTI BARU',
+                'PENGAJUAN CUTI BARU (ADMIN)',
                 "{$request->user()->name} telah mengajukan cuti ({$request->type}) pada {$request->start_date}.",
                 'warning'
             );
@@ -73,6 +97,7 @@ class LeaveController extends Controller
 
     public function approve(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('approve-leaves'), 403, 'Akses ditolak.');
         $leave = Leave::findOrFail($id);
         
         $leave->update([
@@ -88,6 +113,13 @@ class LeaveController extends Controller
             'success'
         );
 
+        // Real-time Push Notification (FCM)
+        \App\Services\FCMService::sendNotification(
+            $leave->user, 
+            'Permohonan Cuti Disetujui', 
+            "Cuti Anda untuk tanggal {$leave->start_date} s/d {$leave->end_date} telah DISETUJUI."
+        );
+
         try {
             Mail::to($leave->user->email)->send(new LeaveNotification($leave, 'Disetujui'));
         } catch (\Exception $e) {}
@@ -97,6 +129,7 @@ class LeaveController extends Controller
 
     public function reject(Request $request, $id)
     {
+        abort_if(!$request->user()->hasPermission('approve-leaves'), 403, 'Akses ditolak.');
         $leave = Leave::findOrFail($id);
         
         $leave->update([
@@ -110,6 +143,13 @@ class LeaveController extends Controller
             'CUTI DITOLAK', 
             "Mohon maaf, permohonan cuti Anda untuk tanggal {$leave->start_date} s/d {$leave->end_date} telah DITOLAK.",
             'danger'
+        );
+
+        // Real-time Push Notification (FCM)
+        \App\Services\FCMService::sendNotification(
+            $leave->user, 
+            'Permohonan Cuti Ditolak', 
+            "Mohon maaf, cuti Anda untuk tanggal {$leave->start_date} s/d {$leave->end_date} telah DITOLAK."
         );
 
         try {

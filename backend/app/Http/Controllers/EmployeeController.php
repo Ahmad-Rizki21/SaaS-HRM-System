@@ -15,7 +15,14 @@ class EmployeeController extends Controller
     {
         abort_if(!$request->user()->hasPermission('view-employees'), 403, 'Akses ditolak.');
 
-        $employees = User::where('company_id', $request->user()->company_id)
+        $query = User::query();
+        $user = $request->user();
+
+        if ($user->company_id && !$user->canAccessAllCompanies()) {
+            $query->where('company_id', $user->company_id);
+        }
+
+        $employees = $query
             ->when($request->search, function($q) use ($request) {
                 $q->where(function($qq) use ($request) {
                     $qq->where('name', 'like', "%{$request->search}%")
@@ -155,5 +162,24 @@ class EmployeeController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengimpor: ' . $e->getMessage(), 500);
         }
+    }
+
+    public function directory(Request $request)
+    {
+        $user = $request->user();
+        $query = User::where('company_id', $user->company_id);
+
+        $employees = $query
+            ->when($request->search, function($q) use ($request) {
+                $q->where(function($qq) use ($request) {
+                    $qq->where('name', 'like', "%{$request->search}%")
+                      ->orWhere('email', 'like', "%{$request->search}%");
+                });
+            })
+            ->with(['role', 'company'])
+            ->orderBy('name', 'asc')
+            ->paginate($request->per_page ?? 20);
+
+        return $this->successResponse($employees, 'Data direktori karyawan berhasil diambil.');
     }
 }

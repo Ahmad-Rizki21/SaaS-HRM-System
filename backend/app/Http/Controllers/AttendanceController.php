@@ -33,6 +33,39 @@ class AttendanceController extends Controller
             return $this->errorResponse('Anda sudah check-in hari ini.', 400);
         }
 
+        // --- 1. Fake GPS Detection ---
+        if ($request->is_mocked) {
+             return $this->errorResponse('Lokasi Palsu Terdeteksi! Mohon gunakan GPS asli perangkat Anda.', 403);
+        }
+
+        // --- 2. Device Binding Check ---
+        if ($request->device_id) {
+            if (!$user->device_id) {
+                // First time using a device, bind it
+                $user->update(['device_id' => $request->device_id]);
+            } elseif ($user->device_id !== $request->device_id) {
+                return $this->errorResponse('HP Anda tidak terdaftar. Mohon hubungi Admin untuk reset Device ID.', 403);
+            }
+        }
+
+        // --- 3. Liveness Verification check ---
+        // (From Frontend Liveness Detection)
+        if (!$request->image) {
+             return $this->errorResponse('Foto Selfie wajib disertakan untuk absensi.', 400);
+        }
+        
+        // --- 4. Face Match Logic (Placeholder/Basic Check) ---
+        // Mencocokkan wajah saat selfie dengan foto profil
+        $faceMatch = true; // Default to true if not implementing ML right away
+        
+        // IF IMPLEMENTING ML Face Recognition:
+        // $manager = new FaceRecognitionManager();
+        // $faceMatch = $manager->match($user->profile_photo_path, $request->image);
+        
+        if ($user->profile_photo_path && !$faceMatch) {
+             return $this->errorResponse('Wajah tidak cocok dengan profil Anda. Pastikan wajah terlihat jelas!', 403);
+        }
+
         $schedule = Schedule::with('shift')
             ->where('user_id', $user->id)
             ->where('date', $today)
@@ -96,13 +129,30 @@ class AttendanceController extends Controller
             'status' => $status,
             'office_id' => $office ? $office->id : null,
         ]);
-
+        
+        // --- Notifications ---
+        
+        // 1. Notify the User (Personal)
         $this->notify(
             $user, 
             'BERHASIL ABSEN MASUK', 
             "Anda telah berhasil absen masuk pada pukul {$now->format('H:i')} WIB. Status: " . strtoupper($status),
             $status === 'late' ? 'warning' : 'success'
         );
+
+        // 2. Proactive: Notify Supervisor if LATE
+        if ($status === 'late' && $user->supervisor_id) {
+            $supervisor = User::find($user->supervisor_id);
+            if ($supervisor) {
+                $this->notify(
+                    $supervisor,
+                    'BAWAHAN TERLAMBAT',
+                    "Karyawan {$user->name} baru saja absen masuk terlambat (Pukul {$now->format('H:i')}). Status: " . strtoupper($status),
+                    'warning',
+                    '/dashboard/attendance'
+                );
+            }
+        }
 
         return $this->successResponse($attendance, 'Check-in berhasil. Status: ' . $status);
     }
@@ -118,6 +168,26 @@ class AttendanceController extends Controller
             
         if (!$attendance) {
             return $this->errorResponse('Anda belum check-in atau sudah check-out.', 400);
+        }
+
+        // --- 1. Fake GPS Check ---
+        if ($request->is_mocked) {
+             return $this->errorResponse('Lokasi Palsu Terdeteksi! Mohon gunakan GPS asli.', 403);
+        }
+
+        // --- 2. Device Binding Check ---
+        if ($request->device_id && $user->device_id && $user->device_id !== $request->device_id) {
+            return $this->errorResponse('HP Anda tidak terdaftar. Gunakan HP yang sama saat absen masuk.', 403);
+        }
+
+        // --- 3. Foto Selfie Check & Face Match Placeholder ---
+        if (!$request->image) {
+             return $this->errorResponse('Foto Selfie wajib disertakan untuk absensi.', 400);
+        }
+        
+        $faceMatch = true; 
+        if ($user->profile_photo_path && !$faceMatch) {
+             return $this->errorResponse('Wajah tidak cocok dengan profil Anda.', 403);
         }
 
         // Handle Image
@@ -163,14 +233,16 @@ class AttendanceController extends Controller
 
         $user = $request->user();
         
-        // Eager load role untuk pengecekan role name atau ID
-        if (!$user->relationLoaded('role')) {
-            $user->load('role');
-        }
-
-        // Hanya limit data sendiri jika role-nya adalah 'Karyawan' (ID 1 atau Nama 'Karyawan')
-        if ($user->role_id == 1 || ($user->role && strtolower($user->role->name) === 'karyawan')) {
-             $query->where('user_id', $user->id);
+        // Logic for Data Isolation:
+        // 1. Managers/Admin see all company data by default.
+        // 2. Staff (non-manager) only sees their own data.
+        
+        if ($user->is_manager) {
+            if ($user->company_id && !$user->canAccessAllCompanies()) {
+                $query->where('company_id', $user->company_id);
+            }
+        } else {
+            $query->where('user_id', $user->id);
         }
 
         if ($request->start_date && $request->end_date) {

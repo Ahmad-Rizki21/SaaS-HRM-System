@@ -47,10 +47,10 @@ export default function ApprovalsPage() {
     try {
       setLoading(true);
       const [leaveRes, reimRes, profileRes, overtimeRes] = await Promise.all([
-        axiosInstance.get("/leave"),
-        axiosInstance.get("/reimbursements"),
-        axiosInstance.get("/profile-requests"),
-        axiosInstance.get("/overtimes")
+        axiosInstance.get("/leave?status=pending"),
+        axiosInstance.get("/reimbursements?status=pending"),
+        axiosInstance.get("/profile-requests?status=pending"),
+        axiosInstance.get("/overtimes?status=pending")
       ]);
 
       const leaves = (leaveRes.data.data.data || []).map((l: any) => ({

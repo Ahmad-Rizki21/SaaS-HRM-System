@@ -12,12 +12,23 @@ class ScheduleController extends Controller
         $query = Schedule::with(['user', 'shift']);
 
         // Filter by company's users
-        $query->whereHas('user', function($q) use ($request) {
-            $q->where('company_id', $request->user()->company_id);
-        });
+        $user = $request->user();
+        
+        if ($user->company_id && !$user->canAccessAllCompanies()) {
+            $query->whereHas('user', function($q) use ($user) {
+                $q->where('company_id', $user->company_id);
+            });
+        }
 
         if ($request->date) {
             $query->where('date', $request->date);
+        } elseif ($request->month && $request->year) {
+            $query->whereMonth('date', $request->month)
+                  ->whereYear('date', $request->year);
+        } else {
+            // Default: Show only current month to prevent loading thousands of records
+            $query->whereMonth('date', now()->month)
+                  ->whereYear('date', now()->year);
         }
 
         return $this->successResponse($query->get(), 'Daftar jadwal berhasil diambil.');

@@ -25,6 +25,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PerformanceReviewController;
 
 // Auth
@@ -125,6 +126,7 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/notifications/fcm-token', [NotificationController::class, 'updateFCMToken']);
     Route::post('/notifications-clear', [NotificationController::class, 'destroyAll']);
 
     // Salary (Gaji)
@@ -141,10 +143,21 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::put('/kpi-reviews/{id}', [PerformanceReviewController::class, 'update']);
     Route::delete('/kpi-reviews/{id}', [PerformanceReviewController::class, 'destroy']);
 
+    // Managerial Routes
+    Route::group(['prefix' => 'manager'], function () {
+        Route::get('/pending-count', [ManagerController::class, 'getPendingCount']);
+        Route::get('/pending-requests', [ManagerController::class, 'getPendingRequests']);
+        Route::post('/update-status', [ManagerController::class, 'updateRequestStatus']);
+        Route::get('/team-attendance', [ManagerController::class, 'getTeamAttendance']);
+    });
+
     // Profile Settings
     Route::post('/profile/update', [ProfileController::class, 'update']);
     Route::post('/profile/upload-photo', [ProfileController::class, 'uploadPhoto']);
     Route::post('/user/change-password', [AuthController::class, 'changePassword']);
+
+    // Employee Directory
+    Route::get('/directory', [EmployeeController::class, 'directory']);
 });
 
 // Exports (Authenticated via query token or header inside controller)

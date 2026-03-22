@@ -60,6 +60,7 @@ export const translations = {
     kpi_reviews: "Manajemen KPI Karyawan",
     performance: "KPI & Review",
     attendance_map: "Peta Kehadiran",
+    employee_directory: "Direktori Karyawan",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -127,6 +128,7 @@ export const translations = {
     kpi_reviews: "Employee KPI Reviews",
     performance: "KPI & Review",
     attendance_map: "Attendance Map",
+    employee_directory: "Employee Directory",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

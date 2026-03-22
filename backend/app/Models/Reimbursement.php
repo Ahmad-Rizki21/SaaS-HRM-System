@@ -11,7 +11,7 @@ class Reimbursement extends Model
 
     protected $fillable = [
         'company_id', 'user_id', 'title', 'amount', 
-        'description', 'status', 'attachment', 'remark'
+        'description', 'status', 'approved_by', 'attachment', 'remark'
     ];
 
     public function user()

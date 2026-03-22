@@ -52,10 +52,17 @@ class AnnouncementController extends Controller
                 'info',
                 '/dashboard/announcements',
                 'mail', // Category KOTAK PESAN
-                false // Jangan kirim email dari trait, kita kirim manual dengan template premium di bawah
+                false 
             );
 
-            // 2. Premium Email Notification
+            // 2. Real-time Push Notification (FCM)
+            \App\Services\FCMService::sendNotification(
+                $member, 
+                "Pengumuman Baru: {$request->title}", 
+                "Buka aplikasi untuk melihat detail pengumuman terbaru."
+            );
+
+            // 3. Premium Email Notification
             try {
                 Mail::send('emails.premium_announcement', [
                     'member' => $member,
