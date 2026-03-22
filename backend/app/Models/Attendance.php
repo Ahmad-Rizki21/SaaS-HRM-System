@@ -19,7 +19,7 @@ class Attendance extends Model
         'status'
     ];
 
-    protected $appends = ['date', 'check_in_time', 'check_out_time', 'check_in_location'];
+    protected $appends = ['date', 'check_in_time', 'check_out_time', 'check_in_location', 'image_in_url', 'image_out_url'];
 
     public function user()
     {
@@ -47,5 +47,15 @@ class Attendance extends Model
             return $this->latitude_in . ', ' . $this->longitude_in;
         }
         return 'Sistem Web';
+    }
+
+    public function getImageInUrlAttribute()
+    {
+        return $this->image_in ? asset('storage/' . $this->image_in) : null;
+    }
+
+    public function getImageOutUrlAttribute()
+    {
+        return $this->image_out ? asset('storage/' . $this->image_out) : null;
     }
 }

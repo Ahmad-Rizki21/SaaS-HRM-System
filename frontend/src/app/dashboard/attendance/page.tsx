@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Search, Download, CheckCircle, Clock, FileWarning } from "lucide-react";
+import { Search, Download, CheckCircle, Clock, Eye, X, MapPin, User as UserIcon, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
-
 import Pagination from "@/components/Pagination";
 
 export default function AttendancePage() {
@@ -18,6 +17,10 @@ export default function AttendancePage() {
     last_page: 1,
     total: 0
   });
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
   useEffect(() => {
     fetchAttendance(page);
@@ -59,6 +62,11 @@ export default function AttendancePage() {
     return <span className="dash-badge dash-badge-neutral">{status}</span>;
   };
 
+  const handleViewDetails = (record: any) => {
+    setSelectedRecord(record);
+    setIsModalOpen(true);
+  };
+
   const handleExport = async () => {
     try {
       const response = await axiosInstance.get('/attendance/export', {
@@ -86,7 +94,7 @@ export default function AttendancePage() {
           <p className="dash-page-desc">Pantau catatan kehadiran harian karyawan secara real-time.</p>
         </div>
         <div className="dash-page-actions">
-          {hasPermission('view-employees') && (
+          {hasPermission('export-attendance') && (
             <button className="dash-btn dash-btn-outline" onClick={handleExport}>
               <Download size={15} />
               Export Laporan
@@ -115,7 +123,7 @@ export default function AttendancePage() {
           </div>
         ) : (
           <div className="dash-table-wrapper">
-            <table className="dash-table">
+            <table className="dash-table text-left">
               <thead>
                 <tr>
                   <th>Karyawan</th>
@@ -124,22 +132,40 @@ export default function AttendancePage() {
                   <th>Jam Pulang</th>
                   <th>Status Kehadiran</th>
                   <th>Lokasi</th>
+                  <th className="text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {attendance.map((record) => (
-                  <tr key={record.id}>
+                  <tr key={record.id} className="hover:bg-gray-50 transition-colors">
                     <td>
-                      <span className="font-semibold text-gray-900">{record.user?.name || "Karyawan"}</span>
+                       <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                             {record.user?.profile_photo_url ? (
+                                <img src={record.user.profile_photo_url} alt="" className="w-full h-full object-cover" />
+                             ) : (
+                                <UserIcon size={16} className="text-gray-400" />
+                             )}
+                          </div>
+                          <span className="font-semibold text-gray-900">{record.user?.name || "Karyawan"}</span>
+                       </div>
                     </td>
-                    <td><span className="text-sm text-gray-600">{record.date}</span></td>
-                    <td><span className="text-sm font-medium text-gray-900">{record.check_in_time || "-"}</span></td>
-                    <td><span className="text-sm font-medium text-gray-900">{record.check_out_time || "-"}</span></td>
+                    <td><span className="text-sm text-gray-600 font-medium">{record.date}</span></td>
+                    <td><span className="text-sm font-bold text-gray-900">{record.check_in_time || "-"}</span></td>
+                    <td><span className="text-sm font-bold text-gray-900">{record.check_out_time || "-"}</span></td>
                     <td>{getStatusBadge(record.status)}</td>
                     <td>
                       <span className="text-xs text-gray-500 block truncate max-w-[150px]">
                         {record.check_in_location || "Sistem web"}
                       </span>
+                    </td>
+                    <td className="text-right">
+                       <button 
+                          onClick={() => handleViewDetails(record)}
+                          className="p-2 text-gray-400 hover:text-[#8B0000] hover:bg-red-50 rounded-lg transition-all"
+                       >
+                          <Eye size={18} />
+                       </button>
                     </td>
                   </tr>
                 ))}
@@ -157,6 +183,115 @@ export default function AttendancePage() {
           />
         )}
       </div>
+
+      {/* Detail Modal */}
+      {isModalOpen && selectedRecord && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-300">
+               <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center text-[#8B0000]">
+                        <Clock size={20} />
+                     </div>
+                     <div>
+                        <h3 className="font-black text-gray-900 tracking-tight">Detail Kehadiran</h3>
+                        <p className="text-xs text-gray-500 font-medium">{selectedRecord.user?.name} · {selectedRecord.date}</p>
+                     </div>
+                  </div>
+                  <button 
+                     onClick={() => setIsModalOpen(false)}
+                     className="p-2 hover:bg-gray-100 rounded-full transition-all text-gray-400 hover:text-gray-600"
+                  >
+                     <X size={20} />
+                  </button>
+               </div>
+
+               <div className="p-6 overflow-y-auto max-h-[70vh]">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     {/* Check In Side */}
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                           <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Check In</span>
+                           <span className="text-sm font-black text-emerald-600">{selectedRecord.check_in_time}</span>
+                        </div>
+                        
+                        <div className="aspect-square bg-gray-100 rounded-3xl overflow-hidden border-2 border-white shadow-lg relative group">
+                           {selectedRecord.image_in_url ? (
+                              <img src={selectedRecord.image_in_url} alt="Selfie Masuk" className="w-full h-full object-cover" />
+                           ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                 <UserIcon size={48} className="mb-2 opacity-20" />
+                                 <span className="text-[10px] font-bold uppercase tracking-widest">Tanpa Foto</span>
+                              </div>
+                           )}
+                           <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+                              <div className="flex items-center gap-2 text-white">
+                                 <MapPin size={12} className="text-red-400" />
+                                 <p className="text-[10px] font-medium truncate">{selectedRecord.latitude_in}, {selectedRecord.longitude_in}</p>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* Check Out Side */}
+                     <div className="space-y-4">
+                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                           <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Check Out</span>
+                           <span className="text-sm font-black text-orange-600">{selectedRecord.check_out_time || "-"}</span>
+                        </div>
+
+                        <div className="aspect-square bg-gray-100 rounded-3xl overflow-hidden border-2 border-white shadow-lg relative group">
+                           {selectedRecord.image_out_url ? (
+                              <img src={selectedRecord.image_out_url} alt="Selfie Pulang" className="w-full h-full object-cover" />
+                           ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                 <UserIcon size={48} className="mb-2 opacity-20" />
+                                 <span className="text-[10px] font-bold uppercase tracking-widest">Belum Check Out</span>
+                              </div>
+                           )}
+                           {selectedRecord.check_out && (
+                              <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+                                 <div className="flex items-center gap-2 text-white">
+                                    <MapPin size={12} className="text-red-400" />
+                                    <p className="text-[10px] font-medium truncate">{selectedRecord.latitude_out}, {selectedRecord.longitude_out}</p>
+                                 </div>
+                              </div>
+                           )}
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Additional Info Cards */}
+                  <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-4">
+                     <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                        <div className="flex items-center gap-2">
+                           <div className={`w-2 h-2 rounded-full ${selectedRecord.status === 'present' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                           <p className="text-xs font-bold text-gray-900">{selectedRecord.status === 'present' ? 'Hadir Tepat Waktu' : 'Terlambat'}</p>
+                        </div>
+                     </div>
+                     <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Perangkat</p>
+                        <p className="text-xs font-bold text-gray-900 truncate">Android/iOS App</p>
+                     </div>
+                     <div className="col-span-2 md:col-span-1 bg-[#8B0000] rounded-2xl p-4 text-white shadow-lg shadow-red-900/10">
+                        <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Audit Trace</p>
+                        <p className="text-[10px] font-medium italic">Verified by Face & GPS</p>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex justify-end">
+                  <button 
+                     onClick={() => setIsModalOpen(false)}
+                     className="px-8 py-3 bg-gray-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200"
+                  >
+                     Tutup
+                  </button>
+               </div>
+            </div>
+         </div>
+      )}
     </div>
   );
 }

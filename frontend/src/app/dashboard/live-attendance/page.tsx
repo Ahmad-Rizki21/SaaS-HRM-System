@@ -10,6 +10,7 @@ export default function LiveAttendancePage() {
   const router = useRouter();
   const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const [streamActive, setStreamActive] = useState(false);
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -99,23 +100,40 @@ export default function LiveAttendancePage() {
       alert("Menunggu titik koordinat lokasi GPS...");
       return;
     }
-    
-    // Validasi Jarak jika ingin enforced (kita bisa warn aja atau strict blokir)
-    // if (distance !== null && distance > ALLOWED_RADIUS) {
-    //   alert(`Anda berada di luar radius kantor! Jarak: ${distance}m (Maks: ${ALLOWED_RADIUS}m)`);
-    //   return;
-    // }
 
+    if (!videoRef.current || !canvasRef.current) {
+      alert("Kamera tidak siap!");
+      return;
+    }
+    
     setLoading(true);
     setStatusMsg("Menganalisis Wajah (Face Recognition)...");
 
-    // Simulasi Face Recognition Delay
+    // Capture Frame After a short delay for dramatic effect/scanning
     setTimeout(async () => {
       try {
+        const video = videoRef.current!;
+        const canvas = canvasRef.current!;
+        const context = canvas.getContext('2d');
+
+        // Set dimensions match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw current frame to canvas
+        if (context) {
+          // Mirror image handling
+          context.translate(canvas.width, 0);
+          context.scale(-1, 1);
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+
+        const selfieBase64 = canvas.toDataURL('image/png');
+
         const payload = {
           latitude: location.lat,
-          longitude: location.lng
-          // Bisa tambah base64 foto hasil canvas disini jika backend siap menerima 'photo'
+          longitude: location.lng,
+          image: selfieBase64
         };
 
         const res = await axiosInstance.post(`/attendance/${type}`, payload);
@@ -130,7 +148,7 @@ export default function LiveAttendancePage() {
       } finally {
         setLoading(false);
       }
-    }, 2000);
+    }, 1500);
   };
 
   return (
@@ -156,6 +174,7 @@ export default function LiveAttendancePage() {
             muted 
             className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" 
           />
+          <canvas ref={canvasRef} className="hidden" />
           
           {/* Scanner Overlay UI */}
           {streamActive && (
