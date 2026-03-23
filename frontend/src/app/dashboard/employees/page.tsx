@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown, User as UserIcon, Camera } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -52,7 +52,7 @@ interface PaginationData {
   per_page: number;
 }
 
-export default function EmployeesPage() {
+function EmployeesContent() {
   const { hasPermission } = useAuth();
   const searchParams = useSearchParams();
   const urlSearch = searchParams.get("search");
@@ -775,5 +775,20 @@ export default function EmployeesPage() {
       )}
 
     </div>
+  );
+}
+
+export default function EmployeesPage() {
+  return (
+    <Suspense fallback={
+      <div className="dash-page-header">
+        <div>
+          <h1 className="dash-page-title">Data Pegawai HRMS</h1>
+          <p className="dash-page-desc">Memuat data...</p>
+        </div>
+      </div>
+    }>
+      <EmployeesContent />
+    </Suspense>
   );
 }

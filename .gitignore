@@ -23,6 +23,10 @@ frontend/out/
 frontend/.env*
 frontend/next-env.d.ts
 
+# Docker
+.env.docker
+backups/
+
 # Misc
 .DS_Store
 Thumbs.db

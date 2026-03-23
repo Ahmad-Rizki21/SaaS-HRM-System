@@ -29,6 +29,27 @@ use App\Http\Controllers\ShiftSwapController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PerformanceReviewController;
 
+// Health Check (Docker)
+Route::get('/health', function () {
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        return response()->json([
+            'status' => 'healthy',
+            'service' => 'HRMS Narwasthu Group API',
+            'database' => 'connected',
+            'timestamp' => now()->toISOString(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'unhealthy',
+            'service' => 'HRMS Narwasthu Group API',
+            'database' => 'disconnected',
+            'error' => $e->getMessage(),
+            'timestamp' => now()->toISOString(),
+        ], 503);
+    }
+});
+
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
 

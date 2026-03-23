@@ -1,0 +1,12 @@
+# ================================================
+# Frontend .dockerignore
+# ================================================
+.git
+.gitignore
+.next
+node_modules
+out
+*.md
+.env*
+.vscode
+.idea

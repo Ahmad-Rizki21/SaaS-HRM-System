@@ -1,0 +1,24 @@
+# ================================================
+# Backend .dockerignore
+# ================================================
+.git
+.gitignore
+.gitattributes
+.editorconfig
+.env
+.env.example
+.env.backup
+.env.production
+phpunit.xml
+README.md
+*.md
+node_modules
+.vscode
+.idea
+storage/logs/*.log
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+database/database.sqlite
+database/database.sqlite-journal
