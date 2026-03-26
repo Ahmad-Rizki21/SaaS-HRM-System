@@ -67,6 +67,8 @@ class ProjectController extends Controller
             ])
         ]);
 
+        $this->logActivity('CREATE_PROJECT', "Membuat proyek baru: {$project->name} ({$project->code})", $project);
+
         return response()->json([
             'success' => true,
             'message' => 'Proyek berhasil dibuat.',
@@ -167,6 +169,8 @@ class ProjectController extends Controller
             'progress_percentage'
         ]));
 
+        $this->logActivity('UPDATE_PROJECT', "Memperbarui data proyek: {$project->name}", $project);
+
         return response()->json([
             'success' => true,
             'message' => 'Proyek berhasil diperbarui.',
@@ -177,7 +181,10 @@ class ProjectController extends Controller
     public function destroy(Request $request, $id)
     {
         $project = Project::where('company_id', $request->user()->company_id)->findOrFail($id);
+        $projectName = $project->name;
         $project->delete();
+
+        $this->logActivity('DELETE_PROJECT', "Menghapus proyek: {$projectName}");
 
         return response()->json([
             'success' => true,
@@ -231,6 +238,7 @@ class ProjectController extends Controller
         ]));
 
         $project->recalculate();
+        $this->logActivity('ADD_PROJECT_BUDGET', "Menambah RAB ({$budget->item_name}) pada proyek: {$project->name}", $project);
 
         return response()->json([
             'success' => true,
@@ -299,6 +307,8 @@ class ProjectController extends Controller
             'status' => 'pending',
         ]);
 
+        $this->logActivity('SUBMIT_PROJECT_COST', "Mencatat biaya aktual (Rp " . number_format($cost->amount, 0, ',', '.') . ") pada proyek: {$project->name}", $project);
+
         return response()->json([
             'success' => true,
             'message' => 'Biaya berhasil dicatat.',
@@ -313,6 +323,7 @@ class ProjectController extends Controller
 
         $cost->update(['status' => 'approved']);
         $project->recalculate();
+        $this->logActivity('APPROVE_PROJECT_COST', "Menyetujui biaya aktual (Rp " . number_format($cost->amount, 0, ',', '.') . ") pada proyek: {$project->name}", $project);
 
         return response()->json([
             'success' => true,
@@ -326,6 +337,7 @@ class ProjectController extends Controller
         $cost = $project->costs()->findOrFail($costId);
 
         $cost->update(['status' => 'rejected']);
+        $this->logActivity('REJECT_PROJECT_COST', "Menolak biaya aktual pada proyek: {$project->name}", $project);
 
         return response()->json([
             'success' => true,
@@ -487,6 +499,8 @@ class ProjectController extends Controller
             'type', 'category', 'description', 'amount',
             'transaction_date', 'reference_number', 'notes'
         ]));
+
+        $this->logActivity('RECORD_CASH_FLOW', "Mencatat arus kas " . ($cashFlow->type == 'income' ? 'masuk' : 'keluar') . " (Rp " . number_format($cashFlow->amount, 0, ',', '.') . ") pada proyek: {$project->name}", $project);
 
         return response()->json([
             'success' => true,
