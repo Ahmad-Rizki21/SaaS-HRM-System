@@ -64,6 +64,9 @@ export const translations = {
     shift_swap: "Tukar Shift",
     shift_swap_report: "Laporan Tukar Shift",
     organization_chart: "Bagan Organisasi",
+    construction: "Konstruksi",
+    project_management: "Manajemen Proyek",
+    project_overview: "Daftar Proyek",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -135,6 +138,9 @@ export const translations = {
     shift_swap: "Shift Swap",
     shift_swap_report: "Shift Swap Report",
     organization_chart: "Organization Chart",
+    construction: "Construction",
+    project_management: "Project Management",
+    project_overview: "Project Overview",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

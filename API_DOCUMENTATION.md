@@ -65,6 +65,30 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `GET` | `/api/holidays` | List kalender hari libur |
 | `POST` | `/api/holidays` | Tambah hari libur internal |
 
+## 🏗️ Manajemen Proyek (Konstruksi)
+| Method | Endpoint | Deskripsi |
+| :--- | :--- | :--- |
+| `GET` | `/api/projects/dashboard` | Dashboard KPI ringkasan proyek |
+| `GET` | `/api/projects` | List semua proyek (filter: status, search) |
+| `POST` | `/api/projects` | Buat proyek baru |
+| `GET` | `/api/projects/{id}` | Detail proyek + summary RAB vs aktual |
+| `PUT` | `/api/projects/{id}` | Update data proyek |
+| `DELETE` | `/api/projects/{id}` | Hapus proyek |
+| `POST` | `/api/projects/{id}/budgets` | Tambah item RAB (Rencana Anggaran Biaya) |
+| `PUT` | `/api/projects/{id}/budgets/{bid}` | Update item RAB |
+| `DELETE` | `/api/projects/{id}/budgets/{bid}` | Hapus item RAB |
+| `POST` | `/api/projects/{id}/costs` | Catat biaya aktual proyek |
+| `POST` | `/api/projects/{id}/costs/{cid}/approve` | Setujui biaya proyek |
+| `POST` | `/api/projects/{id}/costs/{cid}/reject` | Tolak biaya proyek |
+| `POST` | `/api/projects/{id}/contracts` | Tambah kontrak proyek |
+| `PUT` | `/api/projects/{id}/contracts/{cid}` | Update kontrak |
+| `DELETE` | `/api/projects/{id}/contracts/{cid}` | Hapus kontrak |
+| `POST` | `/api/projects/{id}/schedules` | Tambah jadwal/milestone proyek |
+| `PUT` | `/api/projects/{id}/schedules/{sid}` | Update jadwal |
+| `DELETE` | `/api/projects/{id}/schedules/{sid}` | Hapus jadwal |
+| `POST` | `/api/projects/{id}/cash-flows` | Catat transaksi arus kas |
+| `DELETE` | `/api/projects/{id}/cash-flows/{cfid}` | Hapus transaksi arus kas |
+
 ## 🛠️ Sistem & Settings
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
@@ -81,3 +105,4 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 
 ---
 *Gunakan file `postman/collection.json` untuk dokumentasi lebih detail (contoh body request & response).*
+

@@ -28,6 +28,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ShiftSwapController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PerformanceReviewController;
+use App\Http\Controllers\ProjectController;
 
 // Health Check (Docker)
 Route::get('/health', function () {
@@ -190,6 +191,38 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::post('/shift-swap/{id}/approve', [ShiftSwapController::class, 'approve']);
     Route::get('/shift-swap/report', [ShiftSwapController::class, 'report']);
     Route::get('/shift-swap/export', [ShiftSwapController::class, 'export']);
+
+    // Projects (Kontrol Eksekusi Proyek & Aktualisasi RAB)
+    Route::get('/projects/dashboard', [ProjectController::class, 'dashboard']);
+    Route::get('/projects', [ProjectController::class, 'index']);
+    Route::post('/projects', [ProjectController::class, 'store']);
+    Route::get('/projects/{id}', [ProjectController::class, 'show']);
+    Route::put('/projects/{id}', [ProjectController::class, 'update']);
+    Route::delete('/projects/{id}', [ProjectController::class, 'destroy']);
+
+    // Project Budget (RAB)
+    Route::post('/projects/{projectId}/budgets', [ProjectController::class, 'storeBudget']);
+    Route::put('/projects/{projectId}/budgets/{budgetId}', [ProjectController::class, 'updateBudget']);
+    Route::delete('/projects/{projectId}/budgets/{budgetId}', [ProjectController::class, 'destroyBudget']);
+
+    // Project Costs (Aktualisasi Biaya)
+    Route::post('/projects/{projectId}/costs', [ProjectController::class, 'storeCost']);
+    Route::post('/projects/{projectId}/costs/{costId}/approve', [ProjectController::class, 'approveCost']);
+    Route::post('/projects/{projectId}/costs/{costId}/reject', [ProjectController::class, 'rejectCost']);
+
+    // Project Contracts (Kontrak)
+    Route::post('/projects/{projectId}/contracts', [ProjectController::class, 'storeContract']);
+    Route::put('/projects/{projectId}/contracts/{contractId}', [ProjectController::class, 'updateContract']);
+    Route::delete('/projects/{projectId}/contracts/{contractId}', [ProjectController::class, 'destroyContract']);
+
+    // Project Schedules (Jadwal & Tender)
+    Route::post('/projects/{projectId}/schedules', [ProjectController::class, 'storeSchedule']);
+    Route::put('/projects/{projectId}/schedules/{scheduleId}', [ProjectController::class, 'updateSchedule']);
+    Route::delete('/projects/{projectId}/schedules/{scheduleId}', [ProjectController::class, 'destroySchedule']);
+
+    // Project Cash Flow (Arus Kas)
+    Route::post('/projects/{projectId}/cash-flows', [ProjectController::class, 'storeCashFlow']);
+    Route::delete('/projects/{projectId}/cash-flows/{cashFlowId}', [ProjectController::class, 'destroyCashFlow']);
 });
 
 // Exports (Authenticated via query token or header inside controller)

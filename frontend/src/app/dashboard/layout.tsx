@@ -31,7 +31,9 @@ import {
   User,
   Shield,
   Laptop,
-  Camera
+  Camera,
+  HardHat,
+  Building2
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useState, useEffect, useRef } from "react";
@@ -111,6 +113,15 @@ const sidebarLinks: SidebarLink[] = [
       { name: "overtime_report", href: "/dashboard/reports/overtimes", permission: 'view-employees' },
       { name: "shift_swap_report", href: "/dashboard/reports/shift-swap", permission: 'view-shift-swap-reports' },
       { name: "payroll_report", href: "/dashboard/reports/payroll", permission: 'view-employees' },
+    ]
+  },
+  { name: "construction", isHeading: true, permission: 'view-employees' },
+  {
+    name: "project_management",
+    icon: HardHat,
+    permission: 'view-employees',
+    submenus: [
+      { name: "project_overview", href: "/dashboard/projects", permission: 'view-employees' },
     ]
   },
   { name: "system", isHeading: true, permission: 'manage-roles' },

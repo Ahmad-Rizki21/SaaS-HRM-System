@@ -57,6 +57,15 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Lihat Laporan Tukar Shift', 'slug' => 'view-shift-swap-reports', 'group' => 'Tukar Shift'],
             ['name' => 'Export Laporan Tukar Shift', 'slug' => 'export-shift-swaps', 'group' => 'Tukar Shift'],
 
+            // Proyek & Konstruksi
+            ['name' => 'Lihat Proyek', 'slug' => 'view-projects', 'group' => 'Proyek'],
+            ['name' => 'Buat Proyek', 'slug' => 'create-projects', 'group' => 'Proyek'],
+            ['name' => 'Ubah Proyek', 'slug' => 'edit-projects', 'group' => 'Proyek'],
+            ['name' => 'Hapus Proyek', 'slug' => 'delete-projects', 'group' => 'Proyek'],
+            ['name' => 'Kelola Anggaran Proyek', 'slug' => 'manage-project-budgets', 'group' => 'Proyek'],
+            ['name' => 'Kelola Kontrak Proyek', 'slug' => 'manage-project-contracts', 'group' => 'Proyek'],
+            ['name' => 'Setujui Biaya Proyek', 'slug' => 'approve-project-costs', 'group' => 'Proyek'],
+
             // Pengaturan
             ['name' => 'Pengaturan Perusahaan', 'slug' => 'manage-company', 'group' => 'Pengaturan'],
             ['name' => 'Manajemen Role', 'slug' => 'manage-roles', 'group' => 'Pengaturan'],
@@ -78,13 +87,13 @@ class RolePermissionSeeder extends Seeder
         $admin->permissions()->sync($allPermissions);
         $direktur->permissions()->sync($allPermissions);
         
-        // Manager: View Employees, Approvals, KPI, Map, Schedules, Overtimes, Reports, Shift Swaps
+        // Manager: View Employees, Approvals, KPI, Map, Schedules, Overtimes, Reports, Shift Swaps, Projects
         $managerPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek'
         ])->whereNotIn('slug', ['delete-employees', 'manage-roles', 'manage-company'])->pluck('id');
         $manager->permissions()->sync($managerPermissions);
 
-        // Supervisor: Approvals and Viewing
+        // Supervisor: Approvals, Viewing, and Project oversight
         $supervisorPermissions = Permission::whereIn('slug', [
             'view-employees', 
             'view-leaves', 'approve-leaves', 
@@ -92,23 +101,25 @@ class RolePermissionSeeder extends Seeder
             'view-overtimes', 'approve-overtimes',
             'view-kpis', 'view-attendance-map', 'view-attendance-reports',
             'manage-shifts', 'manage-schedules',
-            'view-shift-swaps', 'approve-shift-swaps', 'view-shift-swap-reports', 'export-shift-swaps'
+            'view-shift-swaps', 'approve-shift-swaps', 'view-shift-swap-reports', 'export-shift-swaps',
+            'view-projects', 'approve-project-costs'
         ])->pluck('id');
         $supervisor->permissions()->sync($supervisorPermissions);
 
-        // HRD Manager: Manage Employees, Leaves, Reimbursements, Overtime, Operations, KPI, & Map, Shift Swaps
+        // HRD Manager: Manage Employees, Leaves, Reimbursements, Overtime, Operations, KPI, Map, Shift Swaps, Projects
         $hrdPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek'
         ])->pluck('id');
         $hrd->permissions()->sync($hrdPermissions);
 
-        // Staff Karyawan: Apply Leaves/Reimbursement/Overtime & View basic records
+        // Staff Karyawan: Apply Leaves/Reimbursement/Overtime, View basic records & View Projects
         $staffPermissions = Permission::whereIn('slug', [
             'view-employees', 
             'view-leaves', 'apply-leaves', 
             'view-reimbursements', 'apply-reimbursements',
             'view-overtimes', 'apply-overtimes',
-            'view-shift-swaps', 'apply-shift-swaps'
+            'view-shift-swaps', 'apply-shift-swaps',
+            'view-projects'
         ])->pluck('id');
         $staff->permissions()->sync($staffPermissions);
     }

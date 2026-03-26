@@ -1010,6 +1010,167 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Project Management (Konstruksi)",
+			"description": "Kontrol eksekusi proyek konstruksi, RAB, kontrak, jadwal, dan cash flow.",
+			"item": [
+				{
+					"name": "Dashboard KPI Proyek",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/projects/dashboard"
+					}
+				},
+				{
+					"name": "Get All Projects",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/projects"
+					}
+				},
+				{
+					"name": "Create Project",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Pembangunan Gedung Kantor\",\n    \"code\": \"PRJ-001\",\n    \"description\": \"Proyek pembangunan gedung kantor 5 lantai\",\n    \"client_name\": \"PT. ABC Indonesia\",\n    \"location\": \"Jakarta Selatan\",\n    \"status\": \"planning\",\n    \"total_budget\": 5000000000,\n    \"start_date\": \"2026-04-01\",\n    \"end_date\": \"2026-12-31\",\n    \"project_manager_id\": 1\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/projects"
+					}
+				},
+				{
+					"name": "Get Project Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/projects/1"
+					}
+				},
+				{
+					"name": "Update Project",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"in_progress\",\n    \"progress_percentage\": 25.5\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/projects/1"
+					}
+				},
+				{
+					"name": "Delete Project",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/projects/1"
+					}
+				},
+				{
+					"name": "Add Budget Item (RAB)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"category\": \"Material\",\n    \"item_name\": \"Besi Beton D16\",\n    \"unit\": \"kg\",\n    \"volume\": 5000,\n    \"unit_price\": 15000,\n    \"notes\": \"Besi untuk pondasi\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/projects/1/budgets"
+					}
+				},
+				{
+					"name": "Record Actual Cost",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"category\": \"Material\",\n    \"description\": \"Pembelian besi beton batch 1\",\n    \"amount\": 25000000,\n    \"cost_date\": \"2026-04-10\",\n    \"vendor\": \"PT. Baja Mandiri\",\n    \"receipt_number\": \"INV-2026-001\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/projects/1/costs"
+					}
+				},
+				{
+					"name": "Approve Cost",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/projects/1/costs/1/approve"
+					}
+				},
+				{
+					"name": "Add Contract",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contract_number\": \"KTR-2026-001\",\n    \"title\": \"Kontrak Pekerjaan Struktur\",\n    \"vendor_name\": \"PT. Konstruksi Jaya\",\n    \"vendor_contact\": \"081234567890\",\n    \"contract_value\": 2000000000,\n    \"contract_type\": \"subcontractor\",\n    \"status\": \"active\",\n    \"start_date\": \"2026-04-01\",\n    \"end_date\": \"2026-09-30\",\n    \"scope_of_work\": \"Pekerjaan struktur lantai 1-5\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/projects/1/contracts"
+					}
+				},
+				{
+					"name": "Add Schedule Milestone",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"task_name\": \"Pekerjaan Pondasi\",\n    \"description\": \"Galian dan pengecoran pondasi\",\n    \"phase\": \"foundation\",\n    \"planned_start\": \"2026-04-01\",\n    \"planned_end\": \"2026-05-15\",\n    \"progress\": 0,\n    \"status\": \"not_started\",\n    \"order\": 1\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/projects/1/schedules"
+					}
+				},
+				{
+					"name": "Record Cash Flow",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"income\",\n    \"category\": \"Termin\",\n    \"description\": \"Pembayaran termin 1 dari klien\",\n    \"amount\": 1500000000,\n    \"transaction_date\": \"2026-04-05\",\n    \"reference_number\": \"TRF-2026-001\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/projects/1/cash-flows"
+					}
+				}
+			]
 		}
 	]
 }
