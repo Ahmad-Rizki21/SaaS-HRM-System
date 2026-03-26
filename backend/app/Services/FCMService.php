@@ -37,6 +37,11 @@ class FCMService
             $client = new Google_Client();
             $client->setAuthConfig($credentials_filepath);
             $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+            
+            // Fix cURL error 77 (SSL Certificate issue in Local/Laragon)
+            $httpClient = new \GuzzleHttp\Client(['verify' => false]);
+            $client->setHttpClient($httpClient);
+
             $accessToken = $client->fetchAccessTokenWithAssertion();
             
             if (!isset($accessToken['access_token'])) {
@@ -48,7 +53,8 @@ class FCMService
             $project_id = json_decode(file_get_contents($credentials_filepath))->project_id;
 
             // Send to FCM v1 API
-            $response = Http::withHeaders([
+            $response = Http::withOptions(['verify' => false])
+                ->withHeaders([
                 'Authorization' => "Bearer $token",
                 'Content-Type' => 'application/json',
             ])->post("https://fcm.googleapis.com/v1/projects/$project_id/messages:send", [

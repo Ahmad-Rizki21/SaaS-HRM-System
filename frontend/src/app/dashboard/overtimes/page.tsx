@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Check, X, Eye, Clock, Printer } from "lucide-react";
+import { Plus, Search, Check, X, Eye, Clock, Printer, FileDown } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
@@ -102,6 +102,25 @@ export default function OvertimesPage() {
     setIsDetailModalOpen(true);
   };
 
+  const handleExport = async () => {
+    try {
+      const response = await axiosInstance.get('/overtimes/export', {
+        responseType: 'blob',
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `laporan-lembur-${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (e) {
+      console.error("Gagal mengekspor data lembur", e);
+      alert("Gagal mengekspor data lembur. Silakan coba lagi nanti.");
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending': return <span className="dash-badge dash-badge-warning">Menunggu</span>;
@@ -119,6 +138,14 @@ export default function OvertimesPage() {
           <p className="dash-page-desc">Kelola persetujuan dan riwayat pengajuan lembur karyawan.</p>
         </div>
         <div className="dash-page-actions">
+           <button 
+             onClick={handleExport}
+             className="dash-btn dash-btn-outline"
+             title="Ekspor ke Excel"
+           >
+             <FileDown size={15} />
+             Ekspor Excel
+           </button>
            <button 
              onClick={() => setIsModalOpen(true)} 
              className="dash-btn dash-btn-primary"

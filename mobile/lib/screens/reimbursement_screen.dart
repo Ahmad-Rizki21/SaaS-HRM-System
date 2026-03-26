@@ -14,7 +14,11 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
   final Color primaryColor = const Color(0xFF800000);
   List<dynamic> _claims = [];
   bool _isLoading = true;
-  final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  final currencyFormatter = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
@@ -51,7 +55,12 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
           ),
-          padding: EdgeInsets.only(left: 25, right: 25, top: 30, bottom: MediaQuery.of(context).viewInsets.bottom + 30),
+          padding: EdgeInsets.only(
+            left: 25,
+            right: 25,
+            top: 30,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 30,
+          ),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,71 +68,119 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Ajukan Klaim", style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold)),
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                    Text(
+                      "Ajukan Klaim",
+                      style: GoogleFonts.outfit(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 25),
-                _buildTextField("Judul Klaim (Contoh: Bensin)", titleController, Icons.title_rounded),
+                _buildTextField(
+                  "Judul Klaim (Contoh: Bensin)",
+                  titleController,
+                  Icons.title_rounded,
+                ),
                 const SizedBox(height: 15),
-                _buildTextField("Nominal (Rp)", amountController, Icons.payments_rounded, isNumber: true),
+                _buildTextField(
+                  "Nominal (Rp)",
+                  amountController,
+                  Icons.payments_rounded,
+                  isNumber: true,
+                ),
                 const SizedBox(height: 15),
-                _buildTextField("Keterangan", descController, Icons.description_rounded, maxLines: 3),
+                _buildTextField(
+                  "Keterangan",
+                  descController,
+                  Icons.description_rounded,
+                  maxLines: 3,
+                ),
                 const SizedBox(height: 20),
-                Text("Lampiran Bukti / Nota", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  "Lampiran Bukti / Nota",
+                  style: GoogleFonts.outfit(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 const SizedBox(height: 10),
                 GestureDetector(
-                  onTap: isSubmitting ? null : () async {
-                    final source = await showModalBottomSheet<ImageSource>(
-                      context: context,
-                      builder: (context) => Container(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ListTile(
-                              leading: const Icon(Icons.camera_alt),
-                              title: const Text("Kamera"),
-                              onTap: () => Navigator.pop(context, ImageSource.camera),
-                            ),
-                            ListTile(
-                              leading: const Icon(Icons.photo_library),
-                              title: const Text("Galeri"),
-                              onTap: () => Navigator.pop(context, ImageSource.gallery),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
+                  onTap: isSubmitting
+                      ? null
+                      : () async {
+                          final source =
+                              await showModalBottomSheet<ImageSource>(
+                                context: context,
+                                builder: (context) => Container(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ListTile(
+                                        leading: const Icon(Icons.camera_alt),
+                                        title: const Text("Kamera"),
+                                        onTap: () => Navigator.pop(
+                                          context,
+                                          ImageSource.camera,
+                                        ),
+                                      ),
+                                      ListTile(
+                                        leading: const Icon(
+                                          Icons.photo_library,
+                                        ),
+                                        title: const Text("Galeri"),
+                                        onTap: () => Navigator.pop(
+                                          context,
+                                          ImageSource.gallery,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
 
-                    if (source != null) {
-                      final picker = ImagePicker();
-                      if (source == ImageSource.gallery) {
-                        final images = await picker.pickMultiImage(imageQuality: 50);
-                        if (images.isNotEmpty) {
-                          setModalState(() {
-                            pickedFiles = images;
-                          });
-                        }
-                      } else {
-                        final image = await picker.pickImage(source: source, imageQuality: 50);
-                        if (image != null) {
-                          setModalState(() {
-                            pickedFiles = [image];
-                          });
-                        }
-                      }
-                    }
-                  },
+                          if (source != null) {
+                            final picker = ImagePicker();
+                            if (source == ImageSource.gallery) {
+                              final images = await picker.pickMultiImage(
+                                imageQuality: 50,
+                              );
+                              if (images.isNotEmpty) {
+                                setModalState(() {
+                                  pickedFiles = images;
+                                });
+                              }
+                            } else {
+                              final image = await picker.pickImage(
+                                source: source,
+                                imageQuality: 50,
+                              );
+                              if (image != null) {
+                                setModalState(() {
+                                  pickedFiles = [image];
+                                });
+                              }
+                            }
+                          }
+                        },
                   child: Container(
                     height: 150,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.grey[300]!, style: BorderStyle.none),
+                      border: Border.all(
+                        color: Colors.grey[300]!,
+                        style: BorderStyle.none,
+                      ),
                     ),
-                    child: pickedFiles.isNotEmpty 
+                    child: pickedFiles.isNotEmpty
                         ? ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: pickedFiles.length,
@@ -131,17 +188,27 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                               width: 150,
                               margin: const EdgeInsets.only(right: 10),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(15), 
-                                child: Image.file(File(pickedFiles[i].path), fit: BoxFit.cover)
+                                borderRadius: BorderRadius.circular(15),
+                                child: Image.file(
+                                  File(pickedFiles[i].path),
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           )
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.add_a_photo_outlined, size: 40, color: primaryColor),
+                              Icon(
+                                Icons.add_a_photo_outlined,
+                                size: 40,
+                                color: primaryColor,
+                              ),
                               const SizedBox(height: 10),
-                              const Text("Ambil Foto Nota", style: TextStyle(color: Colors.grey)),
+                              const Text(
+                                "Ambil Foto Nota",
+                                style: TextStyle(color: Colors.grey),
+                              ),
                             ],
                           ),
                   ),
@@ -151,36 +218,78 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: primaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-                    onPressed: isSubmitting ? null : () async {
-                      if (titleController.text.isEmpty || amountController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Isi judul dan nominal!")));
-                        return;
-                      }
-                      
-                      setModalState(() => isSubmitting = true);
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    onPressed: isSubmitting
+                        ? null
+                        : () async {
+                            if (titleController.text.isEmpty ||
+                                amountController.text.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Isi judul dan nominal!"),
+                                ),
+                              );
+                              return;
+                            }
 
-                      final res = await ApiService.submitReimbursement({
-                        'title': titleController.text,
-                        'amount': amountController.text,
-                        'description': descController.text,
-                      }, filePaths: pickedFiles.map((e) => e.path).toList());
+                            setModalState(() => isSubmitting = true);
 
-                      if (mounted) {
-                        if (res['status'] == 'success') {
-                          Navigator.pop(context);
-                          _fetchClaims();
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Klaim berhasil diajukan!"), backgroundColor: Colors.green));
-                        } else {
-                          setModalState(() => isSubmitting = false);
-                          print("SUBMIT_FAILED: $res");
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal: ${res['message'] ?? 'Status Error'}"), backgroundColor: Colors.red));
-                        }
-                      }
-                    },
-                    child: isSubmitting 
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Text("KIRIM PENGAJUAN", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
+                            final res = await ApiService.submitReimbursement(
+                              {
+                                'title': titleController.text,
+                                'amount': amountController.text,
+                                'description': descController.text,
+                              },
+                              filePaths: pickedFiles
+                                  .map((e) => e.path)
+                                  .toList(),
+                            );
+
+                            if (mounted) {
+                              if (res['status'] == 'success') {
+                                Navigator.pop(context);
+                                _fetchClaims();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Klaim berhasil diajukan!"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              } else {
+                                setModalState(() => isSubmitting = false);
+                                print("SUBMIT_FAILED: $res");
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Gagal: ${res['message'] ?? 'Status Error'}",
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    child: isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            "KIRIM PENGAJUAN",
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -191,7 +300,13 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, IconData icon, {bool isNumber = false, int maxLines = 1}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    IconData icon, {
+    bool isNumber = false,
+    int maxLines = 1,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
@@ -201,7 +316,10 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
         prefixIcon: Icon(icon, color: primaryColor),
         filled: true,
         fillColor: Colors.grey[50],
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
@@ -211,7 +329,10 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFB),
       appBar: AppBar(
-        title: Text("Klaim Biaya", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text(
+          "Klaim Biaya",
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -219,36 +340,45 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchClaims),
         ],
       ),
-      body: _isLoading 
-          ? const Center(child: CircularProgressIndicator()) 
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _fetchClaims,
-              child: _claims.isEmpty 
+              child: _claims.isEmpty
                   ? _buildEmptyState()
                   : ListView.builder(
                       padding: const EdgeInsets.all(20),
                       itemCount: _claims.length,
-                      itemBuilder: (context, index) => _buildClaimCard(_claims[index]),
+                      itemBuilder: (context, index) =>
+                          _buildClaimCard(_claims[index]),
                     ),
             ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: primaryColor,
         onPressed: _showAddDialog,
-        label: Text("AJUKAN KLAIM", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
+        label: Text(
+          "AJUKAN KLAIM",
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         icon: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.payments_outlined, size: 80, color: Colors.grey[300]),
-        const SizedBox(height: 15),
-        const Text("Belum ada pengajuan klaim"),
-      ],
-    ));
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.payments_outlined, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 15),
+          const Text("Belum ada pengajuan klaim"),
+        ],
+      ),
+    );
   }
 
   Widget _buildClaimCard(dynamic claim) {
@@ -263,7 +393,13 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,57 +408,96 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                DateFormat('dd MMM yyyy').format(DateTime.parse(claim['created_at'])),
+                DateFormat(
+                  'dd MMM yyyy',
+                ).format(DateTime.parse(claim['created_at'])),
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
               Row(
                 children: [
                   if (status != 'rejected')
                     IconButton(
-                        constraints: BoxConstraints(),
-                        padding: EdgeInsets.zero,
-                        icon: Icon(Icons.picture_as_pdf, color: primaryColor, size: 20),
-                        onPressed: () => ApiService.launchPdf('reimbursement', claim['id'])),
+                      constraints: BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        Icons.picture_as_pdf,
+                        color: primaryColor,
+                        size: 20,
+                      ),
+                      onPressed: () =>
+                          ApiService.launchPdf('reimbursement', claim['id']),
+                    ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                    child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      status.toUpperCase(),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 15),
-          Text(claim['title'], style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(
+            claim['title'],
+            style: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 5),
-          Text(currencyFormatter.format(double.parse(claim['amount'].toString())), style: GoogleFonts.outfit(fontSize: 18, color: primaryColor, fontWeight: FontWeight.bold)),
-          
+          Text(
+            currencyFormatter.format(double.parse(claim['amount'].toString())),
+            style: GoogleFonts.outfit(
+              fontSize: 18,
+              color: primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
           if (claim['attachment'] != null) ...[
             const SizedBox(height: 15),
             SizedBox(
               height: 150,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: (claim['attachment'] is List) ? claim['attachment'].length : 1,
+                itemCount: (claim['attachment'] is List)
+                    ? claim['attachment'].length
+                    : 1,
                 itemBuilder: (context, i) {
-                  String? path = (claim['attachment'] is List) ? claim['attachment'][i] : claim['attachment'];
+                  String? path = (claim['attachment'] is List)
+                      ? claim['attachment'][i]
+                      : claim['attachment'];
                   String imageUrl = path!;
-                  if (!imageUrl.startsWith('http')) {
-                    imageUrl = 'http://192.168.1.9:8000/storage/$imageUrl';
-                  } else {
-                    imageUrl = imageUrl.replaceAll('localhost', '192.168.1.9').replaceAll('127.0.0.1', '192.168.1.9');
-                  }
-                  
+                  imageUrl = ApiService.fixUrl(imageUrl);
+
                   return Container(
                     width: 250,
                     margin: const EdgeInsets.only(right: 10),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: Image.network(
-                        imageUrl, 
+                        imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => Container(color: Colors.grey[100], child: const Center(child: Icon(Icons.broken_image, size: 20))),
+                        errorBuilder: (c, e, s) => Container(
+                          color: Colors.grey[100],
+                          child: const Center(
+                            child: Icon(Icons.broken_image, size: 20),
+                          ),
+                        ),
                       ),
                     ),
                   );
@@ -333,13 +508,30 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
 
           if (claim['description'] != null) ...[
             const SizedBox(height: 10),
-            Text(claim['description'], style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+            Text(
+              claim['description'],
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
           ],
           if (claim['remark'] != null) ...[
             const Divider(height: 30),
-            Text("Catatan Admin:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey[800])),
+            Text(
+              "Catatan Admin:",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.grey[800],
+              ),
+            ),
             const SizedBox(height: 5),
-            Text(claim['remark'], style: TextStyle(color: Colors.red[700], fontStyle: FontStyle.italic, fontSize: 12)),
+            Text(
+              claim['remark'],
+              style: TextStyle(
+                color: Colors.red[700],
+                fontStyle: FontStyle.italic,
+                fontSize: 12,
+              ),
+            ),
           ],
         ],
       ),

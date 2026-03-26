@@ -97,6 +97,7 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::delete('/leave/{id}', [LeaveController::class, 'destroy']);
 
     // Overtimes
+    Route::get('/overtimes/export', [\App\Http\Controllers\OvertimeController::class, 'export']);
     Route::get('/overtimes', [OvertimeController::class, 'index']);
     Route::post('/overtimes', [OvertimeController::class, 'store']);
     Route::post('/overtimes/{id}/approve', [OvertimeController::class, 'approve']);

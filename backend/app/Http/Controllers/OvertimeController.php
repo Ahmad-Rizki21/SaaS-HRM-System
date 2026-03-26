@@ -8,6 +8,8 @@ use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use App\Traits\Notifiable;
 use Illuminate\Support\Facades\Log;
+use App\Exports\OvertimeExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OvertimeController extends Controller
 {
@@ -187,5 +189,53 @@ class OvertimeController extends Controller
 
         $overtime->delete();
         return $this->successResponse(null, 'Permohonan lembur berhasil dihapus.');
+    }
+
+    public function export(Request $request)
+    {
+        $query = Overtime::with(['user', 'approver']);
+        $user = $request->user();
+
+        // Isolation logic (same as index)
+        if ($user->is_manager) {
+            if ($user->company_id && !$user->canAccessAllCompanies()) {
+                $query->where('company_id', $user->company_id);
+            }
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        // Filtering
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('date', [$request->start_date, $request->end_date]);
+        }
+        
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Default to approved if not specified, usually reports are for approved items
+        if ($request->status === 'approved') {
+            $query->where('status', 'approved');
+        }
+
+        $overtimes = $query->orderBy('date', 'asc')->get();
+
+        if ($overtimes->isEmpty()) {
+            return response()->json(['message' => 'Tidak ada data lembur untuk diekspor.'], 404);
+        }
+
+        $meta = [
+            'date_range' => $request->filled('date_range') ? $request->date_range : date('F Y', strtotime($overtimes->first()->date)),
+            'office_name' => $user->company?->offices()->first()->name ?? 'KP Cakung',
+            'company_name' => $user->company->name ?? 'PT. Narwastu Group',
+            'hr_ga' => User::where('company_id', $user->company_id)
+                ->whereHas('role', function($q){ 
+                    $q->where('name', 'LIKE', '%HR%'); 
+                })->first()->name ?? 'Nazirin Nawawi',
+            'today' => now()
+        ];
+
+        return Excel::download(new OvertimeExport($overtimes, $meta), 'laporan-lembur-' . now()->format('Y-m-d') . '.xlsx');
     }
 }

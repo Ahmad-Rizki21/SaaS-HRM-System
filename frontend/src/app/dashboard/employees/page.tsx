@@ -29,6 +29,7 @@ interface Employee {
   profile_photo_url?: string;
   supervisor_id?: number;
   supervisor?: { id: number; name: string };
+  leave_balance?: number;
 }
 
 interface EmployeeFormData {
@@ -43,6 +44,7 @@ interface EmployeeFormData {
   password?: string;
   photo?: File | null;
   supervisor_id?: number | null;
+  leave_balance?: number;
 }
 
 interface PaginationData {
@@ -69,7 +71,8 @@ function EmployeesContent() {
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<EmployeeFormData>({
-    role_id: 3 // Default Employee
+    role_id: 3, // Default Employee
+    leave_balance: 12
   });
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -155,12 +158,12 @@ function EmployeesContent() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const formDataUpload = new FormData();
+    formDataUpload.append("file", file);
 
     try {
       setLoading(true);
-      await axiosInstance.post("/employees/import", formData, {
+      await axiosInstance.post("/employees/import", formDataUpload, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       alert("Import berhasil! Data karyawan sedang diproses.");
@@ -216,7 +219,7 @@ function EmployeesContent() {
 
   const handleOpenAddModal = () => {
     setModalMode("add");
-    setFormData({ role_id: 3 }); // Reset
+    setFormData({ role_id: 3, leave_balance: 12 }); // Reset
     setIsModalOpen(true);
   };
 
@@ -232,6 +235,7 @@ function EmployeesContent() {
       address: emp.address || "",
       join_date: emp.join_date || "",
       supervisor_id: emp.supervisor_id || null,
+      leave_balance: emp.leave_balance ?? 12,
     });
     setPhotoPreview(emp.profile_photo_url || null);
     setIsModalOpen(true);
@@ -636,21 +640,35 @@ function EmployeesContent() {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Supervisor / Atasan Langsung</label>
-                    <select 
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.supervisor_id || ""}
-                      onChange={(e) => setFormData({...formData, supervisor_id: e.target.value ? parseInt(e.target.value) : null})}
-                    >
-                      <option value="">Tanpa Atasan (Management Pusat)</option>
-                      {employees
-                        .filter(e => e.id !== formData.id) // Jangan jadi atasan sendiri
-                        .map(e => (
-                          <option key={e.id} value={e.id}>{e.name} ({e.role?.name})</option>
-                        ))}
-                    </select>
-                    <p className="text-[10px] text-gray-400">Atasan akan menerima notifikasi jika karyawan ini mengajukan Cuti, Lembur, atau Tukar Shift.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-gray-700">Supervisor / Atasan Langsung</label>
+                      <select 
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                        value={formData.supervisor_id || ""}
+                        onChange={(e) => setFormData({...formData, supervisor_id: e.target.value ? parseInt(e.target.value) : null})}
+                      >
+                        <option value="">Tanpa Atasan (Pusat)</option>
+                        {employees
+                          .filter(e => e.id !== formData.id) // Jangan jadi atasan sendiri
+                          .map(e => (
+                            <option key={e.id} value={e.id}>{e.name} ({e.role?.name})</option>
+                          ))}
+                      </select>
+                      <p className="text-[10px] text-gray-400">Atasan menerima notifikasi absen.</p>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-gray-700">Sisa Cuti Tahunan (Hari)</label>
+                      <input 
+                        type="number" 
+                        min="0"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                        value={formData.leave_balance ?? ""}
+                        onChange={(e) => setFormData({...formData, leave_balance: e.target.value ? parseInt(e.target.value) : 0})}
+                      />
+                      <p className="text-[10px] text-gray-400">Default 12 hari/tahun.</p>
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">

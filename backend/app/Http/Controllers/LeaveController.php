@@ -18,10 +18,6 @@ class LeaveController extends Controller
 
         $user = $request->user();
         
-        // Logic for Data Isolation:
-        // 1. Managers/Admin see all company data by default.
-        // 2. Staff (non-manager) only sees their own data.
-        
         if ($user->is_manager) {
             if ($user->company_id && !$user->canAccessAllCompanies()) {
                 $query->where('company_id', $user->company_id);
@@ -32,7 +28,12 @@ class LeaveController extends Controller
 
         $leaves = $query->orderBy('id', 'desc')->paginate(10);
             
-        return $this->successResponse($leaves, 'Data cuti berhasil diambil.');
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Data cuti berhasil diambil.',
+            'data' => $leaves,
+            'leave_balance' => $user->leave_balance
+        ]);
     }
 
     public function store(Request $request)
@@ -44,6 +45,25 @@ class LeaveController extends Controller
             'reason' => 'nullable|string',
             'signature' => 'required|string', // Base64 signature
         ]);
+
+        if ($request->type === 'Cuti Tahunan') {
+            $requestedDays = \Carbon\Carbon::parse($request->start_date)->diffInDays(\Carbon\Carbon::parse($request->end_date)) + 1;
+            
+            $pendingDays = Leave::where('user_id', $request->user()->id)
+                  ->where('type', 'Cuti Tahunan')
+                  ->where('status', 'pending')
+                  ->get()
+                  ->sum(function($l) {
+                      return \Carbon\Carbon::parse($l->start_date)->diffInDays(\Carbon\Carbon::parse($l->end_date)) + 1;
+                  });
+                  
+            if ($request->user()->leave_balance < ($requestedDays + $pendingDays)) {
+                return response()->json([
+                    'status' => 'error', 
+                    'message' => 'Sisa cuti tahunan Anda tidak mencukupi (termasuk cuti yang masih pending/menunggu).'
+                ], 400);
+            }
+        }
 
         $leave = Leave::create([
             'user_id' => $request->user()->id,
@@ -105,6 +125,13 @@ class LeaveController extends Controller
             'approved_by' => $request->user()->id,
             'remark' => $request->remark,
         ]);
+
+        if ($leave->type === 'Cuti Tahunan') {
+            $days = \Carbon\Carbon::parse($leave->start_date)->diffInDays(\Carbon\Carbon::parse($leave->end_date)) + 1;
+            $leaveUser = $leave->user;
+            $leaveUser->leave_balance -= $days;
+            $leaveUser->save();
+        }
 
         $this->notify(
             $leave->user, 

@@ -15,6 +15,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
   List<dynamic> _leaves = [];
   bool _isLoading = true;
   bool _isSubmitting = false;
+  int _leaveBalance = 0;
 
   // Form State
   DateTime _startDate = DateTime.now();
@@ -36,9 +37,11 @@ class _LeaveScreenState extends State<LeaveScreen> {
   Future<void> _fetchLeaves() async {
     setState(() => _isLoading = true);
     final data = await ApiService.getLeaves();
+    final profile = await ApiService.getProfile();
     if (mounted) {
       setState(() {
         _leaves = data ?? [];
+        _leaveBalance = profile?['leave_balance'] ?? 0;
         _isLoading = false;
       });
     }
@@ -175,7 +178,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                           _fetchLeaves();
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil mengajukan cuti"), backgroundColor: Colors.green));
                         } else {
-                          final msg = res['message'] ?? (res['errors']?.toString() ?? "Gagal mengajukan cuti");
+                          final msg = res['message'] ?? (res['errors']?.toString() ?? "Gagal mengajukan cuti\nMungkin sisa cuti tahunan Anda tidak cukup.");
                           setModalState(() => _isSubmitting = false);
                           ScaffoldMessenger.of(stContext).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
                         }
@@ -203,7 +206,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Riwayat Cuti", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text("Cuti Karyawan", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -212,73 +215,126 @@ class _LeaveScreenState extends State<LeaveScreen> {
           ? const Center(child: CircularProgressIndicator()) 
           : RefreshIndicator(
               onRefresh: _fetchLeaves,
-              child: _leaves.isEmpty 
-                  ? Center(child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.calendar_today_outlined, size: 80, color: Colors.grey[300]),
-                        const SizedBox(height: 15),
-                        const Text("Belum ada riwayat cuti"),
+              child: Column(
+                children: [
+                  // CARD SISA CUTI TAHUNAN
+                  Container(
+                    margin: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [primaryColor, const Color(0xFFB00000)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
                       ],
-                    ))
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: _leaves.length,
-                      itemBuilder: (context, index) {
-                        final leave = _leaves[index];
-                        final status = leave['status'];
-                        Color statusColor = Colors.orange;
-                        if (status == 'approved') statusColor = Colors.green;
-                        if (status == 'rejected') statusColor = Colors.red;
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Sisa Cuti Tahunan",
+                              style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              "$_leaveBalance Hari",
+                              style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                          child: const Icon(Icons.beach_access, color: Colors.white, size: 30),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 15),
-                          padding: const EdgeInsets.all(15),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                                child: Icon(Icons.calendar_month, color: statusColor),
+                  // DAFTAR RIWAYAT CUTI
+                  Expanded(
+                    child: _leaves.isEmpty 
+                      ? Center(child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.calendar_today_outlined, size: 80, color: Colors.grey[300]),
+                            const SizedBox(height: 15),
+                            const Text("Belum ada riwayat cuti"),
+                          ],
+                        ))
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: _leaves.length,
+                          itemBuilder: (context, index) {
+                            final leave = _leaves[index];
+                            final status = leave['status'];
+                            Color statusColor = Colors.orange;
+                            if (status == 'approved') statusColor = Colors.green;
+                            if (status == 'rejected') statusColor = Colors.red;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 15),
+                              padding: const EdgeInsets.all(15),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
                               ),
-                              const SizedBox(width: 15),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(leave['type'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                    const SizedBox(height: 4),
-                                    Text("${leave['start_date']} s/d ${leave['end_date']}", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                              child: Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                    decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                                    child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                    child: Icon(Icons.calendar_month, color: statusColor),
                                   ),
-                                  if (status != 'rejected')
-                                    IconButton(
-                                      constraints: BoxConstraints(),
-                                      padding: EdgeInsets.only(top: 8),
-                                      icon: Icon(Icons.picture_as_pdf, color: primaryColor, size: 20), 
-                                      onPressed: () => ApiService.launchPdf('leave', leave['id']),
+                                  const SizedBox(width: 15),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(leave['type'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        const SizedBox(height: 4),
+                                        Text("${leave['start_date']} s/d ${leave['end_date']}", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                                      ],
                                     ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                        decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                                        child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      ),
+                                      if (status != 'rejected')
+                                        IconButton(
+                                          constraints: BoxConstraints(),
+                                          padding: EdgeInsets.only(top: 8),
+                                          icon: Icon(Icons.picture_as_pdf, color: primaryColor, size: 20), 
+                                          onPressed: () => ApiService.launchPdf('leave', leave['id']),
+                                        ),
+                                    ],
+                                  ),
                                 ],
                               ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                            );
+                          },
+                        ),
+                  ),
+                ],
+              ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddLeaveDialog,

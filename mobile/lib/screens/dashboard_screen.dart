@@ -21,7 +21,6 @@ import 'manager_screen.dart';
 import 'shift_swap_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class DashboardScreen extends StatefulWidget {
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -33,7 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _userRole = "";
   String? _profilePhotoUrl;
   bool _isManager = false;
-  
+
   // Custom Menu
   List<String> _pinnedMenuIds = ['absen', 'cuti', 'klaim', 'lembur'];
   bool _isMenuExpanded = false;
@@ -50,7 +49,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _refreshData();
-    NotificationService().startPolling(); 
+    NotificationService().startPolling();
   }
 
   Future<void> _refreshData() async {
@@ -70,7 +69,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final notifs = await ApiService.getNotifications();
       if (notifs != null && mounted) {
         setState(() {
-          _hasUnreadNotification = notifs.any((n) => n['is_read'] == false || n['is_read'] == 0);
+          _hasUnreadNotification = notifs.any(
+            (n) => n['is_read'] == false || n['is_read'] == 0,
+          );
         });
       }
     } catch (e) {
@@ -126,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
-    NotificationService().stopPolling(); 
+    NotificationService().stopPolling();
     super.dispose();
   }
 
@@ -134,13 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final userData = await ApiService.getProfile();
     if (userData != null && mounted) {
       String? rawUrl = userData['profile_photo_url'];
-      if (rawUrl != null) {
-        if (!rawUrl.startsWith('http')) {
-          rawUrl = '${ApiService.baseUrl.replaceFirst('/api', '')}/storage/$rawUrl';
-        } else {
-          rawUrl = rawUrl.replaceAll('localhost', '192.168.1.9').replaceAll('127.0.0.1', '192.168.1.9');
-        }
-      }
+      rawUrl = ApiService.fixUrl(rawUrl);
       setState(() {
         _userName = userData['name'] ?? "Karyawan";
         if (userData['role'] != null) {
@@ -154,13 +149,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _onAbsenTapped() async {
     final dynamic res = await Navigator.push(
-      context, 
-      MaterialPageRoute(builder: (c) => AttendanceScreen(isCheckIn: _attendanceData?['check_in'] == null))
+      context,
+      MaterialPageRoute(
+        builder: (c) =>
+            AttendanceScreen(isCheckIn: _attendanceData?['check_in'] == null),
+      ),
     );
     if (res != null) {
       _refreshData(); // Refresh everything after check-in
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Absensi Berhasil Tercatat!"), backgroundColor: Colors.green)
+        const SnackBar(
+          content: Text("Absensi Berhasil Tercatat!"),
+          backgroundColor: Colors.green,
+        ),
       );
     }
   }
@@ -170,7 +171,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _handleLogout() async {
-    NotificationService().stopPolling(); 
+    NotificationService().stopPolling();
     await ApiService.logout();
     if (mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
@@ -198,22 +199,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
         canPop: false,
         onPopInvokedWithResult: (didPop, result) async {
           if (didPop) return;
-          
+
           if (_selectedIndex != 0) {
             setState(() => _selectedIndex = 0);
             return;
           }
 
           final now = DateTime.now();
-          if (_lastPressedAt == null || now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+          if (_lastPressedAt == null ||
+              now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
             _lastPressedAt = now;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Tekan sekali lagi untuk keluar"), duration: Duration(seconds: 2))
+              const SnackBar(
+                content: Text("Tekan sekali lagi untuk keluar"),
+                duration: Duration(seconds: 2),
+              ),
             );
             return;
           }
-          
-          Navigator.of(context).pop(); 
+
+          Navigator.of(context).pop();
         },
         child: Scaffold(
           backgroundColor: const Color(0xFFFBFBFB),
@@ -231,7 +236,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       right: 0,
                       child: LinearProgressIndicator(
                         backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF800000)),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF800000),
+                        ),
                         minHeight: 2,
                       ),
                     ),
@@ -239,39 +246,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-        floatingActionButton: (_selectedIndex == 0 && _attendanceData?['check_out'] == null)
-            ? FloatingActionButton.extended(
-                onPressed: _onAbsenTapped,
-                backgroundColor: primaryColor,
-                elevation: 10,
-                label: Text(
-                  _attendanceData?['check_in'] == null ? "ABSEN SEKARANG" : "ABSEN PULANG",
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.1),
+          floatingActionButton:
+              (_selectedIndex == 0 && _attendanceData?['check_out'] == null)
+              ? FloatingActionButton.extended(
+                  onPressed: _onAbsenTapped,
+                  backgroundColor: primaryColor,
+                  elevation: 10,
+                  label: Text(
+                    _attendanceData?['check_in'] == null
+                        ? "ABSEN SEKARANG"
+                        : "ABSEN PULANG",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.face_retouching_natural,
+                    color: Colors.white,
+                  ),
+                )
+              : null,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerFloat,
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            selectedItemColor: primaryColor,
+            unselectedItemColor: Colors.grey,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.home_outlined),
+                activeIcon: const Icon(Icons.home),
+                label: "Beranda",
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.list_alt_outlined),
+                activeIcon: const Icon(Icons.list_alt),
+                label: "Riwayat",
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.person_outline),
+                activeIcon: const Icon(Icons.person),
+                label: "Profil",
+              ),
+              if (_isManager)
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                  activeIcon: const Icon(Icons.admin_panel_settings),
+                  label: "Manager",
                 ),
-                icon: const Icon(Icons.face_retouching_natural, color: Colors.white),
-              )
-            : null,
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          selectedItemColor: primaryColor,
-          unselectedItemColor: Colors.grey,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          items: [
-            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: "Beranda"),
-            BottomNavigationBarItem(icon: const Icon(Icons.list_alt_outlined), activeIcon: const Icon(Icons.list_alt), label: "Riwayat"),
-            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), activeIcon: const Icon(Icons.person), label: "Profil"),
-            if (_isManager)
-              BottomNavigationBarItem(icon: const Icon(Icons.admin_panel_settings_outlined), activeIcon: const Icon(Icons.admin_panel_settings), label: "Manager"),
-            BottomNavigationBarItem(icon: const Icon(Icons.settings_outlined), activeIcon: const Icon(Icons.settings), label: "Setting"),
-          ],
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.settings_outlined),
+                activeIcon: const Icon(Icons.settings),
+                label: "Setting",
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Map<String, Map<String, dynamic>> _getMenuItems() {
     return {
@@ -285,19 +323,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'icon': Icons.calendar_month,
         'label': 'Cuti',
         'color': Colors.orange[800],
-        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => LeaveScreen())),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => LeaveScreen()),
+        ),
       },
       'klaim': {
         'icon': Icons.payments_outlined,
         'label': 'Klaim',
         'color': Colors.blue[800],
-        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReimbursementScreen())),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ReimbursementScreen()),
+        ),
       },
       'lembur': {
         'icon': Icons.more_time,
         'label': 'Lembur',
         'color': Colors.red[800],
-        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => OvertimeScreen())),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => OvertimeScreen()),
+        ),
       },
       'profile': {
         'icon': Icons.person,
@@ -309,19 +356,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'icon': Icons.receipt_long,
         'label': 'Gaji',
         'color': Colors.green[800],
-        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => SalaryScreen())),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => SalaryScreen()),
+        ),
       },
       'tugas': {
         'icon': Icons.task,
         'label': 'Tugas',
         'color': Colors.teal[800],
-        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => TaskScreen())),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => TaskScreen()),
+        ),
       },
       'libur': {
         'icon': Icons.event_available,
         'label': 'Libur',
         'color': Colors.deepOrange[800],
-        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => HolidayScreen())),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => HolidayScreen()),
+        ),
       },
       'riwayat': {
         'icon': Icons.history_edu,
@@ -339,13 +395,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'icon': Icons.star_rate_rounded,
         'label': 'Review KPI',
         'color': Color(0xFF8B0000),
-        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => KpiScreen())),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => KpiScreen()),
+        ),
       },
       'swap': {
         'icon': Icons.swap_horizontal_circle,
         'label': 'Tukar Shift',
         'color': primaryColor,
-        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => ShiftSwapScreen())),
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ShiftSwapScreen()),
+        ),
       },
     };
   }
@@ -362,15 +424,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
-              decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+              ),
               padding: const EdgeInsets.all(25),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Atur Akses Cepat", style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    "Atur Akses Cepat",
+                    style: GoogleFonts.outfit(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 10),
-                  Text("Pilih maksimal 4 menu favorit Anda.", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                  Text(
+                    "Pilih maksimal 4 menu favorit Anda.",
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  ),
                   const SizedBox(height: 25),
                   Wrap(
                     spacing: 12,
@@ -390,7 +464,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 tempPinned.add(id);
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Maksimal 4 menu"), behavior: SnackBarBehavior.floating)
+                                  const SnackBar(
+                                    content: Text("Maksimal 4 menu"),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
                                 );
                               }
                             } else {
@@ -408,26 +485,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (tempPinned.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pilih minimal 1 menu")));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Pilih minimal 1 menu"),
+                            ),
+                          );
                           return;
                         }
-                        setState(() { _pinnedMenuIds = List.from(tempPinned); });
+                        setState(() {
+                          _pinnedMenuIds = List.from(tempPinned);
+                        });
                         final prefs = await SharedPreferences.getInstance();
-                        await prefs.setStringList('pinned_menus', _pinnedMenuIds);
+                        await prefs.setStringList(
+                          'pinned_menus',
+                          _pinnedMenuIds,
+                        );
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
                       ),
-                      child: const Text("Simpan Perubahan", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                      child: const Text(
+                        "Simpan Perubahan",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
                 ],
               ),
             );
-          }
+          },
         );
       },
     );
@@ -435,15 +530,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _getBody() {
     switch (_selectedIndex) {
-      case 0: return _buildHomeContent();
-      case 1: return RiwayatScreen();
-      case 2: return ProfileScreen();
+      case 0:
+        return _buildHomeContent();
+      case 1:
+        return RiwayatScreen();
+      case 2:
+        return ProfileScreen();
       case 3:
         if (_isManager) return ManagerScreen();
         return SettingsTab(onLogout: _handleLogout);
       case 4:
         return SettingsTab(onLogout: _handleLogout);
-      default: return _buildHomeContent();
+      default:
+        return _buildHomeContent();
     }
   }
 
@@ -454,7 +553,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .where((id) => !_pinnedMenuIds.contains(id))
         .map((id) => allItems[id]!)
         .toList();
-    
+
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
@@ -476,11 +575,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: CircleAvatar(
                         radius: 25,
                         backgroundColor: primaryColor.withOpacity(0.1),
-                        backgroundImage: _profilePhotoUrl != null ? NetworkImage(_profilePhotoUrl!) : null,
+                        backgroundImage: _profilePhotoUrl != null
+                            ? NetworkImage(_profilePhotoUrl!)
+                            : null,
                         child: _profilePhotoUrl == null
                             ? Text(
-                                _userName.isNotEmpty ? _userName[0].toUpperCase() : "U",
-                                style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                                _userName.isNotEmpty
+                                    ? _userName[0].toUpperCase()
+                                    : "U",
+                                style: TextStyle(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               )
                             : null,
                       ),
@@ -489,13 +595,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_getGreeting(), style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600])),
-                        Text(_userName, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
+                        Text(
+                          _getGreeting(),
+                          style: GoogleFonts.outfit(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          _userName,
+                          style: GoogleFonts.outfit(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
                         if (_userRole.isNotEmpty)
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(5)),
-                            child: Text(_userRole, style: GoogleFonts.outfit(fontSize: 10, color: primaryColor, fontWeight: FontWeight.bold)),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              _userRole,
+                              style: GoogleFonts.outfit(
+                                fontSize: 10,
+                                color: primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                       ],
                     ),
@@ -505,7 +637,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   alignment: Alignment.topRight,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.notifications_none_rounded, color: primaryColor, size: 30),
+                      icon: Icon(
+                        Icons.notifications_none_rounded,
+                        color: primaryColor,
+                        size: 30,
+                      ),
                       onPressed: () async {
                         await Navigator.pushNamed(context, '/notifications');
                         _refreshData(); // Refresh dot when coming back
@@ -518,7 +654,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Container(
                           width: 10,
                           height: 10,
-                          decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
                         ),
                       ),
                   ],
@@ -534,9 +674,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               width: double.infinity,
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [primaryColor, secondaryColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                gradient: LinearGradient(
+                  colors: [primaryColor, secondaryColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.3), blurRadius: 15, offset: Offset(0, 8))],
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: Offset(0, 8),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
@@ -546,20 +696,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Absensi Hari Ini", style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+                          Text(
+                            "Absensi Hari Ini",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                           SizedBox(height: 5),
                           Text(
-                            _attendanceData?['check_in'] != null 
-                              ? (_attendanceData?['check_out'] != null ? "Selesai Kerja" : "Sudah Check-In")
-                              : "Belum Absen",
-                            style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                            _attendanceData?['check_in'] != null
+                                ? (_attendanceData?['check_out'] != null
+                                      ? "Selesai Kerja"
+                                      : "Sudah Check-In")
+                                : "Belum Absen",
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
                       Container(
                         padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-                        child: Icon(Icons.face_retouching_natural, color: Colors.white, size: 30),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.face_retouching_natural,
+                          color: Colors.white,
+                          size: 30,
+                        ),
                       ),
                     ],
                   ),
@@ -567,9 +737,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildAttendanceDetail("Masuk", _formatTime(_attendanceData?['check_in'])),
+                      _buildAttendanceDetail(
+                        "Masuk",
+                        _formatTime(_attendanceData?['check_in']),
+                      ),
                       Container(height: 30, width: 1, color: Colors.white24),
-                      _buildAttendanceDetail("Pulang", _formatTime(_attendanceData?['check_out'])),
+                      _buildAttendanceDetail(
+                        "Pulang",
+                        _formatTime(_attendanceData?['check_out']),
+                      ),
                     ],
                   ),
                 ],
@@ -580,11 +756,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // ANNOUNCEMENTS CAROUSEL (NEW)
           if (_announcements.isNotEmpty) ...[
             Padding(
-              padding: const EdgeInsets.only(left: 25, right: 25, top: 30, bottom: 15),
+              padding: const EdgeInsets.only(
+                left: 25,
+                right: 25,
+                top: 30,
+                bottom: 15,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Pengumuman Terbaru", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    "Pengumuman Terbaru",
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
                 ],
               ),
@@ -607,7 +794,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(15),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
                         border: Border.all(color: Colors.grey.withOpacity(0.1)),
                       ),
                       child: Column(
@@ -617,20 +809,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             children: [
                               Container(
                                 padding: EdgeInsets.all(6),
-                                decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
-                                child: Icon(Icons.campaign, color: Colors.blue, size: 20),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.campaign,
+                                  color: Colors.blue,
+                                  size: 20,
+                                ),
                               ),
                               SizedBox(width: 10),
-                              Expanded(child: Text(ann['title'] ?? "Pengumuman", style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                              Expanded(
+                                child: Text(
+                                  ann['title'] ?? "Pengumuman",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
                           SizedBox(height: 10),
-                          Expanded(child: Text(ann['content'] ?? "", style: TextStyle(fontSize: 12, color: Colors.grey[700]), maxLines: 3, overflow: TextOverflow.ellipsis)),
+                          Expanded(
+                            child: Text(
+                              ann['content'] ?? "",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                           Align(
                             alignment: Alignment.bottomRight,
                             child: Text(
-                              DateFormat('dd MMM yyyy').format(DateTime.parse(ann['created_at'])),
-                              style: TextStyle(fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold),
+                              DateFormat(
+                                'dd MMM yyyy',
+                              ).format(DateTime.parse(ann['created_at'])),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey[400],
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -651,10 +876,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Akses Cepat", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      "Akses Cepat",
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     GestureDetector(
                       onTap: () => _showAturModal(),
-                      child: Text("Atur", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                      child: Text(
+                        "Atur",
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -667,22 +905,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   crossAxisSpacing: 8,
                   childAspectRatio: 0.7,
                   children: [
-                    ...pinnedItems.map((item) => _buildQuickAction(item['icon'], item['label'], item['color'], item['onTap'])),
+                    ...pinnedItems.map(
+                      (item) => _buildQuickAction(
+                        item['icon'],
+                        item['label'],
+                        item['color'],
+                        item['onTap'],
+                      ),
+                    ),
                     GestureDetector(
-                      onTap: () => setState(() => _isMenuExpanded = !_isMenuExpanded),
+                      onTap: () =>
+                          setState(() => _isMenuExpanded = !_isMenuExpanded),
                       child: Column(
                         children: [
-                           Container(
-                             padding: const EdgeInsets.all(12),
-                             decoration: BoxDecoration(
-                               color: _isMenuExpanded ? primaryColor : Colors.white,
-                               shape: BoxShape.circle,
-                               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
-                             ),
-                             child: Icon(_isMenuExpanded ? Icons.close : Icons.apps, color: _isMenuExpanded ? Colors.white : primaryColor, size: 28),
-                           ),
-                           const SizedBox(height: 8),
-                           Text("Lainnya", style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold)),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: _isMenuExpanded
+                                  ? primaryColor
+                                  : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              _isMenuExpanded ? Icons.close : Icons.apps,
+                              color: _isMenuExpanded
+                                  ? Colors.white
+                                  : primaryColor,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Lainnya",
+                            style: GoogleFonts.outfit(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -700,7 +965,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                    ),
+                  ],
                 ),
                 child: GridView.count(
                   shrinkWrap: true,
@@ -710,13 +980,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   crossAxisSpacing: 10,
                   childAspectRatio: 0.8,
                   children: [
-                    ...otherItems.map((item) => _buildNavIcon(
-                      item['icon'] as IconData, 
-                      item['label'] as String, 
-                      item['color'] as Color, 
-                      onTap: item['onTap'] as VoidCallback
-                    )),
-                    _buildNavIcon(Icons.logout, "Keluar", Colors.grey, onTap: _handleLogout),
+                    ...otherItems.map(
+                      (item) => _buildNavIcon(
+                        item['icon'] as IconData,
+                        item['label'] as String,
+                        item['color'] as Color,
+                        onTap: item['onTap'] as VoidCallback,
+                      ),
+                    ),
+                    _buildNavIcon(
+                      Icons.logout,
+                      "Keluar",
+                      Colors.grey,
+                      onTap: _handleLogout,
+                    ),
                   ],
                 ),
               ),
@@ -724,12 +1001,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           // HOLIDAYS SECTION (NEW)
           if (_holidays.isNotEmpty) ...[
-             Padding(
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Hari Libur Terdekat", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    "Hari Libur Terdekat",
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -755,8 +1038,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Container(
                           padding: EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-                          child: Icon(Icons.event_note, color: Colors.orange[800], size: 24),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.event_note,
+                            color: Colors.orange[800],
+                            size: 24,
+                          ),
                         ),
                         SizedBox(width: 15),
                         Expanded(
@@ -764,10 +1054,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(hol['name'] ?? "Libur", style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold), maxLines: 1),
                               Text(
-                                DateFormat('dd MMM yyyy').format(DateTime.parse(hol['date'])),
-                                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                                hol['name'] ?? "Libur",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                              ),
+                              Text(
+                                DateFormat(
+                                  'dd MMM yyyy',
+                                ).format(DateTime.parse(hol['date'])),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[600],
+                                ),
                               ),
                             ],
                           ),
@@ -791,12 +1093,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Text(label, style: TextStyle(color: Colors.white70, fontSize: 11)),
         SizedBox(height: 3),
-        Text(time, style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(
+          time,
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildQuickAction(IconData icon, String label, Color color, VoidCallback onTap) {
+  Widget _buildQuickAction(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -807,21 +1121,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
+              ],
             ),
             child: Icon(icon, color: color, size: 28),
           ),
           const SizedBox(height: 8),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(label, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87)),
+            child: Text(
+              label,
+              style: GoogleFonts.outfit(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNavIcon(IconData icon, String label, Color color, {VoidCallback? onTap}) {
+  Widget _buildNavIcon(
+    IconData icon,
+    String label,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -831,12 +1159,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: Offset(0, 2))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
             child: Icon(icon, color: color, size: 28),
           ),
           SizedBox(height: 6),
-          Text(label, style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w500, color: Colors.black87)),
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
         ],
       ),
     );

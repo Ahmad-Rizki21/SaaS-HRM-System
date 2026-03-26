@@ -8,17 +8,29 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.9:8000/api';
+  // Toggle between Home (192.168.1.9) and Office (2.2.2.76)
+  static const String serverIp = '2.2.2.76'; 
+  static const String baseUrl = 'http://$serverIp:8000/api';
+  static const String storageUrl = 'http://$serverIp:8000/storage';
+
+  /// Fixes URLs that might contain localhost or older IPs to use the current serverIp
+  static String fixUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (!url.startsWith('http')) return '$storageUrl/$url';
+    
+    // Replace any local/old IPs with the current serverIp
+    return url
+        .replaceAll('localhost', serverIp)
+        .replaceAll('127.0.0.1', serverIp)
+        .replaceAll('192.168.1.9', serverIp);
+  }
 
   // ============ HEADERS ============
 
   static Future<Map<String, String>> getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
-    return {
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    return {'Accept': 'application/json', 'Authorization': 'Bearer $token'};
   }
 
   static Future<String> getDeviceId() async {
@@ -35,14 +47,20 @@ class ApiService {
 
   // ============ AUTH ============
 
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<Map<String, dynamic>> login(
+    String email,
+    String password,
+  ) async {
     try {
       String deviceId = await getDeviceId();
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
-        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
         body: jsonEncode({
-          'email': email, 
+          'email': email,
           'password': password,
           'device_id': deviceId,
         }),
@@ -55,10 +73,16 @@ class ApiService {
         await prefs.setString('token', data['data']['access_token']);
         return {'success': true, 'message': 'Login Berhasil!'};
       } else {
-        return {'success': false, 'message': data['message'] ?? 'Email atau Password salah.'};
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Email atau Password salah.',
+        };
       }
     } catch (e) {
-      return {'success': false, 'message': 'Koneksi Gagal. Pastikan Laptop & HP di Wi-Fi yang sama.'};
+      return {
+        'success': false,
+        'message': 'Koneksi Gagal. Pastikan Laptop & HP di Wi-Fi yang sama.',
+      };
     }
   }
 
@@ -72,7 +96,10 @@ class ApiService {
   static Future<Map<String, dynamic>?> getProfile() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/user'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/user'),
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -84,7 +111,9 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> updateProfile(Map<String, String> data) async {
+  static Future<Map<String, dynamic>> updateProfile(
+    Map<String, String> data,
+  ) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -113,15 +142,21 @@ class ApiService {
         return {'success': false, 'needs_approval': false, 'message': errorMsg};
       }
     } catch (e) {
-      return {'success': false, 'needs_approval': false, 'message': 'Koneksi gagal.'};
+      return {
+        'success': false,
+        'needs_approval': false,
+        'message': 'Koneksi gagal.',
+      };
     }
   }
 
-  static Future<Map<String, dynamic>> uploadProfilePhoto(String filePath) async {
+  static Future<Map<String, dynamic>> uploadProfilePhoto(
+    String filePath,
+  ) async {
     try {
       final headers = await getHeaders();
       final uri = Uri.parse('$baseUrl/profile/upload-photo');
-      
+
       var request = http.MultipartRequest('POST', uri);
       request.headers.addAll(headers);
 
@@ -129,21 +164,30 @@ class ApiService {
       String mimeType = 'image/jpeg';
       if (extension == '.png') mimeType = 'image/png';
       if (extension == '.webp') mimeType = 'image/webp';
-      
-      request.files.add(await http.MultipartFile.fromPath(
-        'photo', 
-        filePath,
-        contentType: MediaType.parse(mimeType),
-      ));
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'photo',
+          filePath,
+          contentType: MediaType.parse(mimeType),
+        ),
+      );
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-      
+
       final body = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return {'success': true, 'message': body['message'] ?? 'Foto berhasil diunggah.', 'url': body['data']['profile_photo_url']};
+        return {
+          'success': true,
+          'message': body['message'] ?? 'Foto berhasil diunggah.',
+          'url': body['data']['profile_photo_url'],
+        };
       } else {
-        return {'success': false, 'message': body['message'] ?? 'Gagal mengunggah foto.'};
+        return {
+          'success': false,
+          'message': body['message'] ?? 'Gagal mengunggah foto.',
+        };
       }
     } catch (e) {
       return {'success': false, 'message': 'Koneksi gagal: ${e.toString()}'};
@@ -155,7 +199,10 @@ class ApiService {
   static Future<List<dynamic>?> getAttendanceHistory() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/attendance/history'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/attendance/history'),
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -176,7 +223,10 @@ class ApiService {
   static Future<Map<String, dynamic>?> getTodayAttendance() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/attendance/today'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/attendance/today'),
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -188,7 +238,13 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>?> checkIn(double lat, double lng, {String? image, String? deviceId, bool isMocked = false}) async {
+  static Future<Map<String, dynamic>?> checkIn(
+    double lat,
+    double lng, {
+    String? image,
+    String? deviceId,
+    bool isMocked = false,
+  }) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -196,8 +252,8 @@ class ApiService {
         Uri.parse('$baseUrl/attendance/check-in'),
         headers: headers,
         body: jsonEncode({
-          'latitude': lat, 
-          'longitude': lng, 
+          'latitude': lat,
+          'longitude': lng,
           'image': image,
           'device_id': deviceId,
           'is_mocked': isMocked,
@@ -209,7 +265,13 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>?> checkOut(double lat, double lng, {String? image, String? deviceId, bool isMocked = false}) async {
+  static Future<Map<String, dynamic>?> checkOut(
+    double lat,
+    double lng, {
+    String? image,
+    String? deviceId,
+    bool isMocked = false,
+  }) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -217,8 +279,8 @@ class ApiService {
         Uri.parse('$baseUrl/attendance/check-out'),
         headers: headers,
         body: jsonEncode({
-          'latitude': lat, 
-          'longitude': lng, 
+          'latitude': lat,
+          'longitude': lng,
           'image': image,
           'device_id': deviceId,
           'is_mocked': isMocked,
@@ -235,11 +297,18 @@ class ApiService {
   static Future<List<dynamic>?> getNotifications() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/notifications'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/notifications'),
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return body['data'];
+        // Backend now returns paginated data: body['data']['data']
+        if (body['data'] is Map && body['data'].containsKey('data')) {
+          return body['data']['data'];
+        }
+        return body['data']; // Fallback for list
       }
       return null;
     } catch (e) {
@@ -250,7 +319,10 @@ class ApiService {
   static Future<bool> markNotificationAsRead(int id) async {
     try {
       final headers = await getHeaders();
-      final response = await http.put(Uri.parse('$baseUrl/notifications/$id/read'), headers: headers);
+      final response = await http.put(
+        Uri.parse('$baseUrl/notifications/$id/read'),
+        headers: headers,
+      );
       return response.statusCode == 200;
     } catch (e) {
       return false;
@@ -260,11 +332,14 @@ class ApiService {
   static Future<Map<String, dynamic>> clearNotificationsWithStatus() async {
     try {
       final headers = await getHeaders();
-      final response = await http.post(Uri.parse('$baseUrl/notifications-clear'), headers: headers);
+      final response = await http.post(
+        Uri.parse('$baseUrl/notifications-clear'),
+        headers: headers,
+      );
       return {
         'success': response.statusCode >= 200 && response.statusCode < 300,
         'status': response.statusCode,
-        'body': response.body
+        'body': response.body,
       };
     } catch (e) {
       return {'success': false, 'status': 0, 'error': e.toString()};
@@ -274,7 +349,10 @@ class ApiService {
   static Future<List<dynamic>?> getHolidays() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/holidays'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/holidays'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data']['data'];
@@ -288,7 +366,10 @@ class ApiService {
   static Future<List<dynamic>?> getAnnouncements() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/announcements'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/announcements'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data'];
@@ -324,7 +405,10 @@ class ApiService {
   static Future<List<dynamic>?> getLeaves() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/leave'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/leave'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data']['data'];
@@ -335,7 +419,9 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> submitLeave(Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> submitLeave(
+    Map<String, dynamic> data,
+  ) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -355,7 +441,10 @@ class ApiService {
   static Future<List<dynamic>?> getOvertimes() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/overtimes'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/overtimes'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data']['data'];
@@ -366,7 +455,9 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> submitOvertime(Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> submitOvertime(
+    Map<String, dynamic> data,
+  ) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -386,7 +477,10 @@ class ApiService {
   static Future<List<dynamic>?> getSalaries() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/salary'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/salary'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data'];
@@ -402,7 +496,10 @@ class ApiService {
   static Future<List<dynamic>?> getTasks() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/tasks'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/tasks'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data'];
@@ -413,7 +510,10 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> updateTaskStatus(int taskId, String status) async {
+  static Future<Map<String, dynamic>> updateTaskStatus(
+    int taskId,
+    String status,
+  ) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -429,11 +529,14 @@ class ApiService {
   }
 
   // ============ REIMBURSEMENT ============
-  
+
   static Future<List<dynamic>?> getReimbursements() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/reimbursements'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/reimbursements'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data']['data'];
@@ -444,11 +547,14 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> submitReimbursement(Map<String, String> data, {List<String>? filePaths}) async {
+  static Future<Map<String, dynamic>> submitReimbursement(
+    Map<String, String> data, {
+    List<String>? filePaths,
+  }) async {
     try {
       final headers = await getHeaders();
       final uri = Uri.parse('$baseUrl/reimbursements');
-      
+
       var request = http.MultipartRequest('POST', uri);
       request.headers.addAll(headers);
       request.fields.addAll(data);
@@ -459,19 +565,22 @@ class ApiService {
           String mimeType = 'image/jpeg';
           if (extension == '.png') mimeType = 'image/png';
           if (extension == '.webp') mimeType = 'image/webp';
-          
-          request.files.add(await http.MultipartFile.fromPath(
-            'attachments[]', 
-            filePath,
-            contentType: MediaType.parse(mimeType),
-            filename: 'receipt_${DateTime.now().millisecondsSinceEpoch}_${filePaths.indexOf(filePath)}$extension',
-          ));
+
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'attachments[]',
+              filePath,
+              contentType: MediaType.parse(mimeType),
+              filename:
+                  'receipt_${DateTime.now().millisecondsSinceEpoch}_${filePaths.indexOf(filePath)}$extension',
+            ),
+          );
         }
       }
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-      
+
       return jsonDecode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': 'Koneksi gagal: ${e.toString()}'};
@@ -480,7 +589,11 @@ class ApiService {
 
   // ============ SETTINGS ============
 
-  static Future<Map<String, dynamic>> changePassword(String current, String newPwd, String confirm) async {
+  static Future<Map<String, dynamic>> changePassword(
+    String current,
+    String newPwd,
+    String confirm,
+  ) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -497,7 +610,10 @@ class ApiService {
 
       final body = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        return {'success': true, 'message': body['message'] ?? 'Kata sandi berhasil diubah.'};
+        return {
+          'success': true,
+          'message': body['message'] ?? 'Kata sandi berhasil diubah.',
+        };
       } else {
         String errorMsg = body['message'] ?? 'Gagal mengubah kata sandi.';
         if (body['errors'] != null) {
@@ -516,7 +632,10 @@ class ApiService {
   static Future<List<dynamic>?> getKpis() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/kpi-reviews'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/kpi-reviews'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data']['data'];
@@ -532,7 +651,10 @@ class ApiService {
   static Future<Map<String, dynamic>?> getManagerPendingCount() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/manager/pending-count'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/manager/pending-count'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data'];
@@ -546,7 +668,10 @@ class ApiService {
   static Future<List<dynamic>?> getManagerPendingRequests(String type) async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/manager/pending-requests?type=$type'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/manager/pending-requests?type=$type'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data'];
@@ -557,7 +682,12 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> updateManagerRequestStatus(String type, int id, String status, {String? remark}) async {
+  static Future<Map<String, dynamic>> updateManagerRequestStatus(
+    String type,
+    int id,
+    String status, {
+    String? remark,
+  }) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -580,7 +710,10 @@ class ApiService {
   static Future<List<dynamic>?> getTeamAttendance() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/manager/team-attendance'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/manager/team-attendance'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data'];
@@ -595,7 +728,7 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
     final url = Uri.parse('$baseUrl/export/$type/$id?token=$token');
-    
+
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
     }
@@ -606,7 +739,10 @@ class ApiService {
   static Future<List<dynamic>?> getShiftSwaps() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/shift-swap'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/shift-swap'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data'];
@@ -617,7 +753,9 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> submitShiftSwap(Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> submitShiftSwap(
+    Map<String, dynamic> data,
+  ) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -632,7 +770,11 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> respondShiftSwap(int id, String status, {String? remark}) async {
+  static Future<Map<String, dynamic>> respondShiftSwap(
+    int id,
+    String status, {
+    String? remark,
+  }) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -647,7 +789,10 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> approveShiftSwap(int id, String status) async {
+  static Future<Map<String, dynamic>> approveShiftSwap(
+    int id,
+    String status,
+  ) async {
     try {
       final headers = await getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -681,7 +826,10 @@ class ApiService {
   static Future<List<dynamic>?> getEmployees() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(Uri.parse('$baseUrl/employees'), headers: headers);
+      final response = await http.get(
+        Uri.parse('$baseUrl/employees'),
+        headers: headers,
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         // It could be directly 'data' or 'data.data' depending on API
