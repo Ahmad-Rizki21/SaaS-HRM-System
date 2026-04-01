@@ -19,6 +19,7 @@ import 'holiday_screen.dart';
 import 'kpi_screen.dart';
 import 'manager_screen.dart';
 import 'shift_swap_screen.dart';
+import 'attendance_correction_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -408,6 +409,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           context,
           MaterialPageRoute(builder: (_) => ShiftSwapScreen()),
         ),
+      },
+      'koreksi': {
+        'icon': Icons.edit_calendar,
+        'label': 'Koreksi Absen',
+        'color': Colors.deepPurple[700],
+        'onTap': () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => AttendanceCorrectionScreen()),
+          );
+          _refreshData();
+        },
       },
     };
   }

@@ -24,6 +24,11 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/attendance/check-in` | Absensi masuk (Geo/Selfie) |
 | `POST` | `/api/attendance/check-out` | Absensi pulang |
 | `GET` | `/api/attendance/today` | Status absensi hari ini |
+| `GET` | `/api/attendance/summary` | Ringkasan kehadiran (hadir, telat, alpha, cuti) |
+| `GET` | `/api/attendance-corrections` | Daftar riwayat pengajuan koreksi absen |
+| `POST` | `/api/attendance-corrections` | Mengajukan koreksi absen mandiri |
+| `POST` | `/api/attendance-corrections/{id}/approve` | [HR/Admin] Menyetujui pengajuan koreksi absen |
+| `POST` | `/api/attendance-corrections/{id}/reject` | [HR/Admin] Menolak pengajuan koreksi absen |
 | `GET` | `/api/attendance/history` | Riwayat absensi user |
 | `GET` | `/api/attendance/export` | Export laporan absensi ke Excel |
 | `GET` | `/api/shifts` | List semua jam kerja/shift |

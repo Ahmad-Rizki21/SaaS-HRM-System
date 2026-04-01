@@ -843,4 +843,43 @@ class ApiService {
       return null;
     }
   }
+
+  // ============ ATTENDANCE CORRECTIONS ============
+
+  static Future<List<dynamic>?> getAttendanceCorrections() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/attendance-corrections'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['data'] is Map && body['data']['data'] is List) {
+          return body['data']['data'];
+        }
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitAttendanceCorrection(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/attendance-corrections'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
 }

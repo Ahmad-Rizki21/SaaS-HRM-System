@@ -93,6 +93,12 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::get('/attendance/heatmap', [AttendanceController::class, 'heatmap']);
     Route::get('/attendance/export', [AttendanceController::class, 'export']);
 
+    // Attendance Corrections (Koreksi Absen)
+    Route::get('/attendance-corrections', [\App\Http\Controllers\AttendanceCorrectionController::class, 'index']);
+    Route::post('/attendance-corrections', [\App\Http\Controllers\AttendanceCorrectionController::class, 'store']);
+    Route::post('/attendance-corrections/{id}/approve', [\App\Http\Controllers\AttendanceCorrectionController::class, 'approve']);
+    Route::post('/attendance-corrections/{id}/reject', [\App\Http\Controllers\AttendanceCorrectionController::class, 'reject']);
+
     // Leave
     Route::get('/leave', [LeaveController::class, 'index']);
     Route::post('/leave', [LeaveController::class, 'store']);
