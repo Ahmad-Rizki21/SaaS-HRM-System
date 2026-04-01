@@ -58,6 +58,7 @@ services:
       - "--mysql-native-password=ON"
     volumes:
       - mysql_slave_data:/var/lib/mysql
+      - ./docker/mysql/init-slave.sql:/docker-entrypoint-initdb.d/01-init-slave.sql:ro
     depends_on:
       mysql-master:
         condition: service_healthy
@@ -168,6 +169,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-HrmsSecure2026!}
       CACHE_STORE: redis
       REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-HrmsRedis2026!}
       REVERB_HOST: ${REVERB_HOST:-0.0.0.0}
     depends_on:
       - mysql-master
