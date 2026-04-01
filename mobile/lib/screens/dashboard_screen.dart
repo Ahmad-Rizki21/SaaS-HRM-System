@@ -40,6 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _attendanceData;
   List<dynamic> _announcements = [];
   List<dynamic> _holidays = [];
+  Map<String, dynamic>? _leaderboardData;
   bool _hasUnreadNotification = false;
   bool _isLoadingContent = true;
 
@@ -84,10 +85,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final ann = await ApiService.getAnnouncements();
       final hol = await ApiService.getHolidays();
+      final lead = await ApiService.getLeaderboard();
       if (mounted) {
         setState(() {
           _announcements = ann ?? [];
           _holidays = hol ?? [];
+          _leaderboardData = lead;
         });
       }
     } catch (e) {
@@ -1095,9 +1098,161 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
 
+          // LEADERBOARD SECTION (EMPLOYEE OF THE MONTH)
+          if (_leaderboardData != null && 
+             (_leaderboardData!['top_attendance'] as List).isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 25,
+                right: 25,
+                top: 30,
+                bottom: 15,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.workspace_premium, color: Colors.amber[800], size: 20),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "Employee of the Month",
+                    style: GoogleFonts.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 25),
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [primaryColor, secondaryColor],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: Offset(0, 5),
+                  )
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    "Top 3 Paling Disiplin - ${_leaderboardData!['month']}",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 15),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: _buildLeaderboardPodium(
+                      _leaderboardData!['top_attendance'] as List<dynamic>
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+
           SizedBox(height: 120),
         ],
       ),
+    );
+  }
+
+  List<Widget> _buildLeaderboardPodium(List<dynamic> users) {
+    if (users.isEmpty) return [];
+    
+    // Sort array to put Rank 2, Rank 1, Rank 3 in order for Podium UI
+    List<Widget> podium = [];
+    
+    // Rank 2
+    if (users.length > 1) {
+      podium.add(_buildPodiumItem(users[1], 2, 70, Colors.grey[300]!));
+    }
+    
+    // Rank 1
+    if (users.isNotEmpty) {
+      podium.add(_buildPodiumItem(users[0], 1, 90, Colors.amber));
+    }
+    
+    // Rank 3
+    if (users.length > 2) {
+      podium.add(_buildPodiumItem(users[2], 3, 60, Colors.brown[300]!));
+    }
+
+    return podium;
+  }
+
+  Widget _buildPodiumItem(dynamic user, int rank, double avatarSize, Color medalColor) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Stack(
+          alignment: Alignment.topRight,
+          children: [
+            CircleAvatar(
+              radius: avatarSize / 2,
+              backgroundColor: Colors.white24,
+              backgroundImage: user['photo_url'] != null
+                  ? NetworkImage(user['photo_url'])
+                  : null,
+              child: user['photo_url'] == null
+                  ? Icon(Icons.person, color: Colors.white, size: avatarSize / 2)
+                  : null,
+            ),
+            Container(
+              padding: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: medalColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: Text(
+                "#$rank", 
+                style: TextStyle(
+                  color: rank == 1 ? Colors.black87 : Colors.white, 
+                  fontWeight: FontWeight.bold, 
+                  fontSize: rank == 1 ? 12 : 10
+                )
+              ),
+            )
+          ],
+        ),
+        SizedBox(height: 8),
+        Text(
+          user['name'].toString().split(' ')[0],
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: rank == 1 ? 14 : 12,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          "${user['score']} Tepat Waktu",
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 

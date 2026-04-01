@@ -91,6 +91,26 @@ class ApiService {
     await prefs.remove('token');
   }
 
+  // ============ DASHBOARD ============
+
+  static Future<Map<String, dynamic>?> getLeaderboard() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/dashboard/leaderboard'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ============ PROFILE ============
 
   static Future<Map<String, dynamic>?> getProfile() async {

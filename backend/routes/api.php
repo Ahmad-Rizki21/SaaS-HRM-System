@@ -63,6 +63,7 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
 
     // Dashboard
     Route::get('/dashboard/summary', [DashboardController::class, 'index']);
+    Route::get('/dashboard/leaderboard', [DashboardController::class, 'leaderboard']);
 
     // Company Settings
     Route::get('/company', [CompanyController::class, 'show']);
