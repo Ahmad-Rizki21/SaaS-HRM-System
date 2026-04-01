@@ -28,8 +28,12 @@ php artisan view:cache
 php artisan event:cache
 
 # Run migrations and seeders
-echo "[*] Running database migrations and seeders..."
-php artisan migrate --force --seed --no-interaction
+if [ "${SKIP_MIGRATIONS}" != "true" ]; then
+    echo "[*] Running database migrations and seeders..."
+    php artisan migrate --force --seed --no-interaction
+else
+    echo "[*] Skipping migrations (SKIP_MIGRATIONS=true)..."
+fi
 
 # Storage link
 echo "[*] Creating storage link..."

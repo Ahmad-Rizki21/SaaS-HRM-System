@@ -54,6 +54,9 @@ Route::get('/health', function () {
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
 
+// Broadcast Route
+\Illuminate\Support\Facades\Broadcast::routes(['middleware' => ['auth:sanctum']]);
+
 Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [ProfileController::class, 'me']);

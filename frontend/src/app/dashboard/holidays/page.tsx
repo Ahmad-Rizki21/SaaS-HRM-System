@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Calendar, Trash2, Edit2, Loader2, Info, X, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import multiMonthPlugin from '@fullcalendar/multimonth';
+import iCalendarPlugin from '@fullcalendar/icalendar';
 
 interface Holiday {
   id: number;
@@ -103,45 +108,65 @@ export default function HolidaysPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const d = new Date(dateString);
-    return {
-        day: d.toLocaleDateString("id-ID", { day: "numeric" }),
-        month: d.toLocaleDateString("id-ID", { month: "short" }),
-        full: d.toLocaleDateString("id-ID", { 
-            day: "numeric", 
-            month: "long", 
-            year: "numeric",
-            weekday: "long"
-        })
-    };
+  const calendarEvents = holidays.map((h: Holiday) => ({
+    id: String(h.id),
+    title: h.name,
+    start: h.date,
+    allDay: true,
+    backgroundColor: h.company_id ? '#8B0000' : '#b91c1c', 
+    borderColor: 'transparent',
+    textColor: '#ffffff',
+    extendedProps: {
+       company_id: h.company_id,
+       originalData: h
+    }
+  }));
+
+  const handleDateClick = (arg: any) => {
+    if (!hasPermission('manage-holidays')) return;
+    setModalMode("add");
+    setFormData({ name: "", date: arg.dateStr });
+    setIsModalOpen(true);
   };
 
-  // Group by year/month or just sorted list. Let's do a grouped list by Month for better UX.
-  const groupedHolidays = holidays.reduce((acc: any, h) => {
-    const month = new Date(h.date).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
-    if (!acc[month]) acc[month] = [];
-    acc[month].push(h);
-    return acc;
-  }, {});
+  const handleEventClick = (arg: any) => {
+    if (!hasPermission('manage-holidays')) return;
+    
+    const h = arg.event.extendedProps?.originalData;
+    if (!h) {
+        // External ICS events don't have originalData
+        alert("Hari libur nasional dari Google Calendar tidak dapat diubah.");
+        return;
+    }
+
+    if (!h.company_id) {
+        alert("Hari libur nasional dari sistem tidak dapat diubah (Otomatis).");
+        return;
+    }
+    
+    handleOpenEdit(h);
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       {/* Page Header */}
-      <div className="dash-page-header">
+      <div className="dash-page-header flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-[#8B0000]/5 text-[#8B0000] rounded-xl border border-[#8B0000]/10">
             <Calendar size={24} />
           </div>
           <div>
             <h1 className="dash-page-title">Kalender Hari Libur</h1>
-            <p className="dash-page-desc">Daftar hari libur nasional dan kebijakan internal perusahaan.</p>
+            <p className="dash-page-desc flex items-center gap-2">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#b91c1c]"></span> Nasional</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#8B0000]"></span> Kebijakan Internal</span>
+            </p>
           </div>
         </div>
         {hasPermission('manage-holidays') && (
           <button 
             onClick={handleOpenAdd}
-            className="dash-btn dash-btn-primary"
+            className="dash-btn dash-btn-primary shrink-0"
           >
             <Plus size={16} />
             Tambah Hari Libur
@@ -149,89 +174,87 @@ export default function HolidaysPage() {
         )}
       </div>
 
-      {loading ? (
-        <div className="space-y-8">
-          <div className="space-y-4">
-            <div className="animate-pulse bg-gray-200 rounded h-4 w-32 ml-2" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1,2,3,4,5,6].map((i) => (
-                <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center gap-4">
-                  <div className="animate-pulse bg-gray-200 rounded-xl w-14 h-14 shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="animate-pulse bg-gray-200 rounded h-4 w-3/4" />
-                    <div className="animate-pulse bg-gray-200 rounded h-3 w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : holidays.length === 0 ? (
-        <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-200">
-                <Calendar size={32} />
-            </div>
-            <p className="text-gray-500 font-medium">Belum ada hari libur yang terdaftar.</p>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {Object.keys(groupedHolidays).map((month) => (
-            <div key={month} className="space-y-4">
-                <h2 className="text-xs font-black uppercase tracking-widest text-[#8B0000] flex items-center gap-2 px-2">
-                    <span className="w-8 h-px bg-[#8B0000]/20"></span>
-                    {month}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {groupedHolidays[month].map((h: Holiday) => {
-                        const dateInfo = formatDate(h.date);
-                        return (
-                            <div key={h.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center gap-4 group relative">
-                                <div className="shrink-0 w-14 h-14 bg-gray-50 rounded-xl flex flex-col items-center justify-center border border-gray-100 group-hover:bg-[#8B0000]/5 group-hover:border-[#8B0000]/10 transition-colors">
-                                    <span className="text-lg font-black text-gray-900 group-hover:text-[#8B0000]">{dateInfo.day}</span>
-                                    <span className="text-[10px] uppercase font-bold text-gray-400 group-hover:text-[#8B0000]/70">{dateInfo.month}</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-gray-900 truncate leading-tight mb-1">{h.name}</h3>
-                                    <div className="flex items-center gap-2 text-[11px] text-gray-400 font-medium">
-                                        <MapPin size={12} className={h.company_id ? "text-amber-500" : "text-blue-500"} />
-                                        {h.company_id ? "Kebijakan Kantor" : "Libur Nasional"}
-                                    </div>
-                                </div>
-
-                                {hasPermission('manage-holidays') && h.company_id && (
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button 
-                                            onClick={() => handleOpenEdit(h)}
-                                            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-500 transition-colors"
-                                        >
-                                            <Edit2 size={14} />
-                                        </button>
-                                        <button 
-                                            onClick={() => confirmDelete(h.id)}
-                                            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-rose-500 transition-colors"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+         <style dangerouslySetInnerHTML={{__html: `
+            .fc .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 900 !important; color: #111827 !important; text-transform: uppercase; letter-spacing: 0.05em; }
+            .fc .fc-button-primary { background-color: white !important; color: #374151 !important; border: 1px solid #e5e7eb !important; text-transform: capitalize !important; font-weight: 700 !important; font-size: 0.8rem; border-radius: 0.75rem !important; padding: 0.5rem 1rem !important; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; transition: all 0.2s !important; }
+            .fc .fc-button-primary:hover { background-color: #f9fafb !important; border-color: #d1d5db !important; }
+            .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background-color: #8B0000 !important; color: white !important; border-color: #8B0000 !important; }
+            .fc .fc-daygrid-day-number { font-weight: 700; color: #4b5563; padding: 0.5rem !important; }
+            .fc .fc-col-header-cell-cushion { padding: 0.75rem 0 !important; color: #9ca3af !important; text-transform: uppercase !important; font-size: 0.75rem !important; font-weight: 900 !important; letter-spacing: 0.05em; }
+            .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: #f3f4f6 !important; }
+            .fc-day-today { background-color: #fef2f2 !important; }
+            .fc-event { cursor: pointer; border-radius: 0.5rem !important; padding: 2px 4px !important; font-size: 0.7rem !important; font-weight: 700 !important; margin: 2px !important; border: none !important; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+            .fc-event:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            .fc .fc-multimonth-month { margin-bottom: 2rem; }
+            .fc .fc-multimonth-title { font-size: 1.1rem !important; font-weight: 900 !important; color: #8B0000 !important; padding-bottom: 0.5rem; }
+            .fc .fc-multimonth-header { border-bottom: 2px solid #f3f4f6 !important; }
+            .fc-theme-standard .fc-multimonth-daygrid { border: none !important; }
+            .fc-media-screen { min-height: 600px; }
+            .fc-button-group { gap: 0.5rem; }
+            .fc-button-group > .fc-button { border-radius: 0.75rem !important; margin: 0 !important; }
+         `}} />
+         
+         {loading ? (
+             <div className="flex items-center justify-center h-[500px]">
+                 <Loader2 className="animate-spin text-gray-300" size={40} />
+             </div>
+         ) : (
+             <FullCalendar
+                 plugins={[dayGridPlugin, multiMonthPlugin, interactionPlugin, iCalendarPlugin]}
+                 initialView="multiMonthYear"
+                 headerToolbar={{
+                     left: 'prev,next today',
+                     center: 'title',
+                     right: 'dayGridMonth,multiMonthYear' // Allow toggle between month and full year
+                 }}
+                 buttonText={{
+                     today: 'Bulan / Tahun Ini',
+                     month: 'Bulan',
+                     year: 'Tahun'
+                 }}
+                 eventSources={[
+                     {
+                         events: calendarEvents
+                     },
+                     {
+                         url: '/api/google-holidays',
+                         format: 'ics',
+                         backgroundColor: '#059669', // Emerald Green for public holidays
+                         borderColor: 'transparent',
+                         textColor: '#ffffff',
+                     }
+                 ]}
+                 dateClick={handleDateClick}
+                 eventClick={handleEventClick}
+                 height="auto"
+                 contentHeight="auto"
+                 locale="id"
+                 firstDay={1}
+                 dayMaxEvents={3}
+             />
+         )}
+      </div>
 
       {/* CRUD Modal Add/Edit */}
       {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
               <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95">
                   <form onSubmit={handleSubmit}>
                     <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                         <h3 className="text-lg font-bold text-gray-900">
                             {modalMode === "add" ? "Tambah Hari Libur" : "Edit Hari Libur"}
                         </h3>
+                        {modalMode === "edit" && hasPermission('manage-holidays') && (
+                            <button 
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); confirmDelete(selectedId!); }}
+                                className="w-10 h-10 rounded-full bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors ml-auto mr-2"
+                                title="Hapus Hari Libur"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        )}
                         <button 
                           type="button"
                           onClick={() => setIsModalOpen(false)}
@@ -286,7 +309,7 @@ export default function HolidaysPage() {
 
       {/* Delete Modal */}
       {isDeleteModalOpen && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
               <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 p-8 text-center">
                   <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500">
                       <Trash2 size={40} />

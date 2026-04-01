@@ -137,7 +137,10 @@ class AttendanceController extends Controller
             $user, 
             'BERHASIL ABSEN MASUK', 
             "Anda telah berhasil absen masuk pada pukul {$now->format('H:i')} WIB. Status: " . strtoupper($status),
-            $status === 'late' ? 'warning' : 'success'
+            $status === 'late' ? 'warning' : 'success',
+            null,
+            'notif',
+            false
         );
 
         // 2. Proactive: Notify Supervisor if LATE
@@ -211,7 +214,10 @@ class AttendanceController extends Controller
             $user, 
             'BERHASIL ABSEN KELUAR', 
             "Anda telah berhasil absen keluar pada pukul " . now()->format('H:i') . " WIB. Terima kasih atas kerja keras Anda!",
-            'info'
+            'info',
+            null,
+            'notif',
+            false
         );
 
         return $this->successResponse($attendance, 'Check-out berhasil.');

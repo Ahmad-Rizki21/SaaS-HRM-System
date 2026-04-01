@@ -24,7 +24,11 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 - **Manajemen Tugas (Tasks)**: Pembagian tugas ke karyawan melalui dashboard admin/mobile.
 - **Slip Gaji (Salary)**: Akses slip gaji digital bulanan secara aman.
 - **Komunikasi & Pengumuman**: Broadcast pengumuman melalui Dashboard (Kotak Pesan) dan Email Premium (HTML).
-- **Notifikasi Real-time**: Sistem notifikasi push & database untuk pemberitahuan status pengajuan.
+- **Notifikasi Real-time & WebSocket**: Menggunakan native Laravel Reverb dengan notifikasi audio pintar di Web Dashboard.
+- **Interactive Calendar Dashboard**: Dashboard kalender multifungsi dengan grafik pengajuan tertunda & integrasi API Pihak ketiga.
+- **Sinkronisasi Hari Libur Nasional**: Sinkronisasi otomatis Hari Libur Nasional menggunakan proxy Google Calendar ICS Feed.
+- **High-Availability Database (Enterprise)**: Arsitektur **Master-Slave Replication** (MySQL 8.4) dengan GTID Enabled untuk keamanan dan redundansi data.
+- **Read-Write Splitting**: Optimasi performa Laravel dengan pemisahan trafik `Write` (Master) dan `Read` (Slave/Replica).
 
 ---
 
@@ -99,6 +103,18 @@ Gunakan Docker untuk menjalankan seluruh stack (Backend, Frontend, MySQL, Redis,
 Daftar lengkap endpoint API dapat dilihat pada file berikut:
 
 👉 **[DOKUMENTASI API LENGKAP](./API_DOCUMENTATION.md)**
+
+---
+
+---
+
+## Arsitektur Sinkronisasi (Master-Slave)
+
+Sistem ini dikonfigurasi untuk menangani skala besar dengan memisahkan beban database:
+1.  **Master (hrms-mysql-master)**: Menangani seluruh query `INSERT`, `UPDATE`, `DELETE`.
+2.  **Slave (hrms-mysql-slave)**: Menangani seluruh query `SELECT` (Read).
+3.  **GTID Mode**: Sinkronisasi data dijamin konsisten menggunakan Global Transaction Identifier.
+4.  **Sticky Sessions**: Laravel memastikan jika dalam satu request ada operasi tulis, maka operasi baca selanjutnya dalam request yang sama akan diarahkan ke Master untuk menjaga konsistensi data instan.
 
 ---
 

@@ -59,6 +59,22 @@
 						],
 						"url": "{{base_url}}/api/user"
 					}
+				},
+				{
+					"name": "Authorize WebSocket (Reverb)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" },
+                            { "key": "Content-Type", "value": "application/json" }
+						],
+                        "body": {
+							"mode": "raw",
+							"raw": "{\n    \"socket_id\": \"12345.67890\",\n    \"channel_name\": \"private-notifications.1\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": "{{base_url}}/api/broadcasting/auth"
+					}
 				}
 			]
 		},

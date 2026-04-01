@@ -1,0 +1,11 @@
+[mysqld]
+server-id = 2
+log_bin = mysql-bin
+relay-log = mysql-relay-bin
+binlog_format = ROW
+read_only = 1
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+innodb_buffer_pool_size = 512M
+max_connections = 200
+skip-name-resolve

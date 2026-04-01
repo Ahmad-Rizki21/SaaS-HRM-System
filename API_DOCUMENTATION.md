@@ -102,7 +102,22 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/profile/update` | Update data profil user |
 | `POST` | `/api/profile/upload-photo` | Upload foto profil |
 | `POST` | `/api/user/change-password` | Ganti password user |
+| `POST` | `/api/broadcasting/auth` | Autentikasi koneksi WebSocket (Laravel Reverb) |
 
 ---
-*Gunakan file `postman/collection.json` untuk dokumentasi lebih detail (contoh body request & response).*
+## 📡 Real-time WebSockets (Laravel Reverb)
+Aplikasi menggunakan **Laravel Reverb** untuk notifikasi instan. Developer harus melakukan subscribe ke channel berikut setelah login sukses:
+
+### 1. Subscribe Channel
+| Channel Type | Nama Channel | Deskripsi |
+| :--- | :--- | :--- |
+| `Private` | `notifications.{user_id}` | Untuk menerima notifikasi sistem & audio feedback (Approval/Rejection). |
+
+### 2. Listen Events
+| Event Class | Nama Event di Channel | Kegunaan |
+| :--- | :--- | :--- |
+| `NotificationCreated` | `.NotificationCreated` | Dikirim saat ada notifikasi baru, klaim biaya disetujui, atau absen via mobile berhasil. |
+
+---
+*Gunakan file `postman/collection.json` untuk dokumentasi lebih detail (contoh body request & response).*)
 

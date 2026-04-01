@@ -38,6 +38,7 @@ import {
 import Cookies from "js-cookie";
 import { useState, useEffect, useRef } from "react";
 import axiosInstance from "@/lib/axios";
+import echo from '@/lib/echo';
 
 type SubmenuItem = {
   name: string;
@@ -258,12 +259,42 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         phone: (user as any).phone || '',
         address: (user as any).address || ''
       });
+
+      // Listen on private Laravel Reverb Channel
+      if (echo) {
+        // We use .notifSound to maintain reference
+        const channelName = `notifications.${user.id}`;
+        echo.private(channelName)
+          .listen('NotificationCreated', (e: any) => {
+            console.log("New realtime notification received: ", e);
+            fetchNotifications(); // Refresh list
+
+            // Play sound effect using an elegant bubble pop sound
+            try {
+               const audio = new window.Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+               audio.volume = 0.6;
+               const playPromise = audio.play();
+               if (playPromise !== undefined) {
+                 playPromise.then(_ => {}).catch(error => {
+                   // Auto-play might be blocked by browser without interaction
+                   console.log("Audio play blocked by browser:", error);
+                 });
+               }
+            } catch (err) {}
+          });
+      }
     }
     fetchNotifications();
     
-    // Auto-refresh notifications every 30 seconds
+    // Auto-refresh notifications every 30 seconds as fallback
     const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+      if (user && echo) {
+        echo.leaveChannel(`notifications.${user.id}`);
+      }
+    };
   }, [user]);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
