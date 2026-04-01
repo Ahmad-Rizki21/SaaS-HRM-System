@@ -185,73 +185,75 @@ class DashboardController extends Controller
     public function leaderboard(Request $request)
     {
         $companyId = $request->user()->company_id;
-        $monthStart = Carbon::now()->startOfMonth()->toDateString();
-        $monthEnd = Carbon::now()->endOfMonth()->toDateString();
-
-        // Gunakan cache Redis 2 jam (7200 detik) agar tidak membebani database
-        $cacheKey = "leaderboard_company_{$companyId}_{$monthStart}";
+        $now = Carbon::now();
         
-        $topAttendance = \Illuminate\Support\Facades\Cache::remember($cacheKey, 7200, function () use ($companyId, $monthStart, $monthEnd) {
-            return DB::table('attendances')
-                ->join('users', 'attendances.user_id', '=', 'users.id')
-                ->where('attendances.company_id', $companyId)
-                ->where('attendances.status', 'present') // "present" biasanya digunakan untuk yang tepat waktu
-                ->whereBetween('attendances.check_in', [$monthStart, $monthEnd . ' 23:59:59'])
-                ->select(
-                    'users.id',
-                    'users.name',
-                    'users.profile_photo_path',
-                    DB::raw('COUNT(attendances.id) as score') // on time count
-                )
-                ->groupBy('users.id', 'users.name', 'users.profile_photo_path')
-                ->orderByDesc('score')
-                ->take(3)
-                ->get()
-                ->map(function ($employee) {
-                    $employee->photo_url = $employee->profile_photo_path 
-                        ? url('storage/' . $employee->profile_photo_path) 
-                        : null;
-                    return $employee;
-                });
-        });
-
-        // Top Overtime (jam lembur)
-        $cacheKeyOvertime = "leaderboard_overtime_company_{$companyId}_{$monthStart}";
+        // Key Cache dinamis berdasarkan bulan ini
+        $cacheKey = "leaderboard_full_v2_company_{$companyId}_{$now->format('Y-m')}";
         
-        $topOvertime = \Illuminate\Support\Facades\Cache::remember($cacheKeyOvertime, 7200, function () use ($companyId, $monthStart, $monthEnd) {
-            return DB::table('overtimes')
-                ->join('users', 'overtimes.user_id', '=', 'users.id')
-                ->where('overtimes.company_id', $companyId)
-                ->where('overtimes.status', 'approved')
-                ->whereBetween('overtimes.date', [$monthStart, $monthEnd])
-                ->select(
-                    'users.id',
-                    'users.name',
-                    'users.profile_photo_path',
-                    // Menjumlahkan jam lembur menggunakan TIMESTAMPDIFF atau perhitungan jam sederhananya (jumlah surat lembur / total jam)
-                    // Karena sqlite/mysql beda fungsi,nyari aman guee pake COUNT approval atau SUM jam
-                    DB::raw('COUNT(overtimes.id) as score') 
-                )
-                ->groupBy('users.id', 'users.name', 'users.profile_photo_path')
-                ->orderByDesc('score')
-                ->take(3)
-                ->get()
-                ->map(function ($employee) {
-                    $employee->photo_url = $employee->profile_photo_path 
-                        ? url('storage/' . $employee->profile_photo_path) 
-                        : null;
-                    return $employee;
-                });
+        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 7200, function () use ($companyId, $now) {
+            $targetMonth = $now;
+            $monthStart = $targetMonth->startOfMonth()->toDateString();
+            $monthEnd = $targetMonth->endOfMonth()->toDateString();
+            
+            // 1. Ambil Attendance (April)
+            $topAttendance = $this->getTopAttendance($companyId, $monthStart, $monthEnd);
+            $topOvertime = $this->getTopOvertime($companyId, $monthStart, $monthEnd);
+            $monthLabel = $targetMonth->translatedFormat('F Y');
+
+            // 2. Jika absen kosong, coba mundur ke bulan lalu (Maret)
+            if ($topAttendance->isEmpty() && $topOvertime->isEmpty()) {
+                $targetMonth = $now->copy()->subMonth();
+                $monthStart = $targetMonth->startOfMonth()->toDateString();
+                $monthEnd = $targetMonth->endOfMonth()->toDateString();
+                
+                $topAttendance = $this->getTopAttendance($companyId, $monthStart, $monthEnd);
+                $topOvertime = $this->getTopOvertime($companyId, $monthStart, $monthEnd);
+                $monthLabel = $targetMonth->translatedFormat('F Y');
+            }
+
+            return [
+                'top_attendance' => $topAttendance,
+                'top_overtime' => $topOvertime,
+                'month' => $monthLabel
+            ];
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'Leaderboard bulan ini berhasil diambil',
-            'data' => [
-                'top_attendance' => $topAttendance,
-                'top_overtime' => $topOvertime,
-                'month' => Carbon::now()->translatedFormat('F Y'),
-            ]
+            'message' => 'Leaderboard berhasil diambil',
+            'data' => $data
         ]);
+    }
+
+    private function getTopAttendance($companyId, $start, $end)
+    {
+        return DB::table('attendances')
+            ->join('users', 'attendances.user_id', '=', 'users.id')
+            ->where('attendances.company_id', $companyId)
+            ->where('attendances.status', 'present')
+            ->whereBetween('attendances.check_in', [$start, $end . ' 23:59:59'])
+            ->select('users.id', 'users.name', 'users.profile_photo_path', DB::raw('COUNT(attendances.id) as score'))
+            ->groupBy('users.id', 'users.name', 'users.profile_photo_path')
+            ->orderByDesc('score')->take(10)->get()
+            ->map(function ($e) {
+                $e->photo_url = $e->profile_photo_path ? url('storage/' . $e->profile_photo_path) : null;
+                return $e;
+            })->values();
+    }
+
+    private function getTopOvertime($companyId, $start, $end)
+    {
+        return DB::table('overtimes')
+            ->join('users', 'overtimes.user_id', '=', 'users.id')
+            ->where('overtimes.company_id', $companyId)
+            ->where('overtimes.status', 'approved')
+            ->whereBetween('overtimes.date', [$start, $end])
+            ->select('users.id', 'users.name', 'users.profile_photo_path', DB::raw('COUNT(overtimes.id) as score'))
+            ->groupBy('users.id', 'users.name', 'users.profile_photo_path')
+            ->orderByDesc('score')->take(10)->get()
+            ->map(function ($e) {
+                $e->photo_url = $e->profile_photo_path ? url('storage/' . $e->profile_photo_path) : null;
+                return $e;
+            })->values();
     }
 }
