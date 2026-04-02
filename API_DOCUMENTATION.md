@@ -17,6 +17,8 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `GET` | `/api/employees/{id}` | Detail data pegawai |
 | `PUT` | `/api/employees/{id}` | Update data pegawai |
 | `DELETE` | `/api/employees/{id}` | Hapus data pegawai |
+| `POST` | `/api/employees/{id}/toggle-wfh` | Konfigurasi WFH Individual Karyawan |
+| `POST` | `/api/employees/bulk-wfh` | Pengaturan status WFH Karyawan massal |
 
 ## ⏰ Kehadiran & Shift
 | Method | Endpoint | Deskripsi |

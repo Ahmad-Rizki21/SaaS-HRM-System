@@ -70,6 +70,7 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Pengaturan Perusahaan', 'slug' => 'manage-company', 'group' => 'Pengaturan'],
             ['name' => 'Manajemen Role', 'slug' => 'manage-roles', 'group' => 'Pengaturan'],
             ['name' => 'Lihat Log Aktivitas', 'slug' => 'view-activity-logs', 'group' => 'Pengaturan'],
+            ['name' => 'Kelola WFH', 'slug' => 'manage-wfh', 'group' => 'Pengaturan'],
         ];
 
         foreach ($permissions as $p) {

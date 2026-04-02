@@ -68,6 +68,7 @@ export const translations = {
     construction: "Konstruksi",
     project_management: "Manajemen Proyek",
     project_overview: "Daftar Proyek",
+    wfh_delegation: "Delegasi WFH",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -143,6 +144,7 @@ export const translations = {
     construction: "Construction",
     project_management: "Project Management",
     project_overview: "Project Overview",
+    wfh_delegation: "WFH Delegation",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

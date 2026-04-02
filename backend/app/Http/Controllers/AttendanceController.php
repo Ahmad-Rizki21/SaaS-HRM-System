@@ -89,7 +89,12 @@ class AttendanceController extends Controller
         $userRoleName = $user->role ? strtolower($user->role->name) : '';
         $isTechnician = str_contains($userRoleName, 'teknisi');
 
-        if (!$isTechnician) {
+        // Check if user is WFH based on flag and date range
+        $today = now()->startOfDay();
+        $isWfhActive = $user->is_wfh && 
+                       ($user->wfh_start_date <= $today && $user->wfh_end_date >= $today);
+
+        if (!$isTechnician && !$isWfhActive) {
             // Priority: Office Coords -> Company Coords
             $targetLat = $office?->latitude ?? $company?->latitude ?? null;
             $targetLng = $office?->longitude ?? $company?->longitude ?? null;

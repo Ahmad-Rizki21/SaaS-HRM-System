@@ -392,7 +392,11 @@ class ApiService {
       );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return body['data'];
+        // Backend returns paginated data: body['data']['data']
+        if (body['data'] is Map && body['data'].containsKey('data')) {
+          return body['data']['data'];
+        }
+        return body['data']; // Fallback for direct list
       }
       return null;
     } catch (e) {
@@ -896,6 +900,20 @@ class ApiService {
         Uri.parse('$baseUrl/attendance-corrections'),
         headers: headers,
         body: jsonEncode(data),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> toggleWfh(int userId) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/employees/$userId/toggle-wfh'),
+        headers: headers,
       );
       return jsonDecode(response.body);
     } catch (e) {

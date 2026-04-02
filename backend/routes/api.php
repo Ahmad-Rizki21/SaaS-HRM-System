@@ -140,6 +140,8 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     // Bulk Delete
     Route::post('/employees/bulk-delete', [EmployeeController::class, 'bulkDestroy']);
     Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+    Route::post('/employees/{id}/toggle-wfh', [EmployeeController::class, 'toggleWfh']);
+    Route::post('/employees/bulk-wfh', [EmployeeController::class, 'bulkWfh']);
 
     // Roles & Permissions
     Route::get('/roles', [RoleController::class, 'index']);

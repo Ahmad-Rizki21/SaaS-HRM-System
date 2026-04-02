@@ -117,6 +117,141 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _showAnnouncementDetail(Map<String, dynamic> announcement) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header dengan icon dan judul
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.campaign,
+                        color: primaryColor,
+                        size: 28,
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        announcement['title'] ?? "Pengumuman",
+                        style: GoogleFonts.outfit(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, size: 24),
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                // Tanggal pembuat pengumuman
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      DateFormat('dd MMMM yyyy, HH:mm')
+                          .format(DateTime.parse(announcement['created_at'] ?? DateTime.now().toIso8601String())),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    if (announcement['user'] != null) ...[
+                      Icon(
+                        Icons.person_outline,
+                        size: 14,
+                        color: Colors.grey[600],
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        announcement['user']['name'] ?? 'Admin',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                SizedBox(height: 20),
+                Divider(height: 1, thickness: 1),
+                SizedBox(height: 20),
+                // Konten pengumuman - scrollable
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      announcement['content'] ?? "Tidak ada konten.",
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        height: 1.6,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                // Tombol tutup
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      "Tutup",
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   String _formatTime(String? dateTimeStr) {
     if (dateTimeStr == null) return "--:--";
     try {
@@ -776,117 +911,90 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
 
-          // ANNOUNCEMENTS CAROUSEL (NEW)
+          // ANNOUNCEMENTS SECTION (NEW LAYOUT)
           if (_announcements.isNotEmpty) ...[
+            const SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.only(
-                left: 25,
-                right: 25,
-                top: 30,
-                bottom: 15,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Pengumuman Terbaru",
+                    "Pengumuman Perusahaan",
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
                 ],
               ),
             ),
-            CarouselSlider(
-              options: CarouselOptions(
-                height: 140.0,
-                autoPlay: true,
-                enlargeCenterPage: true,
-                autoPlayInterval: Duration(seconds: 5),
-                viewportFraction: 0.9,
+            const SizedBox(height: 15),
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 25),
+                scrollDirection: Axis.horizontal,
+                itemCount: _announcements.length,
+                itemBuilder: (context, index) {
+                  final ann = _announcements[index];
+                  return Container(
+                    width: 300,
+                    margin: EdgeInsets.only(right: 15),
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.campaign, color: Colors.blue[800], size: 18),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                ann['title'] ?? "Pengumuman",
+                                style: GoogleFonts.outfit(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Expanded(
+                          child: Text(
+                            ann['content'] ?? "",
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            DateFormat('dd MMM').format(DateTime.parse(ann['created_at'])),
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.blue[300],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-              items: _announcements.map((ann) {
-                return Builder(
-                  builder: (BuildContext context) {
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      margin: EdgeInsets.symmetric(horizontal: 5.0),
-                      padding: EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                          ),
-                        ],
-                        border: Border.all(color: Colors.grey.withOpacity(0.1)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.campaign,
-                                  color: Colors.blue,
-                                  size: 20,
-                                ),
-                              ),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  ann['title'] ?? "Pengumuman",
-                                  style: GoogleFonts.outfit(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          Expanded(
-                            child: Text(
-                              ann['content'] ?? "",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[700],
-                              ),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Align(
-                            alignment: Alignment.bottomRight,
-                            child: Text(
-                              DateFormat(
-                                'dd MMM yyyy',
-                              ).format(DateTime.parse(ann['created_at'])),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey[400],
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              }).toList(),
             ),
           ],
 
@@ -1024,15 +1132,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
 
-          // HOLIDAYS SECTION (NEW)
-          if (_holidays.isNotEmpty) ...[
+          // HOLIDAYS & ANNOUNCEMENTS SECTION
+          if (_holidays.isNotEmpty || _announcements.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Hari Libur Terdekat",
+                    "Pengumuman & Hari Libur",
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -1047,61 +1155,122 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: ListView.builder(
                 padding: EdgeInsets.symmetric(horizontal: 25),
                 scrollDirection: Axis.horizontal,
-                itemCount: _holidays.length,
+                itemCount: _holidays.length + _announcements.length,
                 itemBuilder: (context, index) {
-                  final hol = _holidays[index];
-                  return Container(
-                    width: 250,
-                    margin: EdgeInsets.only(right: 15),
-                    padding: EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.05),
+                  // Tampilkan holidays dulu, lalu announcements
+                  if (index < _holidays.length) {
+                    final hol = _holidays[index];
+                    return Container(
+                      width: 250,
+                      margin: EdgeInsets.only(right: 15),
+                      padding: EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: Colors.orange.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.event_note,
+                              color: Colors.orange[800],
+                              size: 24,
+                            ),
+                          ),
+                          SizedBox(width: 15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  hol['name'] ?? "Hari Libur",
+                                  style: GoogleFonts.outfit(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                                Text(
+                                  DateFormat(
+                                    'dd MMM yyyy',
+                                  ).format(DateTime.parse(hol['date'])),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    final ann = _announcements[index - _holidays.length];
+                    return InkWell(
+                      onTap: () => _showAnnouncementDetail(ann),
                       borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.orange.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.event_note,
-                            color: Colors.orange[800],
-                            size: 24,
-                          ),
+                      child: Container(
+                        width: 250,
+                        margin: EdgeInsets.only(right: 15),
+                        padding: EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: primaryColor.withOpacity(0.2)),
                         ),
-                        SizedBox(width: 15),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                hol['name'] ?? "Libur",
-                                style: GoogleFonts.outfit(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              Text(
-                                DateFormat(
-                                  'dd MMM yyyy',
-                                ).format(DateTime.parse(hol['date'])),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey[600],
-                                ),
+                              child: Icon(
+                                Icons.campaign,
+                                color: primaryColor,
+                                size: 24,
                               ),
-                            ],
-                          ),
+                            ),
+                            SizedBox(width: 15),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    ann['title'] ?? "Pengumuman",
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                  ),
+                                  Text(
+                                    DateFormat(
+                                      'dd MMM yyyy',
+                                    ).format(DateTime.parse(ann['created_at'] ?? DateTime.now().toIso8601String())),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
+                      ),
+                    );
+                  }
                 },
               ),
             ),

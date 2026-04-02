@@ -79,6 +79,7 @@ const sidebarLinks: SidebarLink[] = [
       { name: "shift_swap", href: "/dashboard/shift-swap", permission: 'view-shift-swaps' },
       { name: "attendance_correction", href: "/dashboard/attendance-corrections" },
       { name: "attendance_map", href: "/dashboard/attendance/map", permission: 'view-attendance-map' },
+      { name: "wfh_delegation", href: "/dashboard/attendance/wfh", permission: 'manage-wfh' },
       { name: "schedules", href: "/dashboard/schedules", permission: 'manage-schedules' },
       { name: "holidays", href: "/dashboard/holidays", permission: 'manage-holidays' },
     ]
