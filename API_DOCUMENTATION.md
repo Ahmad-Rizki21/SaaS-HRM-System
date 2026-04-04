@@ -64,7 +64,20 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `GET` | `/api/tasks` | List tugas/pekerjaan |
 | `POST` | `/api/tasks/{id}/status` | Update status tugas (Todo/Done) |
 
-## 📢 Pengumuman & Hari Libur
+## 🚗 Manajemen Fleet & Travel Expense
+| Method | Endpoint | Deskripsi |
+| :--- | :--- | :--- |
+| `GET` | `/api/vehicle-logs` | List riwayat penggunaan kendaraan |
+| `GET` | `/api/vehicle-logs/vehicles` | List kendaraan yang pernah digunakan (autocomplete) |
+| `GET` | `/api/vehicle-logs/report` | Laporan mileage (ringkasan jarak & biaya) |
+| `GET` | `/api/vehicle-logs/{id}` | Detail log kendaraan spesifik |
+| `POST` | `/api/vehicle-logs/departure` | Catat keberangkatan (KM Awal + Foto) |
+| `POST` | `/api/vehicle-logs/{id}/return` | Catat kepulangan (KM Akhir + Foto + Biaya) |
+| `POST` | `/api/vehicle-logs/{id}/approve` | [Admin/Mgr] Validasi log kendaraan |
+| `POST` | `/api/vehicle-logs/{id}/reject` | [Admin/Mgr] Tolak log kendaraan |
+| `DELETE` | `/api/vehicle-logs/{id}` | Hapus log (status: departure/rejected) |
+
+ ## 📢 Pengumuman & Hari Libur
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
 | `GET` | `/api/announcements` | List semua pengumuman |

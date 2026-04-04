@@ -1721,6 +1721,182 @@
                     }
                 }
             ]
+        },
+        {
+            "name": "Fleet & Vehicle Management",
+            "description": "Log penggunaan kendaraan operasional, odometer, dan biaya perjalanan.",
+            "item": [
+                {
+                    "name": "Get All Vehicle Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vehicle-logs"
+                    }
+                },
+                {
+                    "name": "Get Odometer & Cost Report",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vehicle-logs/report"
+                    }
+                },
+                {
+                    "name": "Get Used Vehicles List",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vehicle-logs/vehicles"
+                    }
+                },
+                {
+                    "name": "Submit Departure (Step 1)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "vehicle_name",
+                                    "value": "Avanza B 1234 CDG",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "km_start",
+                                    "value": "15200",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "destination",
+                                    "value": "Kantor Klien ABC",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "purpose",
+                                    "value": "Meeting Project",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "photo_start",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/vehicle-logs/departure"
+                    }
+                },
+                {
+                    "name": "Submit Return (Step 2)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "km_end",
+                                    "value": "15350",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "notes",
+                                    "value": "Bahan bakar diisi full di SPBU KM 19",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "photo_end",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "expenses[0][category]",
+                                    "value": "BBM",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "expenses[0][amount]",
+                                    "value": "150000",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "expenses[0][remark]",
+                                    "value": "Pertalite",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "expense_attachments[]",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/vehicle-logs/1/return"
+                    }
+                },
+                {
+                    "name": "Approve Vehicle Log",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vehicle-logs/1/approve"
+                    }
+                },
+                {
+                    "name": "Reject Vehicle Log",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"remark\": \"KM Akhir tidak masuk akal\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/vehicle-logs/1/reject"
+                    }
+                }
+            ]
         }
     ]
 }

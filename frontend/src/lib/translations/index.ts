@@ -69,6 +69,10 @@ export const translations = {
     project_management: "Manajemen Proyek",
     project_overview: "Daftar Proyek",
     wfh_delegation: "Delegasi WFH",
+    operational: "Operasional",
+    fleet_management: "Manajemen Kendaraan",
+    fleet_logs: "Log Kendaraan",
+    mileage_report: "Laporan Mileage",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -145,6 +149,10 @@ export const translations = {
     project_management: "Project Management",
     project_overview: "Project Overview",
     wfh_delegation: "WFH Delegation",
+    operational: "Operational",
+    fleet_management: "Fleet Management",
+    fleet_logs: "Vehicle Logs",
+    mileage_report: "Mileage Report",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

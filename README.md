@@ -23,6 +23,7 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 - **Enterprise Audit & Reporting**: Laporan audit lengkap untuk aktivitas pertukaran shift dengan filter periode dan fitur Export Excel.
 - **Pengajuan Cuti & Lembur**: Workflow pengajuan cuti & lembur, approval/rejection oleh atasan, dan history lengkap.
 - **Reimbursement**: Pengajuan klaim biaya dengan sistem multiple attachments / lampiran foto sekaligus dan approval bertingkat.
+- **Manajemen Kendaraan & Travel Expense (Fleet Logging)**: Pencatatan penggunaan kendaraan operasional dengan alur 2-step (Keberangkatan & Kepulangan), validasi odometer (KM), foto dashboard, dan integrasi biaya perjalanan (BBM, Tol, Parkir).
 - **Performance & Pagination**: Penanganan data skala besar dengan pagination di seluruh API dan proteksi error frontend (Array.isArray).
 - **Manajemen Tugas (Tasks)**: Pembagian tugas ke karyawan melalui dashboard admin/mobile.
 - **Slip Gaji (Salary)**: Akses slip gaji digital bulanan secara aman.

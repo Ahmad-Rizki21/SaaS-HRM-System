@@ -9,7 +9,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiService {
   // Toggle between Home (192.168.1.9) and Office (2.2.2.76)
-  static const String serverIp = '2.2.2.209';
+  static const String serverIp = '10.114.233.81';
   static const String baseUrl = 'http://$serverIp:8000/api';
   static const String storageUrl = 'http://$serverIp:8000/storage';
 

@@ -29,6 +29,7 @@ use App\Http\Controllers\ShiftSwapController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PerformanceReviewController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\VehicleLogController;
 
 // Health Check (Docker)
 Route::get('/health', function () {
@@ -235,6 +236,17 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     // Project Cash Flow (Arus Kas)
     Route::post('/projects/{projectId}/cash-flows', [ProjectController::class, 'storeCashFlow']);
     Route::delete('/projects/{projectId}/cash-flows/{cashFlowId}', [ProjectController::class, 'destroyCashFlow']);
+
+    // Fleet Logging (Manajemen Kendaraan & Travel Expense)
+    Route::get('/vehicle-logs', [VehicleLogController::class, 'index']);
+    Route::get('/vehicle-logs/vehicles', [VehicleLogController::class, 'vehicles']);
+    Route::get('/vehicle-logs/report', [VehicleLogController::class, 'report']);
+    Route::get('/vehicle-logs/{id}', [VehicleLogController::class, 'show']);
+    Route::post('/vehicle-logs/departure', [VehicleLogController::class, 'storeDeparture']);
+    Route::post('/vehicle-logs/{id}/return', [VehicleLogController::class, 'storeReturn']);
+    Route::post('/vehicle-logs/{id}/approve', [VehicleLogController::class, 'approve']);
+    Route::post('/vehicle-logs/{id}/reject', [VehicleLogController::class, 'reject']);
+    Route::delete('/vehicle-logs/{id}', [VehicleLogController::class, 'destroy']);
 });
 
 // Exports (Authenticated via query token or header inside controller)

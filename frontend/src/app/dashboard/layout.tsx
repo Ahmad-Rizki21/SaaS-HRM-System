@@ -33,7 +33,8 @@ import {
   Laptop,
   Camera,
   HardHat,
-  Building2
+  Building2,
+  Car,
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useState, useEffect, useRef } from "react";
@@ -125,6 +126,16 @@ const sidebarLinks: SidebarLink[] = [
     permission: 'view-employees',
     submenus: [
       { name: "project_overview", href: "/dashboard/projects", permission: 'view-employees' },
+    ]
+  },
+  { name: "operational", isHeading: true, permission: 'view-vehicle-logs' },
+  {
+    name: "fleet_management",
+    icon: Car,
+    permission: 'view-vehicle-logs',
+    submenus: [
+      { name: "fleet_logs", href: "/dashboard/fleet-logs", permission: 'view-vehicle-logs' },
+      { name: "mileage_report", href: "/dashboard/fleet-logs?tab=report", permission: 'view-vehicle-reports' },
     ]
   },
   { name: "system", isHeading: true, permission: 'manage-roles' },
