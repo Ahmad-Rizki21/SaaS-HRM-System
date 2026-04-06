@@ -263,12 +263,9 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full pb-8 px-4 md:px-8">
-      {/* Top Header Row for Layout Name */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Page Header */}
+      <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900">Dashboard Admin</h1>
-        <div className="text-sm font-medium text-gray-500">
-          Super Admin / <span className="text-gray-900">Home</span>
-        </div>
       </div>
 
       {/* TOP ROW GRID */}

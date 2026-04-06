@@ -21,6 +21,7 @@ import 'manager_screen.dart';
 import 'shift_swap_screen.dart';
 import 'attendance_correction_screen.dart';
 import 'leaderboard_screen.dart';
+import 'fleet_log_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -565,6 +566,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'onTap': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => LeaderboardScreen()),
+        ),
+      },
+      'fleet': {
+        'icon': Icons.directions_car_filled,
+        'label': 'Fleet Log',
+        'color': Colors.indigo[800],
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => FleetLogScreen()),
         ),
       },
     };

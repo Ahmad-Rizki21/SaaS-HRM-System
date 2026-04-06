@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
+
 
 class AttendanceController extends Controller
 {
@@ -114,14 +116,14 @@ class AttendanceController extends Controller
             }
         }
 
-        // Handle Image
+        // Handle Image & Compression
         $imageName = null;
         if ($request->image) {
-            $image = $request->image; // Base64
-            $image = str_replace('data:image/png;base64,', '', $image);
-            $image = str_replace(' ', '+', $image);
-            $imageName = 'attendance/in_' . $user->id . '_' . time() . '.png';
-            Storage::disk('public')->put($imageName, base64_decode($image));
+            $imageName = 'attendance/in_' . $user->id . '_' . time() . '.jpg';
+            // Compress and resize image to save storage space (target ~50-80KB)
+            $img = Image::decode($request->image);
+            $img->scale(width: 800); 
+            Storage::disk('public')->put($imageName, (string) $img->encodeUsingFileExtension('jpg', 80));
         }
 
         $attendance = Attendance::create([
@@ -198,14 +200,14 @@ class AttendanceController extends Controller
              return $this->errorResponse('Wajah tidak cocok dengan profil Anda.', 403);
         }
 
-        // Handle Image
+        // Handle Image & Compression
         $imageName = null;
         if ($request->image) {
-            $image = $request->image; // Base64
-            $image = str_replace('data:image/png;base64,', '', $image);
-            $image = str_replace(' ', '+', $image);
-            $imageName = 'attendance/out_' . $user->id . '_' . time() . '.png';
-            Storage::disk('public')->put($imageName, base64_decode($image));
+            $imageName = 'attendance/out_' . $user->id . '_' . time() . '.jpg';
+            // Compress and resize image to save storage space
+            $img = Image::decode($request->image);
+            $img->scale(width: 800);
+            Storage::disk('public')->put($imageName, (string) $img->encodeUsingFileExtension('jpg', 80));
         }
 
         $attendance->update([

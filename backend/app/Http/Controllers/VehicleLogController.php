@@ -7,6 +7,10 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Traits\Notifiable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
+
 
 class VehicleLogController extends Controller
 {
@@ -77,7 +81,13 @@ class VehicleLogController extends Controller
 
         $photoPath = null;
         if ($request->hasFile('odometer_start_photo')) {
-            $photoPath = $request->file('odometer_start_photo')->store('vehicle-logs/odometer', 'public');
+            $file = $request->file('odometer_start_photo');
+            $photoPath = 'vehicle-logs/odometer/' . Str::random(40) . '.jpg';
+            
+            // Compress and scale (1000px for better odometer readability)
+            $img = Image::decode($file);
+            $img->scale(width: 1000); 
+            Storage::disk('public')->put($photoPath, (string) $img->encodeUsingFileExtension('jpg', 80));
         }
 
         $log = VehicleLog::create([
@@ -117,6 +127,23 @@ class VehicleLogController extends Controller
             }
         }
 
+        // Notify Admins & HR (Untuk monitoring unit keluar secara real-time)
+        $admins = User::where('company_id', $request->user()->company_id)
+            ->whereIn('role_id', [7, 2, 10, 8]) // Super Admin, HR, dll
+            ->where('id', '!=', $request->user()->id)
+            ->where('id', '!=', $request->user()->supervisor_id)
+            ->get();
+
+        foreach ($admins as $admin) {
+            $this->notify(
+                $admin,
+                'KENDARAAN DINAS KELUAR',
+                "Karyawan {$request->user()->name} baru saja membawa kendaraan {$request->vehicle_name} ({$request->plate_number}) menuju {$request->destination}.",
+                'info',
+                '/dashboard/fleet-logs'
+            );
+        }
+
         $this->logActivity('CREATE_VEHICLE_LOG', "Mencatat keberangkatan kendaraan {$request->vehicle_name} ({$request->plate_number}) ke {$request->destination}", $log);
 
         return $this->successResponse($log, 'Pencatatan keberangkatan berhasil.', 201);
@@ -132,7 +159,7 @@ class VehicleLogController extends Controller
             ->findOrFail($id);
 
         $request->validate([
-            'return_date' => 'required|date|after_or_equal:' . $log->departure_date->format('Y-m-d'),
+            'return_date' => 'required|date|after_or_equal:' . \Carbon\Carbon::parse($log->departure_date)->format('Y-m-d'),
             'odometer_end' => 'required|integer|min:' . $log->odometer_start,
             'odometer_end_photo' => 'nullable|image|max:10240',
             'fuel_cost' => 'nullable|numeric|min:0',
@@ -146,14 +173,23 @@ class VehicleLogController extends Controller
 
         $photoPath = $log->odometer_end_photo;
         if ($request->hasFile('odometer_end_photo')) {
-            $photoPath = $request->file('odometer_end_photo')->store('vehicle-logs/odometer', 'public');
+            $file = $request->file('odometer_end_photo');
+            $photoPath = 'vehicle-logs/odometer/' . Str::random(40) . '.jpg';
+            
+            $img = Image::decode($file);
+            $img->scale(width: 1000);
+            Storage::disk('public')->put($photoPath, (string) $img->encodeUsingFileExtension('jpg', 80));
         }
 
         // Upload expense attachments (bukti BBM, tol, dll)
         $attachments = [];
         if ($request->hasFile('expense_attachments')) {
             foreach ($request->file('expense_attachments') as $file) {
-                $attachments[] = $file->store('vehicle-logs/expenses', 'public');
+                $path = 'vehicle-logs/expenses/' . Str::random(40) . '.jpg';
+                $img = Image::decode($file);
+                $img->scale(width: 1000);
+                Storage::disk('public')->put($path, (string) $img->encodeUsingFileExtension('jpg', 80));
+                $attachments[] = $path;
             }
         }
 
@@ -177,7 +213,7 @@ class VehicleLogController extends Controller
         $this->notify(
             $request->user(),
             'LOG KENDARAAN — SELESAI',
-            "Perjalanan dinas selesai dicatat. Jarak tempuh: {$distance} KM. Total biaya: Rp " . number_format($totalCost, 0, ',', '.') . ". Menunggu validasi admin.",
+            "Perjalanan dinas selesai dicatat. Jarak tempuh: {$distance} KM. Total biaya: Rp " . number_format((float)$totalCost, 0, ',', '.') . ". Menunggu validasi admin.",
             'success',
             '/dashboard/fleet-logs'
         );
@@ -189,7 +225,7 @@ class VehicleLogController extends Controller
                 $this->notify(
                     $supervisor,
                     'LOG KENDARAAN SELESAI — PERLU VALIDASI',
-                    "Karyawan {$request->user()->name} telah menyelesaikan perjalanan dinas dengan {$log->vehicle_name} ({$log->plate_number}). Jarak: {$distance} KM, Biaya: Rp " . number_format($totalCost, 0, ',', '.') . ". Mohon validasi.",
+                    "Karyawan {$request->user()->name} telah menyelesaikan perjalanan dinas dengan {$log->vehicle_name} ({$log->plate_number}). Jarak: {$distance} KM, Biaya: Rp " . number_format((float)$totalCost, 0, ',', '.') . ". Mohon validasi.",
                     'warning',
                     '/dashboard/fleet-logs'
                 );
@@ -207,7 +243,7 @@ class VehicleLogController extends Controller
             $this->notify(
                 $admin,
                 'LOG KENDARAAN SELESAI (ADMIN)',
-                "Karyawan {$request->user()->name} menyelesaikan perjalanan dengan {$log->vehicle_name}. Jarak: {$distance} KM, Biaya: Rp " . number_format($totalCost, 0, ',', '.'),
+                "Karyawan {$request->user()->name} menyelesaikan perjalanan dengan {$log->vehicle_name}. Jarak: {$distance} KM, Biaya: Rp " . number_format((float)$totalCost, 0, ',', '.'),
                 'warning',
                 '/dashboard/fleet-logs'
             );

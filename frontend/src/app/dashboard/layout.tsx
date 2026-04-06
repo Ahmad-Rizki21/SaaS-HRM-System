@@ -264,6 +264,32 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const breadcrumbs = (() => {
+    const parts = pathname.split('/').filter(p => p);
+    const crumbs: string[] = [user?.role?.name || "Super Admin"];
+
+    if (parts.length === 1 && parts[0] === 'dashboard') {
+      crumbs.push("Home");
+    } else {
+      let currentPath = "";
+      parts.forEach((part, index) => {
+        if (index === 0) return;
+        currentPath += `/${part}`;
+        let label = part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ');
+        sidebarLinks.forEach(link => {
+          if (link.submenus) {
+            const sub = link.submenus.find(s => s.href === `/dashboard${currentPath}`);
+            if (sub) label = t(sub.name);
+          } else if (link.href === `/dashboard${currentPath}`) {
+            label = t(link.name);
+          }
+        });
+        crumbs.push(label);
+      });
+    }
+    return crumbs;
+  })();
+
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -837,6 +863,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         {/* Page Content */}
         <main className="dash-content">
           <div className="dash-content-inner">
+            {/* Breadcrumb Navigation Indicator */}
+            <div className="flex justify-end mb-6">
+              <div className="text-sm font-medium text-gray-500 bg-gray-50/50 px-4 py-1.5 rounded-full border border-gray-100/50 backdrop-blur-sm">
+                {breadcrumbs.map((crumb, idx) => (
+                  <span key={idx} className="inline-flex items-center">
+                    {idx > 0 && <span className="mx-2 text-gray-300">/</span>}
+                    <span className={idx === breadcrumbs.length - 1 ? "text-gray-900 font-bold" : ""}>
+                      {crumb}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
             {children}
           </div>
         </main>
