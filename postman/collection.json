@@ -359,6 +359,25 @@
             ]
         },
         {
+            "name": "Manager Portal",
+            "description": "Endpoints for managers to view and manage subordinate requests (Leaves, Overtimes, Reimbursements, Vehicle Logs).",
+            "item": [
+                {
+                    "name": "Get All Pending Requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/manager/pending-requests"
+                    }
+                }
+            ]
+        },
+        {
             "name": "Role & Permissions",
             "description": "Manage user access levels and granular permissions.",
             "item": [

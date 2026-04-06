@@ -57,6 +57,12 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/reimbursements` | Ajukan klaim baru (Support multiple `attachments[]` as files) |
 | `POST` | `/api/reimbursements/{id}/approve` | Persetujuan klaim biaya |
 
+## 🏢 Portofolio Manager (Mobile)
+| Method | Endpoint | Deskripsi |
+| :--- | :--- | :--- |
+| `GET` | `/api/manager/pending-requests` | List seluruh pengajuan tertunda dari subordinat (Cuti, Lembur, Klaim, Log Kendaraan) |
+| `DELETE` | `/api/manager/pending-requests/{id}` | Hapus/Batalkan pengajuan tertunda dari subordinat |
+
 ## 💰 Gaji & Tugas
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
