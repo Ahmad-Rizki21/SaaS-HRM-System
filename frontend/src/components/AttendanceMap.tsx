@@ -94,7 +94,7 @@ const AttendanceMap = () => {
   if (loading || !leafletLib) return <div className="h-[400px] w-full bg-slate-100 animate-pulse flex items-center justify-center rounded-xl border border-dashed border-slate-300">Memuat Peta...</div>;
 
   return (
-    <div className="w-full h-[500px] rounded-xl overflow-hidden border border-slate-200 shadow-sm z-0">
+    <div className="w-full h-full rounded-xl overflow-hidden border border-slate-200 shadow-sm relative isolate z-0">
       <MapContainer 
         center={[-6.2477, 106.9493]} // Zoom centered at the reported area
         zoom={16} 

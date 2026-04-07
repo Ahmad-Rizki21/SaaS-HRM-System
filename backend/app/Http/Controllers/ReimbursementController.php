@@ -6,6 +6,9 @@ use App\Models\Reimbursement;
 use Illuminate\Http\Request;
 use App\Traits\Notifiable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
 
 class ReimbursementController extends Controller
 {
@@ -46,7 +49,12 @@ class ReimbursementController extends Controller
         $paths = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $paths[] = $file->store('reimbursements', 'public');
+                // Compress and scale (1000px for receipt readability)
+                $path = 'reimbursements/' . Str::random(40) . '.jpg';
+                $img = Image::decode($file);
+                $img->scale(width: 1000);
+                Storage::disk('public')->put($path, (string) $img->encodeUsingFileExtension('jpg', 80));
+                $paths[] = $path;
             }
         }
 

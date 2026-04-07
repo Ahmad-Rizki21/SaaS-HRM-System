@@ -14,17 +14,26 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 
 - **Authentication & Security**: Multi-tenant login, Role-based Access Control (RBAC), hash password, dan session management.
 - **Manajemen SDM**: Data karyawan lengkap, request perubahan profil, upload foto, dan manajemen jabatan (Role).
-- **Kehadiran & Shift**: Check-in/out dengan GPS & Selfie, manajemen shift kerja, jadwal mingguan, dan laporan absensi (Export Excel).
+- **Sistem Kehadiran Geofencing & Liveness**: Validasi ketat menggunakan GPS anti-mock dan deteksi wajah.
+- **Koreksi Absen Mandiri**: Fitur pengajuan koreksi dengan workflow persetujuan (Approval) jika karyawan lupa absen pulang.
+- **Delegasi & Manajemen WFH**: Memberikan izin kepada karyawan tertentu untuk absensi jarak jauh tanpa terpaku radius kantor, lengkap dengan pengumuman otomatis.
+- **Manajemen Cuti & Reimbursement**: Approval berjenjang (Supervisor -> HR) otomatis.
 - **Tukar Shift (Shift Swap)**: Workflow pertukaran jadwal antar rekan kerja dengan notifikasi real-time (FCM) & sistem approval atasan.
 - **Hierarki Atasan (Supervisor)**: Fitur penunjukan atasan langsung untuk alur persetujuan (approval flow) yang lebih tertata dan otomatis.
 - **Enterprise Audit & Reporting**: Laporan audit lengkap untuk aktivitas pertukaran shift dengan filter periode dan fitur Export Excel.
 - **Pengajuan Cuti & Lembur**: Workflow pengajuan cuti & lembur, approval/rejection oleh atasan, dan history lengkap.
 - **Reimbursement**: Pengajuan klaim biaya dengan sistem multiple attachments / lampiran foto sekaligus dan approval bertingkat.
+- **Manajemen Kendaraan (Fleet Logging)**: Pencatatan operasional kendaraan efisien dengan alur 2-step (Keberangkatan & Kepulangan), validasi foto odometer, integrasi modal SOP & SK interaktif, serta notifikasi real-time ke Admin/HR saat kendaraan keluar/masuk.
+- **Portofolio Manager (Mobile)**: Dashboard persetujuan terpadu bagi Manager untuk menyetujui Cuti, Lembur, Reimbursement, dan Log Kendaraan secara mobile.
 - **Performance & Pagination**: Penanganan data skala besar dengan pagination di seluruh API dan proteksi error frontend (Array.isArray).
 - **Manajemen Tugas (Tasks)**: Pembagian tugas ke karyawan melalui dashboard admin/mobile.
 - **Slip Gaji (Salary)**: Akses slip gaji digital bulanan secara aman.
 - **Komunikasi & Pengumuman**: Broadcast pengumuman melalui Dashboard (Kotak Pesan) dan Email Premium (HTML).
-- **Notifikasi Real-time**: Sistem notifikasi push & database untuk pemberitahuan status pengajuan.
+- **Notifikasi Real-time & WebSocket**: Menggunakan native Laravel Reverb dengan notifikasi audio pintar di Web Dashboard.
+- **Interactive Calendar Dashboard**: Dashboard kalender multifungsi dengan grafik pengajuan tertunda & integrasi API Pihak ketiga.
+- **Sinkronisasi Hari Libur Nasional**: Sinkronisasi otomatis Hari Libur Nasional menggunakan proxy Google Calendar ICS Feed.
+- **High-Availability Database (Enterprise)**: Arsitektur **Master-Slave Replication** (MySQL 8.4) dengan GTID Enabled untuk keamanan dan redundansi data.
+- **Read-Write Splitting**: Optimasi performa Laravel dengan pemisahan trafik `Write` (Master) dan `Read` (Slave/Replica).
 
 ---
 
@@ -99,6 +108,18 @@ Gunakan Docker untuk menjalankan seluruh stack (Backend, Frontend, MySQL, Redis,
 Daftar lengkap endpoint API dapat dilihat pada file berikut:
 
 👉 **[DOKUMENTASI API LENGKAP](./API_DOCUMENTATION.md)**
+
+---
+
+---
+
+## Arsitektur Sinkronisasi (Master-Slave)
+
+Sistem ini dikonfigurasi untuk menangani skala besar dengan memisahkan beban database:
+1.  **Master (hrms-mysql-master)**: Menangani seluruh query `INSERT`, `UPDATE`, `DELETE`.
+2.  **Slave (hrms-mysql-slave)**: Menangani seluruh query `SELECT` (Read).
+3.  **GTID Mode**: Sinkronisasi data dijamin konsisten menggunakan Global Transaction Identifier.
+4.  **Sticky Sessions**: Laravel memastikan jika dalam satu request ada operasi tulis, maka operasi baca selanjutnya dalam request yang sama akan diarahkan ke Master untuk menjaga konsistensi data instan.
 
 ---
 

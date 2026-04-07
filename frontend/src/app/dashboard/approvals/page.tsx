@@ -145,6 +145,13 @@ export default function ApprovalsPage() {
       console.log(`Processing ${action} for ${item.type} ID: ${item.id}`);
       await axiosInstance.post(`${endpoint}/${item.id}/${action}`, { remark: remarkInput });
       
+      // Play a satisfying 'success' sound on the Admin side
+      try {
+          const audio = new window.Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          audio.volume = 0.8;
+          audio.play().catch(e => console.log(e));
+      } catch (e) {}
+
       alert(`Berhasil ${action === 'approve' ? 'menyetujui' : 'menolak'} pengajuan.`);
       setActionModal({ isOpen: false, action: null, item: null });
       await fetchApprovals();
@@ -355,7 +362,7 @@ export default function ApprovalsPage() {
 
       {/* Action Modal */}
       {actionModal.isOpen && actionModal.item && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-120 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h3 className={`font-bold text-lg ${actionModal.action === 'approve' ? 'text-emerald-700' : 'text-red-700'}`}>

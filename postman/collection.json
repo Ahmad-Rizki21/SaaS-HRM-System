@@ -1,1176 +1,1921 @@
 {
-	"info": {
-		"_postman_id": "864da7ba-b085-44fd-958d-ef70602c2309",
-		"name": "HRM SaaS Collection - COMPLETE",
-		"description": "# HRM SaaS MVP API Documentation\n\nSelamat datang di dokumentasi API untuk sistem **Multi-tenant HRM SaaS**. Dokumentasi ini mencakup seluruh fitur inti yang dibutuhkan untuk fase MVP.\n\n## Fitur Utama\n1.  **Multi-tenancy**: Data antar perusahaan terisolasi sepenuhnya (Tenant isolation).\n2.  **Authentication**: Menggunakan Laravel Sanctum (Bearer Token).\n3.  **Attendance**: Absensi berbasis lokasi (Geo-tagging) dengan deteksi keterlambatan otomatis berdasarkan jadwal.\n4.  **Work Schedules & Shifts**: Pengaturan jam kerja fleksibel (Pagi, Sore, Malam, NOC).\n5.  **Leave & Reimbursement**: Alur pengajuan dan persetujuan (Approval workflow).\n6.  **Payroll & Slip Gaji**: (Coming Soon).\n7.  **Reporting**: Export data absensi ke format Excel.\n\n## Role System\n-   **Super Admin**: Akses penuh ke seluruh sistem.\n-   **HRD / Manager**: Mengelola karyawan, jadwal, dan menyetujui pengajuan di dalam satu perusahaan.\n-   **Employee**: Melakukan absensi, melihat riwayat, dan mengajukan cuti/klaim.\n\n## Persiapan Penggunaan\n1.  Pastikan **Environment** `HRM SaaS Env` sudah terpilih.\n2.  Variabel `base_url` harus mengarah ke backend Anda (default: `http://127.0.0.1:8000`).\n3.  Lakukan **Login** terlebih dahulu. Token akan otomatis tersimpan ke variabel `token` setelah login berhasil.\n\n---\n*Dibuat oleh Ahmad Rizki - PT. Artacomindo Jejaring Nusa - 2026*",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Authentication",
-			"description": "Endpoints for Login, Logout, and User profile.",
-			"item": [
-				{
-					"name": "Login",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.data && jsonData.data.access_token) {",
-									"    pm.environment.set(\"token\", jsonData.data.access_token);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Accept", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"superadmin@example.com\",\n    \"password\": \"password\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/login"
-					}
-				},
-				{
-					"name": "Logout",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Accept", "value": "application/json" },
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/logout"
-					}
-				},
-				{
-					"name": "Get Current User",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/user"
-					}
-				}
-			]
-		},
-		{
-			"name": "Dashboard & Stats",
-			"description": "Real-time summary for Admin/HRD dashboard.",
-			"item": [
-				{
-					"name": "Get Summary",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/dashboard/summary"
-					}
-				}
-			]
-		},
-		{
-			"name": "Company Management",
-			"description": "Adjust company identities and settings.",
-			"item": [
-				{
-					"name": "Get Company Info",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/company"
-					}
-				},
-				{
-					"name": "Update Company",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"SaaS HRM Updated\",\n    \"address\": \"Jakarta Selatan\",\n    \"target_absensi\": \"WFO\",\n    \"latitude\": \"-6.200000\",\n    \"longitude\": \"106.816666\",\n    \"radius_meters\": 50\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/company/update"
-					}
-				}
-			]
-		},
-		{
-			"name": "Employee Management",
-			"description": "CRUD operations for company employees.",
-			"item": [
-				{
-					"name": "Get All Employees",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/employees"
-					}
-				},
-				{
-					"name": "Create Employee",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Karyawan Baru\",\n    \"email\": \"baru@example.com\",\n    \"password\": \"password123\",\n    \"role_id\": 1,\n    \"nik\": \"2026001\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/employees"
-					}
-				},
-				{
-					"name": "Update Employee",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Budi Santoso Update\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/employees/2"
-					}
-				},
-				{
-					"name": "Delete Employee",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/employees/2"
-					}
-				},
-				{
-					"name": "Import Employee (Excel/CSV)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{ "key": "file", "type": "file", "src": ["/path/to/your/file.xlsx"] }
-							]
-						},
-						"url": "{{base_url}}/api/employees/import"
-					}
-				},
-				{
-					"name": "Bulk Delete Employee",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" },
-							{ "key": "Content-Type", "value": "application/json" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"ids\": [2, 3, 5]\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/employees/bulk-delete"
-					}
-				}
-			]
-		},
-		{
-			"name": "Profile Requests",
-			"description": "Employee profile update requests and admin approvals.",
-			"item": [
-				{
-					"name": "Get All Profile Requests (Admin)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/profile-requests"
-					}
-				},
-				{
-					"name": "Submit Profile Request (Employee)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"requested_data\": {\n        \"name\": \"Ahmad Rizki Updated\",\n        \"email\": \"rizki@example.com\"\n    }\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/profile-requests"
-					}
-				},
-				{
-					"name": "Approve Request",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/profile-requests/1/approve"
-					}
-				},
-				{
-					"name": "Reject Request",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/profile-requests/1/reject"
-					}
-				}
-			]
-		},
-		{
-			"name": "Role & Permissions",
-			"description": "Manage user access levels and granular permissions.",
-			"item": [
-				{
-					"name": "Get All Roles",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/roles"
-					}
-				},
-				{
-					"name": "Get Role Details",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/roles/1"
-					}
-				},
-				{
-					"name": "Create Role",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Supervisor NOC\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/roles"
-					}
-				},
-				{
-					"name": "Update Role",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Manager NOC Updated\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/roles/1"
-					}
-				},
-				{
-					"name": "Delete Role",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/roles/1"
-					}
-				},
-				{
-					"name": "Get All Permissions",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/permissions"
-					}
-				},
-				{
-					"name": "Sync Role Permissions",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"permissions\": [1, 2, 5, 10]\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/roles/1/permissions"
-					}
-				}
-			]
-		},
-		{
-			"name": "Shifts & Scheduling",
-			"description": "Manage work timings and employee assignments.",
-			"item": [
-				{
-					"name": "Get All Shifts",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/shifts"
-					}
-				},
-				{
-					"name": "Create Shift",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Shift Malam\",\n    \"start_time\": \"22:00:00\",\n    \"end_time\": \"06:00:00\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/shifts"
-					}
-				},
-				{
-					"name": "Update Shift",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Shift NOC Update\",\n    \"start_time\": \"20:00:00\",\n    \"end_time\": \"08:00:00\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/shifts/1"
-					}
-				},
-				{
-					"name": "Delete Shift",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/shifts/1"
-					}
-				},
-				{
-					"name": "Get All Schedules (Assignments)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/schedules"
-					}
-				},
-				{
-					"name": "Assign Schedule",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"user_id\": 2,\n    \"shift_id\": 1,\n    \"date\": \"2026-03-20\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/schedules"
-					}
-				},
-				{
-					"name": "Delete Schedule",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/schedules/1"
-					}
-				}
-			]
-		},
-		{
-			"name": "Attendance",
-			"description": "Geo-tagged attendance check-ins, history, and exports.",
-			"item": [
-				{
-					"name": "Check-in",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Accept", "value": "application/json" },
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"latitude\": -6.2,\n    \"longitude\": 106.8\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/attendance/check-in"
-					}
-				},
-				{
-					"name": "Check-out",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Accept", "value": "application/json" },
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"latitude\": -6.2,\n    \"longitude\": 106.8\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/attendance/check-out"
-					}
-				},
-				{
-					"name": "History",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/attendance/history"
-					}
-				},
-				{
-					"name": "Export Attendance (Excel)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/attendance/export"
-					}
-				},
-				{
-					"name": "Today Status",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/attendance/today"
-					}
-				}
-			]
-		},
-		{
-			"name": "Leave Management",
-			"description": "Handling employee leave requests and approvals.",
-			"item": [
-				{
-					"name": "Get All Leaves",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/leave"
-					}
-				},
-				{
-					"name": "Submit Leave",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"start_date\": \"2024-03-20\",\n    \"end_date\": \"2024-03-22\",\n    \"type\": \"Cuti Tahunan\",\n    \"reason\": \"Keluarga ada acara\",\n    \"signature\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/leave"
-					}
-				},
-				{
-					"name": "Approve Leave",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"remark\": \"Disetujui, silakan serah terima pekerjaan sebelum cuti.\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/leave/1/approve"
-					}
-				},
-				{
-					"name": "Reject Leave",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"remark\": \"Mohon maaf, pada tanggal tersebut sedang ada audit internal.\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/leave/1/reject"
-					}
-				},
-				{
-					"name": "Delete Leave (If Pending)",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/leave/1"
-					}
-				}
-			]
-		},
-		{
-			"name": "Overtime Management",
-			"description": "Handling employee overtime requests and approvals.",
-			"item": [
-				{
-					"name": "Get All Overtimes",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/overtimes"
-					}
-				},
-				{
-					"name": "Submit Overtime",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"date\": \"2024-03-20\",\n    \"start_time\": \"18:00\",\n    \"end_time\": \"21:00\",\n    \"reason\": \"Lembur perbaikan server\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/overtimes"
-					}
-				},
-				{
-					"name": "Approve Overtime",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"remark\": \"Lembur disetujui.\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/overtimes/1/approve"
-					}
-				},
-				{
-					"name": "Reject Overtime",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"remark\": \"Lembur ditolak.\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/overtimes/1/reject"
-					}
-				}
-			]
-		},
-		{
-			"name": "Salary & Payroll",
-			"description": "View employee salary slips.",
-			"item": [
-				{
-					"name": "Get All Salaries",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/salary"
-					}
-				}
-			]
-		},
-		{
-			"name": "Tasks Management",
-			"description": "Employee work assignments and status updates.",
-			"item": [
-				{
-					"name": "Get All Tasks",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/tasks"
-					}
-				},
-				{
-					"name": "Update Task Status",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"status\": \"completed\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/tasks/1/status"
-					}
-				}
-			]
-		},
-		{
-			"name": "Reimbursement",
-			"description": "Expense claims for employees.",
-			"item": [
-				{
-					"name": "Get All Claims",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/reimbursements"
-					}
-				},
-				{
-					"name": "Submit Claim",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" },
-							{ "key": "Accept", "value": "application/json" }
-						],
-						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{ "key": "title", "value": "Bensin Perjalanan Dinas", "type": "text" },
-								{ "key": "amount", "value": "50000", "type": "text" },
-								{ "key": "description", "value": "Klaim bensin kunjungan klien", "type": "text" },
-								{ "key": "attachments[]", "type": "file", "src": [] }
-							]
-						},
-						"url": "{{base_url}}/api/reimbursements"
-					}
-				},
-				{
-					"name": "Approve Claim",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"remark\": \"Bukti valid, dana akan segera diproses.\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/reimbursements/1/approve"
-					}
-				},
-				{
-					"name": "Reject Claim",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"remark\": \"Bukti kurang jelas, mohon upload ulang yang lebih tajam.\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/reimbursements/1/reject"
-					}
-				},
-				{
-					"name": "Delete Claim (If Pending)",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/reimbursements/1"
-					}
-				}
-			]
-		},
-		{
-			"name": "Announcements",
-			"description": "Internal company-wide communications.",
-			"item": [
-				{
-					"name": "Get All Announcements",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/announcements"
-					}
-				},
-				{
-					"name": "Publish Announcement",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"title\": \"Info Libur\",\n    \"content\": \"Libur hari raya idul fitri\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/announcements"
-					}
-				},
-				{
-					"name": "Update Announcement",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"content\": \"Konten pengumuman diubah\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/announcements/1"
-					}
-				},
-				{
-					"name": "Delete Announcement",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/announcements/1"
-					}
-				}
-			]
-		},
-		{
-			"name": "Activity Logs",
-			"description": "System-wide audit trail for Admins.",
-			"item": [
-				{
-					"name": "Get All Logs",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/activity-logs"
-					}
-				}
-			]
-		},
-		{
-			"name": "Holidays Management",
-			"description": "Public holidays setting and information.",
-			"item": [
-				{
-					"name": "Get All Holidays",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/holidays"
-					}
-				},
-				{
-					"name": "Create Holiday",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Libur Nasional\",\n    \"date\": \"2026-04-10\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/holidays"
-					}
-				},
-				{
-					"name": "Delete Holiday",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/holidays/1"
-					}
-				}
-			]
-		},
-		{
-			"name": "Shift Swap",
-			"description": "Employee shift exchange requests and management.",
-			"item": [
-				{
-					"name": "Get Swap List (User)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/shift-swap"
-					}
-				},
-				{
-					"name": "Submit Swap Request",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"receiver_id\": 2,\n    \"requester_schedule_id\": 10,\n    \"receiver_schedule_id\": 15,\n    \"reason\": \"Ada urusan mendadak\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/shift-swap"
-					}
-				},
-				{
-					"name": "Respond to Swap (Receiver)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"status\": \"approved_by_receiver\",\n    \"remark\": \"Oke saya setuju\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/shift-swap/1/respond"
-					}
-				},
-				{
-					"name": "Approve Swap (Manager)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"status\": \"approved\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/shift-swap/1/approve"
-					}
-				},
-				{
-					"name": "Get Audit Report",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": {
-							"raw": "{{base_url}}/api/shift-swap/report?start_date=2024-03-01&end_date=2024-03-31",
-							"host": ["{{base_url}}"],
-							"path": ["api", "shift-swap", "report"],
-							"query": [
-								{ "key": "start_date", "value": "2024-03-01" },
-								{ "key": "end_date", "value": "2024-03-31" },
-								{ "key": "user_id", "value": "1", "disabled": true },
-								{ "key": "status", "value": "approved", "disabled": true }
-							]
-						}
-					}
-				},
-				{
-					"name": "Export Audit (Excel)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": {
-							"raw": "{{base_url}}/api/shift-swap/export?start_date=2024-03-01&end_date=2024-03-31",
-							"host": ["{{base_url}}"],
-							"path": ["api", "shift-swap", "export"],
-							"query": [
-								{ "key": "start_date", "value": "2024-03-01" },
-								{ "key": "end_date", "value": "2024-03-31" }
-							]
-						}
-					}
-				}
-			]
-		},
-		{
-			"name": "Notifications",
-			"description": "User notification management.",
-			"item": [
-				{
-					"name": "Get List",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/notifications"
-					}
-				},
-				{
-					"name": "Mark as Read",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/notifications/1/read"
-					}
-				},
-				{
-					"name": "Mark All as Read",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/notifications/read-all"
-					}
-				},
-				{
-					"name": "Clear All Notifications",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/notifications-clear"
-					}
-				}
-			]
-		},
-		{
-			"name": "Project Management (Konstruksi)",
-			"description": "Kontrol eksekusi proyek konstruksi, RAB, kontrak, jadwal, dan cash flow.",
-			"item": [
-				{
-					"name": "Dashboard KPI Proyek",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/projects/dashboard"
-					}
-				},
-				{
-					"name": "Get All Projects",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/projects"
-					}
-				},
-				{
-					"name": "Create Project",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Pembangunan Gedung Kantor\",\n    \"code\": \"PRJ-001\",\n    \"description\": \"Proyek pembangunan gedung kantor 5 lantai\",\n    \"client_name\": \"PT. ABC Indonesia\",\n    \"location\": \"Jakarta Selatan\",\n    \"status\": \"planning\",\n    \"total_budget\": 5000000000,\n    \"start_date\": \"2026-04-01\",\n    \"end_date\": \"2026-12-31\",\n    \"project_manager_id\": 1\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/projects"
-					}
-				},
-				{
-					"name": "Get Project Detail",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/projects/1"
-					}
-				},
-				{
-					"name": "Update Project",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"status\": \"in_progress\",\n    \"progress_percentage\": 25.5\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/projects/1"
-					}
-				},
-				{
-					"name": "Delete Project",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/projects/1"
-					}
-				},
-				{
-					"name": "Add Budget Item (RAB)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"category\": \"Material\",\n    \"item_name\": \"Besi Beton D16\",\n    \"unit\": \"kg\",\n    \"volume\": 5000,\n    \"unit_price\": 15000,\n    \"notes\": \"Besi untuk pondasi\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/projects/1/budgets"
-					}
-				},
-				{
-					"name": "Record Actual Cost",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"category\": \"Material\",\n    \"description\": \"Pembelian besi beton batch 1\",\n    \"amount\": 25000000,\n    \"cost_date\": \"2026-04-10\",\n    \"vendor\": \"PT. Baja Mandiri\",\n    \"receipt_number\": \"INV-2026-001\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/projects/1/costs"
-					}
-				},
-				{
-					"name": "Approve Cost",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": "{{base_url}}/api/projects/1/costs/1/approve"
-					}
-				},
-				{
-					"name": "Add Contract",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"contract_number\": \"KTR-2026-001\",\n    \"title\": \"Kontrak Pekerjaan Struktur\",\n    \"vendor_name\": \"PT. Konstruksi Jaya\",\n    \"vendor_contact\": \"081234567890\",\n    \"contract_value\": 2000000000,\n    \"contract_type\": \"subcontractor\",\n    \"status\": \"active\",\n    \"start_date\": \"2026-04-01\",\n    \"end_date\": \"2026-09-30\",\n    \"scope_of_work\": \"Pekerjaan struktur lantai 1-5\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/projects/1/contracts"
-					}
-				},
-				{
-					"name": "Add Schedule Milestone",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"task_name\": \"Pekerjaan Pondasi\",\n    \"description\": \"Galian dan pengecoran pondasi\",\n    \"phase\": \"foundation\",\n    \"planned_start\": \"2026-04-01\",\n    \"planned_end\": \"2026-05-15\",\n    \"progress\": 0,\n    \"status\": \"not_started\",\n    \"order\": 1\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/projects/1/schedules"
-					}
-				},
-				{
-					"name": "Record Cash Flow",
-					"request": {
-						"method": "POST",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"type\": \"income\",\n    \"category\": \"Termin\",\n    \"description\": \"Pembayaran termin 1 dari klien\",\n    \"amount\": 1500000000,\n    \"transaction_date\": \"2026-04-05\",\n    \"reference_number\": \"TRF-2026-001\"\n}",
-							"options": { "raw": { "language": "json" } }
-						},
-						"url": "{{base_url}}/api/projects/1/cash-flows"
-					}
-				}
-			]
-		}
-	]
+    "info": {
+        "_postman_id": "864da7ba-b085-44fd-958d-ef70602c2309",
+        "name": "HRM SaaS Collection - COMPLETE",
+        "description": "# HRM SaaS MVP API Documentation\n\nSelamat datang di dokumentasi API untuk sistem **Multi-tenant HRM SaaS**. Dokumentasi ini mencakup seluruh fitur inti yang dibutuhkan untuk fase MVP.\n\n## Fitur Utama\n1.  **Multi-tenancy**: Data antar perusahaan terisolasi sepenuhnya (Tenant isolation).\n2.  **Authentication**: Menggunakan Laravel Sanctum (Bearer Token).\n3.  **Attendance**: Absensi berbasis lokasi (Geo-tagging) dengan deteksi keterlambatan otomatis berdasarkan jadwal.\n4.  **Work Schedules & Shifts**: Pengaturan jam kerja fleksibel (Pagi, Sore, Malam, NOC).\n5.  **Leave & Reimbursement**: Alur pengajuan dan persetujuan (Approval workflow).\n6.  **Payroll & Slip Gaji**: (Coming Soon).\n7.  **Reporting**: Export data absensi ke format Excel.\n\n## Role System\n-   **Super Admin**: Akses penuh ke seluruh sistem.\n-   **HRD / Manager**: Mengelola karyawan, jadwal, dan menyetujui pengajuan di dalam satu perusahaan.\n-   **Employee**: Melakukan absensi, melihat riwayat, dan mengajukan cuti/klaim.\n\n## Persiapan Penggunaan\n1.  Pastikan **Environment** `HRM SaaS Env` sudah terpilih.\n2.  Variabel `base_url` harus mengarah ke backend Anda (default: `http://127.0.0.1:8000`).\n3.  Lakukan **Login** terlebih dahulu. Token akan otomatis tersimpan ke variabel `token` setelah login berhasil.\n\n---\n*Dibuat oleh Ahmad Rizki - PT. Artacomindo Jejaring Nusa - 2026*",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Authentication",
+            "description": "Endpoints for Login, Logout, and User profile.",
+            "item": [
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.data && jsonData.data.access_token) {",
+                                    "    pm.environment.set(\"token\", jsonData.data.access_token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"superadmin@example.com\",\n    \"password\": \"password\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/login"
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/logout"
+                    }
+                },
+                {
+                    "name": "Get Current User",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/user"
+                    }
+                },
+                {
+                    "name": "Authorize WebSocket (Reverb)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"socket_id\": \"12345.67890\",\n    \"channel_name\": \"private-notifications.1\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/broadcasting/auth"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Dashboard & Stats",
+            "description": "Real-time summary for Admin/HRD dashboard.",
+            "item": [
+                {
+                    "name": "Get Summary",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/dashboard/summary"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Company Management",
+            "description": "Adjust company identities and settings.",
+            "item": [
+                {
+                    "name": "Get Company Info",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/company"
+                    }
+                },
+                {
+                    "name": "Update Company",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"SaaS HRM Updated\",\n    \"address\": \"Jakarta Selatan\",\n    \"target_absensi\": \"WFO\",\n    \"latitude\": \"-6.200000\",\n    \"longitude\": \"106.816666\",\n    \"radius_meters\": 50\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/company/update"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Employee Management",
+            "description": "CRUD operations for company employees.",
+            "item": [
+                {
+                    "name": "Get All Employees",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/employees"
+                    }
+                },
+                {
+                    "name": "Create Employee",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Karyawan Baru\",\n    \"email\": \"baru@example.com\",\n    \"password\": \"password123\",\n    \"role_id\": 1,\n    \"nik\": \"2026001\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/employees"
+                    }
+                },
+                {
+                    "name": "Update Employee",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Budi Santoso Update\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/employees/2"
+                    }
+                },
+                {
+                    "name": "Delete Employee",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/employees/2"
+                    }
+                },
+                {
+                    "name": "Import Employee (Excel/CSV)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": [
+                                        "/path/to/your/file.xlsx"
+                                    ]
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/employees/import"
+                    }
+                },
+                {
+                    "name": "Bulk Delete Employee",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ids\": [2, 3, 5]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/employees/bulk-delete"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Profile Requests",
+            "description": "Employee profile update requests and admin approvals.",
+            "item": [
+                {
+                    "name": "Get All Profile Requests (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/profile-requests"
+                    }
+                },
+                {
+                    "name": "Submit Profile Request (Employee)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"requested_data\": {\n        \"name\": \"Ahmad Rizki Updated\",\n        \"email\": \"rizki@example.com\"\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/profile-requests"
+                    }
+                },
+                {
+                    "name": "Approve Request",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/profile-requests/1/approve"
+                    }
+                },
+                {
+                    "name": "Reject Request",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/profile-requests/1/reject"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Manager Portal",
+            "description": "Endpoints for managers to view and manage subordinate requests (Leaves, Overtimes, Reimbursements, Vehicle Logs).",
+            "item": [
+                {
+                    "name": "Get All Pending Requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/manager/pending-requests"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Role & Permissions",
+            "description": "Manage user access levels and granular permissions.",
+            "item": [
+                {
+                    "name": "Get All Roles",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/roles"
+                    }
+                },
+                {
+                    "name": "Get Role Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/roles/1"
+                    }
+                },
+                {
+                    "name": "Create Role",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Supervisor NOC\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/roles"
+                    }
+                },
+                {
+                    "name": "Update Role",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Manager NOC Updated\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/roles/1"
+                    }
+                },
+                {
+                    "name": "Delete Role",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/roles/1"
+                    }
+                },
+                {
+                    "name": "Get All Permissions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/permissions"
+                    }
+                },
+                {
+                    "name": "Sync Role Permissions",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"permissions\": [1, 2, 5, 10]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/roles/1/permissions"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Shifts & Scheduling",
+            "description": "Manage work timings and employee assignments.",
+            "item": [
+                {
+                    "name": "Get All Shifts",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/shifts"
+                    }
+                },
+                {
+                    "name": "Create Shift",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Shift Malam\",\n    \"start_time\": \"22:00:00\",\n    \"end_time\": \"06:00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/shifts"
+                    }
+                },
+                {
+                    "name": "Update Shift",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Shift NOC Update\",\n    \"start_time\": \"20:00:00\",\n    \"end_time\": \"08:00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/shifts/1"
+                    }
+                },
+                {
+                    "name": "Delete Shift",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/shifts/1"
+                    }
+                },
+                {
+                    "name": "Get All Schedules (Assignments)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/schedules"
+                    }
+                },
+                {
+                    "name": "Assign Schedule",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user_id\": 2,\n    \"shift_id\": 1,\n    \"date\": \"2026-03-20\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/schedules"
+                    }
+                },
+                {
+                    "name": "Delete Schedule",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/schedules/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Attendance",
+            "description": "Geo-tagged attendance check-ins, history, and exports.",
+            "item": [
+                {
+                    "name": "Check-in",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"latitude\": -6.2,\n    \"longitude\": 106.8\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/attendance/check-in"
+                    }
+                },
+                {
+                    "name": "Check-out",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"latitude\": -6.2,\n    \"longitude\": 106.8\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/attendance/check-out"
+                    }
+                },
+                {
+                    "name": "History",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/attendance/history"
+                    }
+                },
+                {
+                    "name": "Export Attendance (Excel)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/attendance/export"
+                    }
+                },
+                {
+                    "name": "Today Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/attendance/today"
+                    }
+                },
+                {
+                    "name": "Get Attendance Corrections",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/attendance-corrections"
+                    }
+                },
+                {
+                    "name": "Submit Attendance Correction",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\r\n  \"attendance_id\": 1,\r\n  \"correction_type\": \"missing_checkout\",\r\n  \"corrected_check_out\": \"17:00\",\r\n  \"reason\": \"Lupa absen pulang karena buru-buru\"\r\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/attendance-corrections"
+                    }
+                },
+                {
+                    "name": "Approve Correction",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/attendance-corrections/1/approve"
+                    }
+                },
+                {
+                    "name": "Reject Correction",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/attendance-corrections/1/reject"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Leave Management",
+            "description": "Handling employee leave requests and approvals.",
+            "item": [
+                {
+                    "name": "Get All Leaves",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/leave"
+                    }
+                },
+                {
+                    "name": "Submit Leave",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"start_date\": \"2024-03-20\",\n    \"end_date\": \"2024-03-22\",\n    \"type\": \"Cuti Tahunan\",\n    \"reason\": \"Keluarga ada acara\",\n    \"signature\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/leave"
+                    }
+                },
+                {
+                    "name": "Approve Leave",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"remark\": \"Disetujui, silakan serah terima pekerjaan sebelum cuti.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/leave/1/approve"
+                    }
+                },
+                {
+                    "name": "Reject Leave",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"remark\": \"Mohon maaf, pada tanggal tersebut sedang ada audit internal.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/leave/1/reject"
+                    }
+                },
+                {
+                    "name": "Delete Leave (If Pending)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/leave/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Overtime Management",
+            "description": "Handling employee overtime requests and approvals.",
+            "item": [
+                {
+                    "name": "Get All Overtimes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/overtimes"
+                    }
+                },
+                {
+                    "name": "Submit Overtime",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"date\": \"2024-03-20\",\n    \"start_time\": \"18:00\",\n    \"end_time\": \"21:00\",\n    \"reason\": \"Lembur perbaikan server\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/overtimes"
+                    }
+                },
+                {
+                    "name": "Approve Overtime",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"remark\": \"Lembur disetujui.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/overtimes/1/approve"
+                    }
+                },
+                {
+                    "name": "Reject Overtime",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"remark\": \"Lembur ditolak.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/overtimes/1/reject"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Salary & Payroll",
+            "description": "View employee salary slips.",
+            "item": [
+                {
+                    "name": "Get All Salaries",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/salary"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Tasks Management",
+            "description": "Employee work assignments and status updates.",
+            "item": [
+                {
+                    "name": "Get All Tasks",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/tasks"
+                    }
+                },
+                {
+                    "name": "Update Task Status",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"completed\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/tasks/1/status"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Reimbursement",
+            "description": "Expense claims for employees.",
+            "item": [
+                {
+                    "name": "Get All Claims",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/reimbursements"
+                    }
+                },
+                {
+                    "name": "Submit Claim",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "title",
+                                    "value": "Bensin Perjalanan Dinas",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "amount",
+                                    "value": "50000",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "Klaim bensin kunjungan klien",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "attachments[]",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/reimbursements"
+                    }
+                },
+                {
+                    "name": "Approve Claim",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"remark\": \"Bukti valid, dana akan segera diproses.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/reimbursements/1/approve"
+                    }
+                },
+                {
+                    "name": "Reject Claim",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"remark\": \"Bukti kurang jelas, mohon upload ulang yang lebih tajam.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/reimbursements/1/reject"
+                    }
+                },
+                {
+                    "name": "Delete Claim (If Pending)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/reimbursements/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Announcements",
+            "description": "Internal company-wide communications.",
+            "item": [
+                {
+                    "name": "Get All Announcements",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/announcements"
+                    }
+                },
+                {
+                    "name": "Publish Announcement",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"Info Libur\",\n    \"content\": \"Libur hari raya idul fitri\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/announcements"
+                    }
+                },
+                {
+                    "name": "Update Announcement",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"content\": \"Konten pengumuman diubah\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/announcements/1"
+                    }
+                },
+                {
+                    "name": "Delete Announcement",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/announcements/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Activity Logs",
+            "description": "System-wide audit trail for Admins.",
+            "item": [
+                {
+                    "name": "Get All Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/activity-logs"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Holidays Management",
+            "description": "Public holidays setting and information.",
+            "item": [
+                {
+                    "name": "Get All Holidays",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/holidays"
+                    }
+                },
+                {
+                    "name": "Create Holiday",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Libur Nasional\",\n    \"date\": \"2026-04-10\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/holidays"
+                    }
+                },
+                {
+                    "name": "Delete Holiday",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/holidays/1"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Shift Swap",
+            "description": "Employee shift exchange requests and management.",
+            "item": [
+                {
+                    "name": "Get Swap List (User)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/shift-swap"
+                    }
+                },
+                {
+                    "name": "Submit Swap Request",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"receiver_id\": 2,\n    \"requester_schedule_id\": 10,\n    \"receiver_schedule_id\": 15,\n    \"reason\": \"Ada urusan mendadak\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/shift-swap"
+                    }
+                },
+                {
+                    "name": "Respond to Swap (Receiver)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"approved_by_receiver\",\n    \"remark\": \"Oke saya setuju\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/shift-swap/1/respond"
+                    }
+                },
+                {
+                    "name": "Approve Swap (Manager)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"approved\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/shift-swap/1/approve"
+                    }
+                },
+                {
+                    "name": "Get Audit Report",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/shift-swap/report?start_date=2024-03-01&end_date=2024-03-31",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "shift-swap",
+                                "report"
+                            ],
+                            "query": [
+                                {
+                                    "key": "start_date",
+                                    "value": "2024-03-01"
+                                },
+                                {
+                                    "key": "end_date",
+                                    "value": "2024-03-31"
+                                },
+                                {
+                                    "key": "user_id",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "approved",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Export Audit (Excel)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/shift-swap/export?start_date=2024-03-01&end_date=2024-03-31",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "shift-swap",
+                                "export"
+                            ],
+                            "query": [
+                                {
+                                    "key": "start_date",
+                                    "value": "2024-03-01"
+                                },
+                                {
+                                    "key": "end_date",
+                                    "value": "2024-03-31"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Notifications",
+            "description": "User notification management.",
+            "item": [
+                {
+                    "name": "Get List",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/notifications"
+                    }
+                },
+                {
+                    "name": "Mark as Read",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/notifications/1/read"
+                    }
+                },
+                {
+                    "name": "Mark All as Read",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/notifications/read-all"
+                    }
+                },
+                {
+                    "name": "Clear All Notifications",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/notifications-clear"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Project Management (Konstruksi)",
+            "description": "Kontrol eksekusi proyek konstruksi, RAB, kontrak, jadwal, dan cash flow.",
+            "item": [
+                {
+                    "name": "Dashboard KPI Proyek",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/projects/dashboard"
+                    }
+                },
+                {
+                    "name": "Get All Projects",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/projects"
+                    }
+                },
+                {
+                    "name": "Create Project",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Pembangunan Gedung Kantor\",\n    \"code\": \"PRJ-001\",\n    \"description\": \"Proyek pembangunan gedung kantor 5 lantai\",\n    \"client_name\": \"PT. ABC Indonesia\",\n    \"location\": \"Jakarta Selatan\",\n    \"status\": \"planning\",\n    \"total_budget\": 5000000000,\n    \"start_date\": \"2026-04-01\",\n    \"end_date\": \"2026-12-31\",\n    \"project_manager_id\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/projects"
+                    }
+                },
+                {
+                    "name": "Get Project Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/projects/1"
+                    }
+                },
+                {
+                    "name": "Update Project",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"in_progress\",\n    \"progress_percentage\": 25.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/projects/1"
+                    }
+                },
+                {
+                    "name": "Delete Project",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/projects/1"
+                    }
+                },
+                {
+                    "name": "Add Budget Item (RAB)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"category\": \"Material\",\n    \"item_name\": \"Besi Beton D16\",\n    \"unit\": \"kg\",\n    \"volume\": 5000,\n    \"unit_price\": 15000,\n    \"notes\": \"Besi untuk pondasi\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/projects/1/budgets"
+                    }
+                },
+                {
+                    "name": "Record Actual Cost",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"category\": \"Material\",\n    \"description\": \"Pembelian besi beton batch 1\",\n    \"amount\": 25000000,\n    \"cost_date\": \"2026-04-10\",\n    \"vendor\": \"PT. Baja Mandiri\",\n    \"receipt_number\": \"INV-2026-001\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/projects/1/costs"
+                    }
+                },
+                {
+                    "name": "Approve Cost",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/projects/1/costs/1/approve"
+                    }
+                },
+                {
+                    "name": "Add Contract",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"contract_number\": \"KTR-2026-001\",\n    \"title\": \"Kontrak Pekerjaan Struktur\",\n    \"vendor_name\": \"PT. Konstruksi Jaya\",\n    \"vendor_contact\": \"081234567890\",\n    \"contract_value\": 2000000000,\n    \"contract_type\": \"subcontractor\",\n    \"status\": \"active\",\n    \"start_date\": \"2026-04-01\",\n    \"end_date\": \"2026-09-30\",\n    \"scope_of_work\": \"Pekerjaan struktur lantai 1-5\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/projects/1/contracts"
+                    }
+                },
+                {
+                    "name": "Add Schedule Milestone",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"task_name\": \"Pekerjaan Pondasi\",\n    \"description\": \"Galian dan pengecoran pondasi\",\n    \"phase\": \"foundation\",\n    \"planned_start\": \"2026-04-01\",\n    \"planned_end\": \"2026-05-15\",\n    \"progress\": 0,\n    \"status\": \"not_started\",\n    \"order\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/projects/1/schedules"
+                    }
+                },
+                {
+                    "name": "Record Cash Flow",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"type\": \"income\",\n    \"category\": \"Termin\",\n    \"description\": \"Pembayaran termin 1 dari klien\",\n    \"amount\": 1500000000,\n    \"transaction_date\": \"2026-04-05\",\n    \"reference_number\": \"TRF-2026-001\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/projects/1/cash-flows"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Fleet & Vehicle Management",
+            "description": "Log penggunaan kendaraan operasional, odometer, dan biaya perjalanan.",
+            "item": [
+                {
+                    "name": "Get All Vehicle Logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vehicle-logs"
+                    }
+                },
+                {
+                    "name": "Get Odometer & Cost Report",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vehicle-logs/report"
+                    }
+                },
+                {
+                    "name": "Get Used Vehicles List",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vehicle-logs/vehicles"
+                    }
+                },
+                {
+                    "name": "Submit Departure (Step 1)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "vehicle_name",
+                                    "value": "Avanza B 1234 CDG",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "km_start",
+                                    "value": "15200",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "destination",
+                                    "value": "Kantor Klien ABC",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "purpose",
+                                    "value": "Meeting Project",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "photo_start",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/vehicle-logs/departure"
+                    }
+                },
+                {
+                    "name": "Submit Return (Step 2)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "km_end",
+                                    "value": "15350",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "notes",
+                                    "value": "Bahan bakar diisi full di SPBU KM 19",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "photo_end",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "expenses[0][category]",
+                                    "value": "BBM",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "expenses[0][amount]",
+                                    "value": "150000",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "expenses[0][remark]",
+                                    "value": "Pertalite",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "expense_attachments[]",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/vehicle-logs/1/return"
+                    }
+                },
+                {
+                    "name": "Approve Vehicle Log",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/vehicle-logs/1/approve"
+                    }
+                },
+                {
+                    "name": "Reject Vehicle Log",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"remark\": \"KM Akhir tidak masuk akal\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/vehicle-logs/1/reject"
+                    }
+                }
+            ]
+        }
+    ]
 }

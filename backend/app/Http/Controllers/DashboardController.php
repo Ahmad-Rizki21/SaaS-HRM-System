@@ -181,4 +181,79 @@ class DashboardController extends Controller
             'today_attendance' => $todayAttendance
         ], 'Data ringkasan dashboard berhasil diambil.');
     }
+
+    public function leaderboard(Request $request)
+    {
+        $companyId = $request->user()->company_id;
+        $now = Carbon::now();
+        
+        // Key Cache dinamis berdasarkan bulan ini
+        $cacheKey = "leaderboard_full_v2_company_{$companyId}_{$now->format('Y-m')}";
+        
+        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 7200, function () use ($companyId, $now) {
+            $targetMonth = $now;
+            $monthStart = $targetMonth->startOfMonth()->toDateString();
+            $monthEnd = $targetMonth->endOfMonth()->toDateString();
+            
+            // 1. Ambil Attendance (April)
+            $topAttendance = $this->getTopAttendance($companyId, $monthStart, $monthEnd);
+            $topOvertime = $this->getTopOvertime($companyId, $monthStart, $monthEnd);
+            $monthLabel = $targetMonth->translatedFormat('F Y');
+
+            // 2. Jika absen kosong, coba mundur ke bulan lalu (Maret)
+            if ($topAttendance->isEmpty() && $topOvertime->isEmpty()) {
+                $targetMonth = $now->copy()->subMonth();
+                $monthStart = $targetMonth->startOfMonth()->toDateString();
+                $monthEnd = $targetMonth->endOfMonth()->toDateString();
+                
+                $topAttendance = $this->getTopAttendance($companyId, $monthStart, $monthEnd);
+                $topOvertime = $this->getTopOvertime($companyId, $monthStart, $monthEnd);
+                $monthLabel = $targetMonth->translatedFormat('F Y');
+            }
+
+            return [
+                'top_attendance' => $topAttendance,
+                'top_overtime' => $topOvertime,
+                'month' => $monthLabel
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Leaderboard berhasil diambil',
+            'data' => $data
+        ]);
+    }
+
+    private function getTopAttendance($companyId, $start, $end)
+    {
+        return DB::table('attendances')
+            ->join('users', 'attendances.user_id', '=', 'users.id')
+            ->where('attendances.company_id', $companyId)
+            ->where('attendances.status', 'present')
+            ->whereBetween('attendances.check_in', [$start, $end . ' 23:59:59'])
+            ->select('users.id', 'users.name', 'users.profile_photo_path', DB::raw('COUNT(attendances.id) as score'))
+            ->groupBy('users.id', 'users.name', 'users.profile_photo_path')
+            ->orderByDesc('score')->take(10)->get()
+            ->map(function ($e) {
+                $e->photo_url = $e->profile_photo_path ? url('storage/' . $e->profile_photo_path) : null;
+                return $e;
+            })->values();
+    }
+
+    private function getTopOvertime($companyId, $start, $end)
+    {
+        return DB::table('overtimes')
+            ->join('users', 'overtimes.user_id', '=', 'users.id')
+            ->where('overtimes.company_id', $companyId)
+            ->where('overtimes.status', 'approved')
+            ->whereBetween('overtimes.date', [$start, $end])
+            ->select('users.id', 'users.name', 'users.profile_photo_path', DB::raw('COUNT(overtimes.id) as score'))
+            ->groupBy('users.id', 'users.name', 'users.profile_photo_path')
+            ->orderByDesc('score')->take(10)->get()
+            ->map(function ($e) {
+                $e->photo_url = $e->profile_photo_path ? url('storage/' . $e->profile_photo_path) : null;
+                return $e;
+            })->values();
+    }
 }

@@ -1,0 +1,12 @@
+[mysqld]
+server-id = 1
+log_bin = mysql-bin
+binlog_format = ROW
+expire_logs_days = 7
+innodb_flush_log_at_trx_commit = 1
+sync_binlog = 1
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+innodb_buffer_pool_size = 512M
+max_connections = 200
+skip-name-resolve

@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
+
 
 class AttendanceController extends Controller
 {
@@ -89,7 +91,12 @@ class AttendanceController extends Controller
         $userRoleName = $user->role ? strtolower($user->role->name) : '';
         $isTechnician = str_contains($userRoleName, 'teknisi');
 
-        if (!$isTechnician) {
+        // Check if user is WFH based on flag and date range
+        $today = now()->startOfDay();
+        $isWfhActive = $user->is_wfh && 
+                       ($user->wfh_start_date <= $today && $user->wfh_end_date >= $today);
+
+        if (!$isTechnician && !$isWfhActive) {
             // Priority: Office Coords -> Company Coords
             $targetLat = $office?->latitude ?? $company?->latitude ?? null;
             $targetLng = $office?->longitude ?? $company?->longitude ?? null;
@@ -109,14 +116,14 @@ class AttendanceController extends Controller
             }
         }
 
-        // Handle Image
+        // Handle Image & Compression
         $imageName = null;
         if ($request->image) {
-            $image = $request->image; // Base64
-            $image = str_replace('data:image/png;base64,', '', $image);
-            $image = str_replace(' ', '+', $image);
-            $imageName = 'attendance/in_' . $user->id . '_' . time() . '.png';
-            Storage::disk('public')->put($imageName, base64_decode($image));
+            $imageName = 'attendance/in_' . $user->id . '_' . time() . '.jpg';
+            // Compress and resize image to save storage space (target ~50-80KB)
+            $img = Image::decode($request->image);
+            $img->scale(width: 800); 
+            Storage::disk('public')->put($imageName, (string) $img->encodeUsingFileExtension('jpg', 80));
         }
 
         $attendance = Attendance::create([
@@ -137,7 +144,10 @@ class AttendanceController extends Controller
             $user, 
             'BERHASIL ABSEN MASUK', 
             "Anda telah berhasil absen masuk pada pukul {$now->format('H:i')} WIB. Status: " . strtoupper($status),
-            $status === 'late' ? 'warning' : 'success'
+            $status === 'late' ? 'warning' : 'success',
+            null,
+            'notif',
+            false
         );
 
         // 2. Proactive: Notify Supervisor if LATE
@@ -190,14 +200,14 @@ class AttendanceController extends Controller
              return $this->errorResponse('Wajah tidak cocok dengan profil Anda.', 403);
         }
 
-        // Handle Image
+        // Handle Image & Compression
         $imageName = null;
         if ($request->image) {
-            $image = $request->image; // Base64
-            $image = str_replace('data:image/png;base64,', '', $image);
-            $image = str_replace(' ', '+', $image);
-            $imageName = 'attendance/out_' . $user->id . '_' . time() . '.png';
-            Storage::disk('public')->put($imageName, base64_decode($image));
+            $imageName = 'attendance/out_' . $user->id . '_' . time() . '.jpg';
+            // Compress and resize image to save storage space
+            $img = Image::decode($request->image);
+            $img->scale(width: 800);
+            Storage::disk('public')->put($imageName, (string) $img->encodeUsingFileExtension('jpg', 80));
         }
 
         $attendance->update([
@@ -211,7 +221,10 @@ class AttendanceController extends Controller
             $user, 
             'BERHASIL ABSEN KELUAR', 
             "Anda telah berhasil absen keluar pada pukul " . now()->format('H:i') . " WIB. Terima kasih atas kerja keras Anda!",
-            'info'
+            'info',
+            null,
+            'notif',
+            false
         );
 
         return $this->successResponse($attendance, 'Check-out berhasil.');

@@ -29,6 +29,7 @@ use App\Http\Controllers\ShiftSwapController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PerformanceReviewController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\VehicleLogController;
 
 // Health Check (Docker)
 Route::get('/health', function () {
@@ -54,12 +55,16 @@ Route::get('/health', function () {
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
 
+// Broadcast Route
+\Illuminate\Support\Facades\Broadcast::routes(['middleware' => ['auth:sanctum']]);
+
 Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [ProfileController::class, 'me']);
 
     // Dashboard
     Route::get('/dashboard/summary', [DashboardController::class, 'index']);
+    Route::get('/dashboard/leaderboard', [DashboardController::class, 'leaderboard']);
 
     // Company Settings
     Route::get('/company', [CompanyController::class, 'show']);
@@ -89,6 +94,12 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::get('/attendance/history', [AttendanceController::class, 'history']);
     Route::get('/attendance/heatmap', [AttendanceController::class, 'heatmap']);
     Route::get('/attendance/export', [AttendanceController::class, 'export']);
+
+    // Attendance Corrections (Koreksi Absen)
+    Route::get('/attendance-corrections', [\App\Http\Controllers\AttendanceCorrectionController::class, 'index']);
+    Route::post('/attendance-corrections', [\App\Http\Controllers\AttendanceCorrectionController::class, 'store']);
+    Route::post('/attendance-corrections/{id}/approve', [\App\Http\Controllers\AttendanceCorrectionController::class, 'approve']);
+    Route::post('/attendance-corrections/{id}/reject', [\App\Http\Controllers\AttendanceCorrectionController::class, 'reject']);
 
     // Leave
     Route::get('/leave', [LeaveController::class, 'index']);
@@ -130,6 +141,8 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     // Bulk Delete
     Route::post('/employees/bulk-delete', [EmployeeController::class, 'bulkDestroy']);
     Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+    Route::post('/employees/{id}/toggle-wfh', [EmployeeController::class, 'toggleWfh']);
+    Route::post('/employees/bulk-wfh', [EmployeeController::class, 'bulkWfh']);
 
     // Roles & Permissions
     Route::get('/roles', [RoleController::class, 'index']);
@@ -223,6 +236,17 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     // Project Cash Flow (Arus Kas)
     Route::post('/projects/{projectId}/cash-flows', [ProjectController::class, 'storeCashFlow']);
     Route::delete('/projects/{projectId}/cash-flows/{cashFlowId}', [ProjectController::class, 'destroyCashFlow']);
+
+    // Fleet Logging (Manajemen Kendaraan & Travel Expense)
+    Route::get('/vehicle-logs', [VehicleLogController::class, 'index']);
+    Route::get('/vehicle-logs/vehicles', [VehicleLogController::class, 'vehicles']);
+    Route::get('/vehicle-logs/report', [VehicleLogController::class, 'report']);
+    Route::get('/vehicle-logs/{id}', [VehicleLogController::class, 'show']);
+    Route::post('/vehicle-logs/departure', [VehicleLogController::class, 'storeDeparture']);
+    Route::post('/vehicle-logs/{id}/return', [VehicleLogController::class, 'storeReturn']);
+    Route::post('/vehicle-logs/{id}/approve', [VehicleLogController::class, 'approve']);
+    Route::post('/vehicle-logs/{id}/reject', [VehicleLogController::class, 'reject']);
+    Route::delete('/vehicle-logs/{id}', [VehicleLogController::class, 'destroy']);
 });
 
 // Exports (Authenticated via query token or header inside controller)

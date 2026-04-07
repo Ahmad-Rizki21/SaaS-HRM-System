@@ -27,6 +27,7 @@ class ManagerController extends Controller
         $leaveCount = Leave::whereIn('user_id', $subordinateIds)->where('status', 'pending')->count();
         $overtimeCount = Overtime::whereIn('user_id', $subordinateIds)->where('status', 'pending')->count();
         $reimbursementCount = Reimbursement::whereIn('user_id', $subordinateIds)->where('status', 'pending')->count();
+        $vehicleCount = \App\Models\VehicleLog::whereIn('user_id', $subordinateIds)->where('status', 'completed')->count();
 
         return response()->json([
             'status' => 'success',
@@ -34,7 +35,8 @@ class ManagerController extends Controller
                 'leave' => $leaveCount,
                 'overtime' => $overtimeCount,
                 'reimbursement' => $reimbursementCount,
-                'total' => $leaveCount + $overtimeCount + $reimbursementCount
+                'vehicle_log' => $vehicleCount,
+                'total' => $leaveCount + $overtimeCount + $reimbursementCount + $vehicleCount
             ]
         ]);
     }
@@ -52,6 +54,7 @@ class ManagerController extends Controller
             'leave' => Leave::with('user')->whereIn('user_id', $subordinateIds)->where('status', 'pending'),
             'overtime' => Overtime::with('user')->whereIn('user_id', $subordinateIds)->where('status', 'pending'),
             'reimbursement' => Reimbursement::with('user')->whereIn('user_id', $subordinateIds)->where('status', 'pending'),
+            'vehicle_log' => \App\Models\VehicleLog::with('user')->whereIn('user_id', $subordinateIds)->where('status', 'completed'),
             default => null
         };
 
@@ -71,7 +74,7 @@ class ManagerController extends Controller
     public function updateRequestStatus(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:leave,overtime,reimbursement',
+            'type' => 'required|in:leave,overtime,reimbursement,vehicle_log',
             'id' => 'required|integer',
             'status' => 'required|in:approved,rejected',
             'remark' => 'nullable|string'
@@ -84,6 +87,7 @@ class ManagerController extends Controller
             'leave' => Leave::class,
             'overtime' => Overtime::class,
             'reimbursement' => Reimbursement::class,
+            'vehicle_log' => \App\Models\VehicleLog::class,
         };
 
         $item = $model::where('id', $request->id)->whereIn('user_id', $subordinateIds)->first();
@@ -104,6 +108,7 @@ class ManagerController extends Controller
             'leave' => 'Cuti',
             'overtime' => 'Lembur',
             'reimbursement' => 'Reimbursement',
+            'vehicle_log' => 'Vehicle Log',
         };
 
         $this->notify(
@@ -111,7 +116,7 @@ class ManagerController extends Controller
             "PENGAJUAN {$typeText} {$statusText}",
             "Pengajuan {$typeText} Anda telah {$statusText} oleh Manager." . ($request->remark ? " Catatan: {$request->remark}" : ""),
             $request->status === 'approved' ? 'success' : 'danger',
-            $request->type === 'leave' ? '/dashboard/leaves' : ($request->type === 'overtime' ? '/dashboard/overtimes' : '/dashboard/reimbursements')
+            $request->type === 'leave' ? '/dashboard/leaves' : ($request->type === 'overtime' ? '/dashboard/overtimes' : ($request->type === 'reimbursement' ? '/dashboard/reimbursements' : '/dashboard/fleet-logs'))
         );
 
         return response()->json([

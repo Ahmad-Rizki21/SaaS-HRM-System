@@ -66,10 +66,17 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Kelola Kontrak Proyek', 'slug' => 'manage-project-contracts', 'group' => 'Proyek'],
             ['name' => 'Setujui Biaya Proyek', 'slug' => 'approve-project-costs', 'group' => 'Proyek'],
 
+            // Fleet Logging (Manajemen Kendaraan)
+            ['name' => 'Lihat Log Kendaraan', 'slug' => 'view-vehicle-logs', 'group' => 'Kendaraan'],
+            ['name' => 'Catat Penggunaan Kendaraan', 'slug' => 'apply-vehicle-logs', 'group' => 'Kendaraan'],
+            ['name' => 'Validasi Log Kendaraan', 'slug' => 'approve-vehicle-logs', 'group' => 'Kendaraan'],
+            ['name' => 'Lihat Laporan Mileage', 'slug' => 'view-vehicle-reports', 'group' => 'Kendaraan'],
+
             // Pengaturan
             ['name' => 'Pengaturan Perusahaan', 'slug' => 'manage-company', 'group' => 'Pengaturan'],
             ['name' => 'Manajemen Role', 'slug' => 'manage-roles', 'group' => 'Pengaturan'],
             ['name' => 'Lihat Log Aktivitas', 'slug' => 'view-activity-logs', 'group' => 'Pengaturan'],
+            ['name' => 'Kelola WFH', 'slug' => 'manage-wfh', 'group' => 'Pengaturan'],
         ];
 
         foreach ($permissions as $p) {
@@ -89,7 +96,7 @@ class RolePermissionSeeder extends Seeder
         
         // Manager: View Employees, Approvals, KPI, Map, Schedules, Overtimes, Reports, Shift Swaps, Projects
         $managerPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan'
         ])->whereNotIn('slug', ['delete-employees', 'manage-roles', 'manage-company'])->pluck('id');
         $manager->permissions()->sync($managerPermissions);
 
@@ -102,13 +109,14 @@ class RolePermissionSeeder extends Seeder
             'view-kpis', 'view-attendance-map', 'view-attendance-reports',
             'manage-shifts', 'manage-schedules',
             'view-shift-swaps', 'approve-shift-swaps', 'view-shift-swap-reports', 'export-shift-swaps',
-            'view-projects', 'approve-project-costs'
+            'view-projects', 'approve-project-costs',
+            'view-vehicle-logs', 'approve-vehicle-logs', 'view-vehicle-reports'
         ])->pluck('id');
         $supervisor->permissions()->sync($supervisorPermissions);
 
         // HRD Manager: Manage Employees, Leaves, Reimbursements, Overtime, Operations, KPI, Map, Shift Swaps, Projects
         $hrdPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan'
         ])->pluck('id');
         $hrd->permissions()->sync($hrdPermissions);
 
@@ -119,7 +127,8 @@ class RolePermissionSeeder extends Seeder
             'view-reimbursements', 'apply-reimbursements',
             'view-overtimes', 'apply-overtimes',
             'view-shift-swaps', 'apply-shift-swaps',
-            'view-projects'
+            'view-projects',
+            'view-vehicle-logs', 'apply-vehicle-logs'
         ])->pluck('id');
         $staff->permissions()->sync($staffPermissions);
     }

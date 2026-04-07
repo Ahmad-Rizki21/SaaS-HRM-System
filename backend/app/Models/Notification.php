@@ -23,6 +23,10 @@ class Notification extends Model
         'is_read' => 'boolean',
     ];
 
+    protected $dispatchesEvents = [
+        'created' => \App\Events\NotificationCreated::class,
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

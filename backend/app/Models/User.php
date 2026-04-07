@@ -17,7 +17,8 @@ class User extends Authenticatable
     protected $fillable = [
         'name', 'email', 'password', 'company_id', 'role_id', 'supervisor_id', 'device_id',
         'profile_photo_path', 'face_embedding',
-        'nik', 'phone', 'address', 'join_date', 'fcm_token', 'leave_balance'
+        'nik', 'phone', 'address', 'join_date', 'fcm_token', 'leave_balance', 'is_wfh',
+        'wfh_start_date', 'wfh_end_date'
     ];
 
     protected $hidden = [
@@ -43,6 +44,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_wfh' => 'boolean',
+            'wfh_start_date' => 'date',
+            'wfh_end_date' => 'date',
         ];
     }
 

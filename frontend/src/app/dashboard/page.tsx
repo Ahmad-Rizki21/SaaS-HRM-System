@@ -6,7 +6,7 @@ import {
   Users, UserCheck, UserX, Calendar as CalendarIcon, 
   MoreVertical, Eye, Plus, Search, Filter, X, Clock, AlertCircle, CheckCircle
 } from "lucide-react";
-import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, CartesianGrid } from 'recharts';
 import Image from "next/image";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -127,6 +127,12 @@ export default function DashboardPage() {
 
   // Colors for charts
   const COLORS = ['#8B0000', '#991b1b', '#b91c1c', '#dc2626', '#fca5a5', '#ef4444', '#f87171'];
+
+  const pendingApprovalsChartData = [
+    { name: 'Cuti', count: pendingApprovals.leaves, color: '#3b82f6' },
+    { name: 'Lembur', count: pendingApprovals.overtimes, color: '#f59e0b' },
+    { name: 'Klaim', count: pendingApprovals.reimbursements, color: '#10b981' }
+  ];
 
   if (user?.role?.name === "Karyawan" || user?.role?.name === "Staff Karyawan") {
     return (
@@ -257,12 +263,9 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full pb-8 px-4 md:px-8">
-      {/* Top Header Row for Layout Name */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Page Header */}
+      <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900">Dashboard Admin</h1>
-        <div className="text-sm font-medium text-gray-500">
-          Super Admin / <span className="text-gray-900">Home</span>
-        </div>
       </div>
 
       {/* TOP ROW GRID */}
@@ -416,7 +419,8 @@ export default function DashboardPage() {
                View Full Map
              </button>
            </div>
-           <div className="h-[400px] w-full rounded-xl overflow-hidden border border-gray-50">
+           {/* Add 'isolate z-0' here so Leaflet's high z-index panes don't overlap the fixed page header */}
+           <div className="h-[400px] w-full rounded-xl overflow-hidden border border-gray-50 relative isolate z-0">
               <AttendanceMap />
            </div>
         </div>
@@ -523,37 +527,42 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Upcoming Holidays */}
+        {/* Pending Requests Chart (Replaces 2nd Work Calendar) */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col h-[350px]">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-gray-900">Upcoming Holidays</h3>
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+              Pending Approvals
+            </h3>
             <button 
-              onClick={() => router.push('/dashboard/holidays')}
-              className="text-xs font-bold text-[#8B0000] hover:underline"
+              onClick={() => router.push('/dashboard/reimbursements')}
+              className="text-[10px] font-black text-[#8B0000] hover:underline uppercase tracking-widest"
             >
-              View All
+              Cek Data
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
-            {upcomingHolidays.length > 0 ? (
-              upcomingHolidays.map((holiday) => (
-                <div key={holiday.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition border border-transparent hover:border-gray-100">
-                  <div className="w-10 h-10 rounded-lg bg-[#fef2f2] text-[#b91c1c] flex items-center justify-center shrink-0">
-                    <CalendarIcon size={16} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-gray-900 truncate">{holiday.name}</h4>
-                  </div>
-                  <div className="text-[11px] font-bold text-gray-600 shrink-0 bg-gray-100 px-2 py-1 rounded">
-                    {new Date(holiday.date).toLocaleDateString()}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-10">
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">No holidays soon</p>
+          <div className="flex-1 w-full relative min-h-0 pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={pendingApprovalsChartData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280', fontWeight: 'bold' }} tickMargin={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} allowDecimals={false} />
+                <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '0.75rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={40}>
+                  {pendingApprovalsChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {pendingApprovalsChartData.map((item, id) => (
+              <div key={id} className="text-center bg-gray-50 border border-gray-100 rounded-lg py-2">
+                 <p className="text-sm font-black text-gray-900">{item.count}</p>
+                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">{item.name}</p>
               </div>
-            )}
+            ))}
           </div>
         </div>
 

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use App\Imports\EmployeeImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
 
 class EmployeeController extends Controller
 {
@@ -183,5 +184,89 @@ class EmployeeController extends Controller
             ->paginate($request->per_page ?? 20);
 
         return $this->successResponse($employees, 'Data direktori karyawan berhasil diambil.');
+    }
+
+    public function toggleWfh(Request $request, $id)
+    {
+        abort_if(!$request->user()->hasPermission('manage-wfh'), 403, 'Akses ditolak.');
+
+        $request->validate([
+            'start_date' => 'required_if:is_wfh,true|nullable|date',
+            'end_date' => 'required_if:is_wfh,true|nullable|date|after_or_equal:start_date',
+        ]);
+
+        $employee = User::findOrFail($id);
+        
+        // Toggle or set specifically if provided in request
+        $isActivating = $request->has('is_wfh') ? filter_var($request->is_wfh, FILTER_VALIDATE_BOOLEAN) : !$employee->is_wfh;
+        
+        $employee->is_wfh = $isActivating;
+        
+        if ($isActivating) {
+            $employee->wfh_start_date = $request->start_date ?? now()->toDateString();
+            $employee->wfh_end_date = $request->end_date ?? now()->addDays(7)->toDateString();
+            
+            // Create Generic Announcement (only if activating)
+            \App\Models\Announcement::create([
+                'company_id' => $employee->company_id,
+                'user_id' => $request->user()->id,
+                'title' => "PENGUMUMAN WFH (WORK FROM HOME)",
+                'content' => "Diberitahukan kepada seluruh tim, bahwa perusahaan memberlakukan kebijakan WFH (Work From Home) terhitung mulai tanggal " . 
+                             Carbon::parse($employee->wfh_start_date)->format('d M Y') . " sampai " . 
+                             Carbon::parse($employee->wfh_end_date)->format('d M Y') . ". Selama periode ini, karyawan yang telah diberikan izin dapat melakukan absensi di luar radius kantor."
+            ]);
+        } else {
+            $employee->wfh_start_date = null;
+            $employee->wfh_end_date = null;
+        }
+        
+        $employee->save();
+
+        $status = $employee->is_wfh ? 'AKTIF' : 'NONAKTIF';
+        $this->logActivity('TOGGLE_WFH', "Mengubah status WFH karyawan {$employee->name} menjadi {$status}", $employee);
+
+        return $this->successResponse($employee, "Status WFH berhasil diubah menjadi {$status}.");
+    }
+
+    public function bulkWfh(Request $request)
+    {
+        abort_if(!$request->user()->hasPermission('manage-wfh'), 403, 'Akses ditolak.');
+
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:users,id',
+            'is_wfh' => 'required|boolean',
+            'start_date' => 'required_if:is_wfh,true|nullable|date',
+            'end_date' => 'required_if:is_wfh,true|nullable|date|after_or_equal:start_date',
+        ]);
+
+        $isWfh = $request->is_wfh;
+        $users = User::whereIn('id', $request->ids)->get();
+
+        foreach ($users as $user) {
+            $user->is_wfh = $isWfh;
+            if ($isWfh) {
+                $user->wfh_start_date = $request->start_date;
+                $user->wfh_end_date = $request->end_date;
+            } else {
+                $user->wfh_start_date = null;
+                $user->wfh_end_date = null;
+            }
+            $user->save();
+        }
+
+        if ($isWfh && count($users) > 0) {
+            // Create Single Generic Announcement for all
+            \App\Models\Announcement::create([
+                'company_id' => $users->first()->company_id,
+                'user_id' => $request->user()->id,
+                'title' => "PENGUMUMAN WFH (WORK FROM HOME)",
+                'content' => "Diberitahukan kepada seluruh karyawan, bahwa perusahaan memberlakukan kebijakan WFH (Work From Home) terhitung mulai tanggal " . 
+                             Carbon::parse($request->start_date)->format('d M Y') . " sampai " . 
+                             Carbon::parse($request->end_date)->format('d M Y') . ". Selama periode ini, karyawan yang mendapatkan izin dapat melakukan absensi melalui perangkat mobile tanpa batasan radius kantor."
+            ]);
+        }
+
+        return $this->successResponse(null, "Berhasil memperbarui status WFH untuk " . count($users) . " karyawan.");
     }
 }

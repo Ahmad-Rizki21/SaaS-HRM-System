@@ -63,10 +63,16 @@ export const translations = {
     employee_directory: "Direktori Karyawan",
     shift_swap: "Tukar Shift",
     shift_swap_report: "Laporan Tukar Shift",
+    attendance_correction: "Koreksi Absen",
     organization_chart: "Bagan Organisasi",
     construction: "Konstruksi",
     project_management: "Manajemen Proyek",
     project_overview: "Daftar Proyek",
+    wfh_delegation: "Delegasi WFH",
+    operational: "Operasional",
+    fleet_management: "Manajemen Kendaraan",
+    fleet_logs: "Log Kendaraan",
+    mileage_report: "Laporan Mileage",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -137,10 +143,16 @@ export const translations = {
     employee_directory: "Employee Directory",
     shift_swap: "Shift Swap",
     shift_swap_report: "Shift Swap Report",
+    attendance_correction: "Attendance Correction",
     organization_chart: "Organization Chart",
     construction: "Construction",
     project_management: "Project Management",
     project_overview: "Project Overview",
+    wfh_delegation: "WFH Delegation",
+    operational: "Operational",
+    fleet_management: "Fleet Management",
+    fleet_logs: "Vehicle Logs",
+    mileage_report: "Mileage Report",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

@@ -17,6 +17,8 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `GET` | `/api/employees/{id}` | Detail data pegawai |
 | `PUT` | `/api/employees/{id}` | Update data pegawai |
 | `DELETE` | `/api/employees/{id}` | Hapus data pegawai |
+| `POST` | `/api/employees/{id}/toggle-wfh` | Konfigurasi WFH Individual Karyawan |
+| `POST` | `/api/employees/bulk-wfh` | Pengaturan status WFH Karyawan massal |
 
 ## ⏰ Kehadiran & Shift
 | Method | Endpoint | Deskripsi |
@@ -24,6 +26,11 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/attendance/check-in` | Absensi masuk (Geo/Selfie) |
 | `POST` | `/api/attendance/check-out` | Absensi pulang |
 | `GET` | `/api/attendance/today` | Status absensi hari ini |
+| `GET` | `/api/attendance/summary` | Ringkasan kehadiran (hadir, telat, alpha, cuti) |
+| `GET` | `/api/attendance-corrections` | Daftar riwayat pengajuan koreksi absen |
+| `POST` | `/api/attendance-corrections` | Mengajukan koreksi absen mandiri |
+| `POST` | `/api/attendance-corrections/{id}/approve` | [HR/Admin] Menyetujui pengajuan koreksi absen |
+| `POST` | `/api/attendance-corrections/{id}/reject` | [HR/Admin] Menolak pengajuan koreksi absen |
 | `GET` | `/api/attendance/history` | Riwayat absensi user |
 | `GET` | `/api/attendance/export` | Export laporan absensi ke Excel |
 | `GET` | `/api/shifts` | List semua jam kerja/shift |
@@ -50,6 +57,12 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/reimbursements` | Ajukan klaim baru (Support multiple `attachments[]` as files) |
 | `POST` | `/api/reimbursements/{id}/approve` | Persetujuan klaim biaya |
 
+## 🏢 Portofolio Manager (Mobile)
+| Method | Endpoint | Deskripsi |
+| :--- | :--- | :--- |
+| `GET` | `/api/manager/pending-requests` | List seluruh pengajuan tertunda dari subordinat (Cuti, Lembur, Klaim, Log Kendaraan) |
+| `DELETE` | `/api/manager/pending-requests/{id}` | Hapus/Batalkan pengajuan tertunda dari subordinat |
+
 ## 💰 Gaji & Tugas
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
@@ -57,7 +70,20 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `GET` | `/api/tasks` | List tugas/pekerjaan |
 | `POST` | `/api/tasks/{id}/status` | Update status tugas (Todo/Done) |
 
-## 📢 Pengumuman & Hari Libur
+## 🚗 Manajemen Fleet & Travel Expense
+| Method | Endpoint | Deskripsi |
+| :--- | :--- | :--- |
+| `GET` | `/api/vehicle-logs` | List riwayat penggunaan kendaraan |
+| `GET` | `/api/vehicle-logs/vehicles` | List kendaraan yang pernah digunakan (autocomplete) |
+| `GET` | `/api/vehicle-logs/report` | Laporan mileage (ringkasan jarak & biaya) |
+| `GET` | `/api/vehicle-logs/{id}` | Detail log kendaraan spesifik |
+| `POST` | `/api/vehicle-logs/departure` | Catat keberangkatan (KM Awal + Foto) |
+| `POST` | `/api/vehicle-logs/{id}/return` | Catat kepulangan (KM Akhir + Foto + Biaya) |
+| `POST` | `/api/vehicle-logs/{id}/approve` | [Admin/Mgr] Validasi log kendaraan |
+| `POST` | `/api/vehicle-logs/{id}/reject` | [Admin/Mgr] Tolak log kendaraan |
+| `DELETE` | `/api/vehicle-logs/{id}` | Hapus log (status: departure/rejected) |
+
+ ## 📢 Pengumuman & Hari Libur
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
 | `GET` | `/api/announcements` | List semua pengumuman |
@@ -102,7 +128,22 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/profile/update` | Update data profil user |
 | `POST` | `/api/profile/upload-photo` | Upload foto profil |
 | `POST` | `/api/user/change-password` | Ganti password user |
+| `POST` | `/api/broadcasting/auth` | Autentikasi koneksi WebSocket (Laravel Reverb) |
 
 ---
-*Gunakan file `postman/collection.json` untuk dokumentasi lebih detail (contoh body request & response).*
+## 📡 Real-time WebSockets (Laravel Reverb)
+Aplikasi menggunakan **Laravel Reverb** untuk notifikasi instan. Developer harus melakukan subscribe ke channel berikut setelah login sukses:
+
+### 1. Subscribe Channel
+| Channel Type | Nama Channel | Deskripsi |
+| :--- | :--- | :--- |
+| `Private` | `notifications.{user_id}` | Untuk menerima notifikasi sistem & audio feedback (Approval/Rejection). |
+
+### 2. Listen Events
+| Event Class | Nama Event di Channel | Kegunaan |
+| :--- | :--- | :--- |
+| `NotificationCreated` | `.NotificationCreated` | Dikirim saat ada notifikasi baru, klaim biaya disetujui, atau absen via mobile berhasil. |
+
+---
+*Gunakan file `postman/collection.json` untuk dokumentasi lebih detail (contoh body request & response).*)
 

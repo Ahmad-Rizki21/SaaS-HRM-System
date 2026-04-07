@@ -98,6 +98,7 @@ class _ManagerScreenState extends State<ManagerScreen> with SingleTickerProvider
           _buildSummaryCard("Cuti", _pendingCounts?['leave'] ?? 0, Icons.calendar_month),
           _buildSummaryCard("Lembur", _pendingCounts?['overtime'] ?? 0, Icons.more_time),
           _buildSummaryCard("Klaim", _pendingCounts?['reimbursement'] ?? 0, Icons.payments),
+          _buildSummaryCard("Fleet", _pendingCounts?['vehicle_log'] ?? 0, Icons.directions_car),
         ],
       ),
     );
@@ -125,6 +126,7 @@ class _ManagerScreenState extends State<ManagerScreen> with SingleTickerProvider
         _buildApprovalSection("Pengajuan Cuti", "leave", Icons.calendar_today, Colors.orange),
         _buildApprovalSection("Pengajuan Lembur", "overtime", Icons.access_time, Colors.red),
         _buildApprovalSection("Pengajuan Klaim", "reimbursement", Icons.monetization_on, Colors.blue),
+        _buildApprovalSection("Log Kendaraan", "vehicle_log", Icons.directions_car, Colors.indigo),
       ],
     );
   }
@@ -188,8 +190,11 @@ class _ManagerScreenState extends State<ManagerScreen> with SingleTickerProvider
       date = "${item['date']}";
       info = "Pukul: ${item['start_time']} - ${item['end_time']}";
     } else if (type == 'reimbursement') {
-      date = "Rp " + NumberFormat("#,###").format(double.parse(item['amount'].toString()));
+      date = "Rp " + NumberFormat("#,###").format(double.tryParse(item['amount'].toString()) ?? 0);
       info = "${item['title']}";
+    } else if (type == 'vehicle_log') {
+      date = "${item['vehicle_name']} (${item['plate_number']})";
+      info = "Tujuan: ${item['destination']}\nJarak: ${item['distance'] ?? '-'} KM";
     }
 
     return Card(

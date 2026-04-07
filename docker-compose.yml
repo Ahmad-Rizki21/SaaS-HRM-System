@@ -5,22 +5,28 @@
 # ============================================================
 
 services:
-  # ── MySQL Database ─────────────────────────────────────────
-  mysql:
+  # ── MySQL Master (Writes) ──────────────────────────────────
+  mysql-master:
     image: mysql:8.4
-    container_name: hrms-mysql
+    container_name: hrms-mysql-master
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-HrmsN@rwasthu2026!}
       MYSQL_DATABASE: ${DB_DATABASE:-hrm_saas}
       MYSQL_USER: ${DB_USERNAME:-hrms_user}
       MYSQL_PASSWORD: ${DB_PASSWORD:-HrmsSecure2026!}
+    command: 
+      - "--server-id=1"
+      - "--log-bin=mysql-bin"
+      - "--binlog-format=ROW"
+      - "--enforce-gtid-consistency=ON"
+      - "--gtid-mode=ON"
+      - "--mysql-native-password=ON"
     ports:
       - "${DB_PORT_EXPOSE:-3306}:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_master_data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
-      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/hrms.cnf:ro
     networks:
       - hrms-network
     healthcheck:
@@ -33,6 +39,35 @@ services:
       resources:
         limits:
           memory: 1G
+
+  # ── MySQL Slave (Reads) ──────────────────────────────────
+  mysql-slave:
+    image: mysql:8.4
+    container_name: hrms-mysql-slave
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-HrmsN@rwasthu2026!}
+    command:
+      - "--server-id=2"
+      - "--log-bin=mysql-bin"
+      - "--relay-log=mysql-relay-bin"
+      - "--binlog-format=ROW"
+      - "--read-only=1"
+      - "--enforce-gtid-consistency=ON"
+      - "--gtid-mode=ON"
+      - "--mysql-native-password=ON"
+    volumes:
+      - mysql_slave_data:/var/lib/mysql
+      - ./docker/mysql/init-slave.sql:/docker-entrypoint-initdb.d/01-init-slave.sql:ro
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+    networks:
+      - hrms-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # ── Redis Cache ────────────────────────────────────────────
   redis:
@@ -70,7 +105,8 @@ services:
       APP_DEBUG: ${APP_DEBUG:-false}
       APP_URL: ${APP_URL:-http://localhost:8000}
       DB_CONNECTION: mysql
-      DB_HOST: mysql
+      DB_HOST: mysql-master
+      DB_READ_HOST: mysql-slave
       DB_PORT: 3306
       DB_DATABASE: ${DB_DATABASE:-hrm_saas}
       DB_USERNAME: ${DB_USERNAME:-hrms_user}
@@ -98,8 +134,10 @@ services:
       - backend_storage:/var/www/html/storage/app/public
       - backend_logs:/var/www/html/storage/logs
     depends_on:
-      mysql:
+      mysql-master:
         condition: service_healthy
+      mysql-slave:
+        condition: service_started
       redis:
         condition: service_healthy
     networks:
@@ -108,6 +146,41 @@ services:
       resources:
         limits:
           memory: 1G
+
+  # ── Reverb Server (Websockets) ─────────────────────────────
+  reverb:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hrms-reverb
+    command: php artisan reverb:start --host="0.0.0.0" --port=8080
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      SKIP_MIGRATIONS: "true"
+      DB_CONNECTION: mysql
+      DB_HOST: mysql-master
+      DB_READ_HOST: mysql-slave
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-hrm_saas}
+      DB_USERNAME: ${DB_USERNAME:-hrms_user}
+      DB_PASSWORD: ${DB_PASSWORD:-HrmsSecure2026!}
+      CACHE_STORE: redis
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-HrmsRedis2026!}
+      REVERB_HOST: ${REVERB_HOST:-0.0.0.0}
+    depends_on:
+      - mysql-master
+      - mysql-slave
+      - redis
+    networks:
+      - hrms-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   # ── Frontend (Next.js Dashboard) ───────────────────────────
   frontend:
@@ -123,6 +196,7 @@ services:
       NODE_ENV: production
     depends_on:
       - backend
+      - mysql-master
     networks:
       - hrms-network
     deploy:
@@ -160,7 +234,9 @@ services:
 
 # ── Volumes ────────────────────────────────────────────────
 volumes:
-  mysql_data:
+  mysql_master_data:
+    driver: local
+  mysql_slave_data:
     driver: local
   redis_data:
     driver: local

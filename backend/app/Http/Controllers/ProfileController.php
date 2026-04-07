@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use App\Traits\Notifiable;
+use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
 
 class ProfileController extends Controller
 {
@@ -95,8 +97,13 @@ class ProfileController extends Controller
             Storage::disk('public')->delete($user->profile_photo_path);
         }
 
-        // Store new photo
-        $path = $request->file('photo')->store('profile-photos', 'public');
+        // Compress and store new photo (Avatar size: 400x400)
+        $file = $request->file('photo');
+        $path = 'profile-photos/' . Str::random(40) . '.jpg';
+        
+        $img = Image::decode($file);
+        $img->cover(400, 400); // Crop and resize to square
+        Storage::disk('public')->put($path, (string) $img->encodeUsingFileExtension('jpg', 80));
 
         $user->update([
             'profile_photo_path' => $path

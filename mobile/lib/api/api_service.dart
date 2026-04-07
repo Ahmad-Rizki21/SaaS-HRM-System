@@ -9,7 +9,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiService {
   // Toggle between Home (192.168.1.9) and Office (2.2.2.76)
-  static const String serverIp = '2.2.2.76'; 
+  static const String serverIp = '2.2.2.209';
   static const String baseUrl = 'http://$serverIp:8000/api';
   static const String storageUrl = 'http://$serverIp:8000/storage';
 
@@ -17,7 +17,7 @@ class ApiService {
   static String fixUrl(String? url) {
     if (url == null || url.isEmpty) return '';
     if (!url.startsWith('http')) return '$storageUrl/$url';
-    
+
     // Replace any local/old IPs with the current serverIp
     return url
         .replaceAll('localhost', serverIp)
@@ -89,6 +89,26 @@ class ApiService {
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+  }
+
+  // ============ DASHBOARD ============
+
+  static Future<Map<String, dynamic>?> getLeaderboard() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/dashboard/leaderboard'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   // ============ PROFILE ============
@@ -372,7 +392,11 @@ class ApiService {
       );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return body['data'];
+        // Backend returns paginated data: body['data']['data']
+        if (body['data'] is Map && body['data'].containsKey('data')) {
+          return body['data']['data'];
+        }
+        return body['data']; // Fallback for direct list
       }
       return null;
     } catch (e) {
@@ -843,4 +867,237 @@ class ApiService {
       return null;
     }
   }
+
+  // ============ ATTENDANCE CORRECTIONS ============
+
+  static Future<List<dynamic>?> getAttendanceCorrections() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/attendance-corrections'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['data'] is Map && body['data']['data'] is List) {
+          return body['data']['data'];
+        }
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitAttendanceCorrection(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/attendance-corrections'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> toggleWfh(int userId) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/employees/$userId/toggle-wfh'),
+        headers: headers,
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  // ============ FLEET LOGGING (KENDARAAN) ============
+
+  static Future<List<dynamic>?> getVehicleLogs() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/vehicle-logs'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['data'] is Map && body['data']['data'] is List) {
+          return body['data']['data'];
+        }
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<List<dynamic>?> getAvailableVehicles() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/vehicle-logs/vehicles'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getVehicleReport() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/vehicle-logs/report'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitDeparture(
+    Map<String, String> data,
+    String? photoPath,
+  ) async {
+    try {
+      final headers = await getHeaders();
+      final uri = Uri.parse('$baseUrl/vehicle-logs/departure');
+
+      var request = http.MultipartRequest('POST', uri);
+      request.headers.addAll(headers);
+      request.fields.addAll(data);
+
+      if (photoPath != null) {
+        final extension = p.extension(photoPath).toLowerCase();
+        String mimeType = 'image/jpeg';
+        if (extension == '.png') mimeType = 'image/png';
+        if (extension == '.webp') mimeType = 'image/webp';
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'odometer_start_photo',
+            photoPath,
+            contentType: MediaType.parse(mimeType),
+          ),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal: ${e.toString()}'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitReturn(
+    int id,
+    Map<String, String> data, {
+    String? odometerPhotoPath,
+    List<String>? expenseFiles,
+  }) async {
+    try {
+      final headers = await getHeaders();
+      final uri = Uri.parse('$baseUrl/vehicle-logs/$id/return');
+
+      var request = http.MultipartRequest('POST', uri);
+      request.headers.addAll(headers);
+      request.fields.addAll(data);
+
+      if (odometerPhotoPath != null) {
+        final extension = p.extension(odometerPhotoPath).toLowerCase();
+        String mimeType = 'image/jpeg';
+        if (extension == '.png') mimeType = 'image/png';
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'odometer_end_photo',
+            odometerPhotoPath,
+            contentType: MediaType.parse(mimeType),
+          ),
+        );
+      }
+
+      if (expenseFiles != null && expenseFiles.isNotEmpty) {
+        for (var filePath in expenseFiles) {
+          final extension = p.extension(filePath).toLowerCase();
+          String mimeType = 'image/jpeg';
+          if (extension == '.png') mimeType = 'image/png';
+
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'expense_attachments[]',
+              filePath,
+              contentType: MediaType.parse(mimeType),
+            ),
+          );
+        }
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal: ${e.toString()}'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> approveVehicleLog(
+    int id, {
+    String? remark,
+  }) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/vehicle-logs/$id/approve'),
+        headers: headers,
+        body: jsonEncode({'remark': remark}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> rejectVehicleLog(
+    int id, {
+    String? remark,
+  }) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/vehicle-logs/$id/reject'),
+        headers: headers,
+        body: jsonEncode({'remark': remark}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
 }
+

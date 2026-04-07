@@ -33,11 +33,13 @@ import {
   Laptop,
   Camera,
   HardHat,
-  Building2
+  Building2,
+  Car,
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useState, useEffect, useRef } from "react";
 import axiosInstance from "@/lib/axios";
+import echo from '@/lib/echo';
 
 type SubmenuItem = {
   name: string;
@@ -76,7 +78,9 @@ const sidebarLinks: SidebarLink[] = [
       { name: "Live Attendance", href: "/dashboard/live-attendance" },
       { name: "attendance_history", href: "/dashboard/attendance" },
       { name: "shift_swap", href: "/dashboard/shift-swap", permission: 'view-shift-swaps' },
+      { name: "attendance_correction", href: "/dashboard/attendance-corrections" },
       { name: "attendance_map", href: "/dashboard/attendance/map", permission: 'view-attendance-map' },
+      { name: "wfh_delegation", href: "/dashboard/attendance/wfh", permission: 'manage-wfh' },
       { name: "schedules", href: "/dashboard/schedules", permission: 'manage-schedules' },
       { name: "holidays", href: "/dashboard/holidays", permission: 'manage-holidays' },
     ]
@@ -122,6 +126,16 @@ const sidebarLinks: SidebarLink[] = [
     permission: 'view-employees',
     submenus: [
       { name: "project_overview", href: "/dashboard/projects", permission: 'view-employees' },
+    ]
+  },
+  { name: "operational", isHeading: true, permission: 'view-vehicle-logs' },
+  {
+    name: "fleet_management",
+    icon: Car,
+    permission: 'view-vehicle-logs',
+    submenus: [
+      { name: "fleet_logs", href: "/dashboard/fleet-logs", permission: 'view-vehicle-logs' },
+      { name: "mileage_report", href: "/dashboard/fleet-logs?tab=report", permission: 'view-vehicle-reports' },
     ]
   },
   { name: "system", isHeading: true, permission: 'manage-roles' },
@@ -250,6 +264,32 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const breadcrumbs = (() => {
+    const parts = pathname.split('/').filter(p => p);
+    const crumbs: string[] = [user?.role?.name || "Super Admin"];
+
+    if (parts.length === 1 && parts[0] === 'dashboard') {
+      crumbs.push("Home");
+    } else {
+      let currentPath = "";
+      parts.forEach((part, index) => {
+        if (index === 0) return;
+        currentPath += `/${part}`;
+        let label = part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ');
+        sidebarLinks.forEach(link => {
+          if (link.submenus) {
+            const sub = link.submenus.find(s => s.href === `/dashboard${currentPath}`);
+            if (sub) label = t(sub.name);
+          } else if (link.href === `/dashboard${currentPath}`) {
+            label = t(link.name);
+          }
+        });
+        crumbs.push(label);
+      });
+    }
+    return crumbs;
+  })();
+
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -258,12 +298,42 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         phone: (user as any).phone || '',
         address: (user as any).address || ''
       });
+
+      // Listen on private Laravel Reverb Channel
+      if (echo) {
+        // We use .notifSound to maintain reference
+        const channelName = `notifications.${user.id}`;
+        echo.private(channelName)
+          .listen('NotificationCreated', (e: any) => {
+            console.log("New realtime notification received: ", e);
+            fetchNotifications(); // Refresh list
+
+            // Play sound effect using an elegant bubble pop sound
+            try {
+               const audio = new window.Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+               audio.volume = 0.6;
+               const playPromise = audio.play();
+               if (playPromise !== undefined) {
+                 playPromise.then(_ => {}).catch(error => {
+                   // Auto-play might be blocked by browser without interaction
+                   console.log("Audio play blocked by browser:", error);
+                 });
+               }
+            } catch (err) {}
+          });
+      }
     }
     fetchNotifications();
     
-    // Auto-refresh notifications every 30 seconds
+    // Auto-refresh notifications every 30 seconds as fallback
     const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+      if (user && echo) {
+        echo.leaveChannel(`notifications.${user.id}`);
+      }
+    };
   }, [user]);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -793,6 +863,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         {/* Page Content */}
         <main className="dash-content">
           <div className="dash-content-inner">
+            {/* Breadcrumb Navigation Indicator */}
+            <div className="flex justify-end mb-6">
+              <div className="text-sm font-medium text-gray-500 bg-gray-50/50 px-4 py-1.5 rounded-full border border-gray-100/50 backdrop-blur-sm">
+                {breadcrumbs.map((crumb, idx) => (
+                  <span key={idx} className="inline-flex items-center">
+                    {idx > 0 && <span className="mx-2 text-gray-300">/</span>}
+                    <span className={idx === breadcrumbs.length - 1 ? "text-gray-900 font-bold" : ""}>
+                      {crumb}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
             {children}
           </div>
         </main>
