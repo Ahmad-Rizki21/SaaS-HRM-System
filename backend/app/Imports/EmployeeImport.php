@@ -62,6 +62,8 @@ class EmployeeImport implements ToModel, WithHeadingRow
             'password'   => Hash::make($password),
             'role_id'    => $roleId,
             'join_date'  => $joinDate,
+            'employment_status' => !empty($row['status_karyawan']) ? $row['status_karyawan'] : null,
+            'work_location'     => !empty($row['lokasi_kerja']) ? $row['lokasi_kerja'] : null,
         ]);
     }
 }

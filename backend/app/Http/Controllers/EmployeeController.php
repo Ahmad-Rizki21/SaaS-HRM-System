@@ -23,6 +23,11 @@ class EmployeeController extends Controller
             $query->where('company_id', $user->company_id);
         }
 
+        // --- GreetDay Feature: My Team Filter ---
+        if ($request->is_team === 'true' || $request->is_team === true) {
+            $query->where('supervisor_id', $user->id);
+        }
+
         $employees = $query
             ->when($request->search, function($q) use ($request) {
                 $q->where(function($qq) use ($request) {
@@ -42,6 +47,15 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
+        $user = $request->user();
+        $company = $user->company;
+
+        // Check Employee Limit
+        $empCount = User::where('company_id', $user->company_id)->count();
+        if ($empCount >= $company->getEmployeeLimit()) {
+            return $this->errorResponse("Batas karyawan Anda ({$company->getEmployeeLimit()}) telah tercapai. Silakan upgrade paket berlangganan Anda.", 403);
+        }
+
         abort_if(!$request->user()->hasPermission('create-employees'), 403, 'Akses ditolak.');
 
         $request->validate([
@@ -55,6 +69,9 @@ class EmployeeController extends Controller
             'join_date' => 'nullable|date',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'supervisor_id' => 'nullable|exists:users,id',
+            'employment_status' => 'nullable|string',
+            'work_location' => 'nullable|string',
+            'attendance_type' => 'nullable|string|in:office_hour,shift',
         ]);
 
         $path = null;
@@ -72,18 +89,34 @@ class EmployeeController extends Controller
         $employee->phone = $request->phone;
         $employee->address = $request->address;
         $employee->join_date = $request->join_date;
+        $employee->employment_status = $request->employment_status;
+        $employee->work_location = $request->work_location;
+        $employee->attendance_type = $request->attendance_type ?? 'office_hour';
         $employee->profile_photo_path = $path;
         $employee->supervisor_id = $request->supervisor_id;
         $employee->save();
 
+        // Send Welcome & Verification Email
+        try {
+            \Illuminate\Support\Facades\Mail::to($employee->email)->send(new \App\Mail\WelcomeEmployeeNotification($employee, $request->password));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Gagal mengirim email welcome: " . $e->getMessage());
+        }
+
         $this->logActivity('CREATE_EMPLOYEE', "Menambahkan karyawan baru: {$employee->name}", $employee);
 
-        return $this->successResponse($employee, 'Karyawan baru berhasil ditambahkan.', 201);
+        return $this->successResponse($employee, 'Karyawan baru berhasil ditambahkan dan email undangan telah dikirim.', 201);
     }
 
-    public function show($id)
+    public function show($id, Request $request)
     {
-        $employee = User::findOrFail($id);
+        $user = $request->user();
+        $employee = User::where(function($query) use ($user) {
+            if ($user->role_id !== 1) {
+                $query->where('company_id', $user->company_id);
+            }
+        })->findOrFail($id);
+
         return $this->successResponse($employee, 'Detail karyawan berhasil diambil.');
     }
 
@@ -98,6 +131,7 @@ class EmployeeController extends Controller
             'email' => 'sometimes|email|unique:users,email,' . $id,
             'role_id' => 'sometimes|exists:roles,id',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'attendance_type' => 'nullable|string|in:office_hour,shift',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -109,6 +143,16 @@ class EmployeeController extends Controller
         }
 
         $employee->update($request->except(['photo', 'password']));
+
+        if ($request->has('employment_status')) {
+            $employee->employment_status = $request->employment_status;
+        }
+
+        if ($request->has('work_location')) {
+            $employee->work_location = $request->work_location;
+        }
+
+        $employee->save();
         
         if ($request->password) {
             $employee->update(['password' => Hash::make($request->password)]);
@@ -140,7 +184,13 @@ class EmployeeController extends Controller
     {
         abort_if(!$request->user()->hasPermission('delete-employees'), 403, 'Akses ditolak.');
 
-        $employee = User::findOrFail($id);
+        $user = $request->user();
+        $employee = User::where(function($query) use ($user) {
+            if ($user->role_id !== 1) {
+                $query->where('company_id', $user->company_id);
+            }
+        })->findOrFail($id);
+
         $name = $employee->name;
         $employee->delete();
         
@@ -244,6 +294,7 @@ class EmployeeController extends Controller
         $users = User::whereIn('id', $request->ids)->get();
 
         foreach ($users as $user) {
+            /** @var \App\Models\User $user */
             $user->is_wfh = $isWfh;
             if ($isWfh) {
                 $user->wfh_start_date = $request->start_date;
@@ -268,5 +319,26 @@ class EmployeeController extends Controller
         }
 
         return $this->successResponse(null, "Berhasil memperbarui status WFH untuk " . count($users) . " karyawan.");
+    }
+    public function resendVerification($id)
+    {
+        $employee = User::findOrFail($id);
+
+        if ($employee->email_verified_at) {
+            return $this->errorResponse('Email karyawan sudah terverifikasi.', 400);
+        }
+
+        // Re-send Welcome & Verification Email
+        try {
+            // Note: In real app, you might want to reset the password or keep it
+            \Illuminate\Support\Facades\Mail::to($employee->email)->send(new \App\Mail\WelcomeEmployeeNotification($employee, "********"));
+            
+            $this->logActivity('RESEND_VERIFICATION', "Mengirim ulang email verifikasi ke: {$employee->name}", $employee);
+            
+            return $this->successResponse(null, 'Email verifikasi berhasil dikirim ulang.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Gagal mengirim ulang email: " . $e->getMessage());
+            return $this->errorResponse('Gagal mengirim ulang email verifikasi.', 500);
+        }
     }
 }

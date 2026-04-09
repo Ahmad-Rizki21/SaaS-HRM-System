@@ -9,17 +9,40 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function searchCompanies(Request $request)
+    {
+        $query = $request->get('q');
+        
+        $companies = \App\Models\Company::where('name', 'like', "%$query%")
+            ->select('id', 'name')
+            ->limit(10)
+            ->get();
+
+        return $this->successResponse($companies, 'Companies found');
+    }
+
     public function login(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'company_name' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $company = \App\Models\Company::where('name', $request->company_name)
+            ->orWhere('name', 'like', '%' . $request->company_name . '%')
+            ->first();
+
+        if (!$company) {
+            return $this->errorResponse('Perusahaan tidak ditemukan.', 404);
+        }
+
+        $user = User::where('email', $request->email)
+            ->where('company_id', $company->id)
+            ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            return $this->errorResponse('Kredensial login Anda salah.', 401);
+            return $this->errorResponse('Kredensial login Anda salah untuk perusahaan ini.', 401);
         }
 
         // --- Device Binding & FCM Token ---
@@ -89,5 +112,36 @@ class AuthController extends Controller
         $this->logActivity('CHANGE_PASSWORD', "User {$user->name} telah mengubah kata sandi akunnya.");
 
         return $this->successResponse(null, 'Kata sandi berhasil diubah.');
+    }
+    public function verifyEmail($token)
+    {
+        // Simple token-based verification (base64 encoded email for this example, or a custom field)
+        // In a real app, use Illuminate\Auth\Events\Verified or a signed URL
+        try {
+            $email = base64_decode($token);
+            $user = User::where('email', $email)->first();
+
+            if (!$user) {
+                return $this->errorResponse('Tautan verifikasi tidak valid.', 404);
+            }
+
+            if ($user->email_verified_at) {
+                return $this->successResponse(null, 'Email sudah diverifikasi sebelumnya.');
+            }
+
+            $user->email_verified_at = now();
+            $user->save();
+
+            \App\Models\ActivityLog::create([
+                'company_id' => $user->company_id,
+                'user_id' => $user->id,
+                'action' => 'VERIFY_EMAIL',
+                'description' => "User {$user->name} berhasil verifikasi email.",
+            ]);
+
+            return $this->successResponse(null, 'Verifikasi email berhasil! Pasword sementara telah aktif.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal verifikasi email.', 500);
+        }
     }
 }

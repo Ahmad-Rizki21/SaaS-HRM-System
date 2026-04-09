@@ -39,10 +39,28 @@ class FCMService
             $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
             
             // Fix cURL error 77 (SSL Certificate issue in Local/Laragon)
-            $httpClient = new \GuzzleHttp\Client(['verify' => false]);
+            $cacertPath = 'C:\\laragon\\etc\\ssl\\cacert.pem';
+            if (!file_exists($cacertPath)) {
+                $cacertPath = 'C:\\laragon\\bin\\php\\php8.1.10-Win32-vs16-x64\\extras\\ssl\\cacert.pem';
+            }
+            
+            if (file_exists($cacertPath)) {
+                @ini_set('curl.cainfo', $cacertPath);
+                @ini_set('openssl.cafile', $cacertPath);
+                putenv("SSL_CERT_FILE=$cacertPath");
+                putenv("CURL_CA_BUNDLE=$cacertPath");
+            }
+
+            $httpClient = new \GuzzleHttp\Client([
+                'verify' => false,
+                'timeout' => 30,
+            ]);
             $client->setHttpClient($httpClient);
 
-            $accessToken = $client->fetchAccessTokenWithAssertion();
+            if ($httpClient) {
+                // Remove the redundant argument that causes type mismatch
+                $accessToken = $client->fetchAccessTokenWithAssertion();
+            }
             
             if (!isset($accessToken['access_token'])) {
                 Log::error("FCM Error: Failed to fetch access token.");
@@ -66,9 +84,12 @@ class FCMService
                     ],
                     'data' => !empty($data) ? array_map('strval', $data) : null,
                     'android' => [
+                        'priority' => 'high',
                         'notification' => [
                             'sound' => 'default',
                             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                            'notification_priority' => 'PRIORITY_HIGH',
+                            'channel_id' => 'hrm_notif_channel_v2', // Match the one in Flutter
                         ]
                     ]
                 ],

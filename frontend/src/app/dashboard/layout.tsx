@@ -35,6 +35,9 @@ import {
   HardHat,
   Building2,
   Car,
+  ClipboardList,
+  CheckSquare,
+  ShieldCheck,
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useState, useEffect, useRef } from "react";
@@ -45,6 +48,7 @@ type SubmenuItem = {
   name: string;
   href: string;
   permission?: string;
+  feature?: string;
 };
 
 type SidebarLink = {
@@ -54,6 +58,7 @@ type SidebarLink = {
   icon?: any;
   submenus?: SubmenuItem[];
   permission?: string;
+  feature?: string;
 };
 
 const sidebarLinks: SidebarLink[] = [
@@ -74,11 +79,12 @@ const sidebarLinks: SidebarLink[] = [
   { 
     name: "attendance", 
     icon: Clock,
+    permission: 'view-attendances',
     submenus: [
-      { name: "Live Attendance", href: "/dashboard/live-attendance" },
-      { name: "attendance_history", href: "/dashboard/attendance" },
+      { name: "Live Attendance", href: "/dashboard/live-attendance", permission: 'apply-attendances' },
+      { name: "attendance_history", href: "/dashboard/attendance", permission: 'view-attendances' },
       { name: "shift_swap", href: "/dashboard/shift-swap", permission: 'view-shift-swaps' },
-      { name: "attendance_correction", href: "/dashboard/attendance-corrections" },
+      { name: "attendance_correction", href: "/dashboard/attendance-corrections", permission: 'manage-attendance-corrections' },
       { name: "attendance_map", href: "/dashboard/attendance/map", permission: 'view-attendance-map' },
       { name: "wfh_delegation", href: "/dashboard/attendance/wfh", permission: 'manage-wfh' },
       { name: "schedules", href: "/dashboard/schedules", permission: 'manage-schedules' },
@@ -86,48 +92,70 @@ const sidebarLinks: SidebarLink[] = [
     ]
   },
   
-  { name: "administration", isHeading: true },
+  { name: "administration", isHeading: true, permission: 'view-leaves' },
   { 
-    name: "applications", 
-    icon: FileText,
+    name: "leave_management", 
+    icon: CalendarIcon,
+    permission: 'view-leaves',
     submenus: [
-      { name: "leaves", href: "/dashboard/leaves", permission: 'view-leaves' },
+      { name: "leave_requests", href: "/dashboard/leaves", permission: 'view-leaves' },
+      { name: "leave_balances", href: "/dashboard/leave-balances", permission: 'approve-leaves' }, 
+      { name: "leave_calendar", href: "/dashboard/leave-calendar", permission: 'view-leaves' },
+      { name: "mass_leaves", href: "/dashboard/mass-leaves", permission: 'approve-leaves' },
+    ]
+  },
+  {
+    name: "applications",
+    icon: FileText,
+    permission: 'view-reimbursements',
+    submenus: [
       { name: "reimbursements", href: "/dashboard/reimbursements", permission: 'view-reimbursements' },
-      { name: "approvals", href: "/dashboard/approvals", permission: 'approve-leaves' },
-      { name: "overtime", href: "/dashboard/overtimes" },
+      { name: "approvals", href: "/dashboard/approvals", permission: 'manage-approvals' },
+    ]
+  },
+  {
+    name: "overtime_management",
+    icon: Clock,
+    permission: 'view-overtimes',
+    submenus: [
+      { name: "overtime_requests", href: "/dashboard/overtimes", permission: 'view-overtimes' },
+      { name: "overtime_report", href: "/dashboard/reports/overtimes", permission: 'view-reports' },
     ]
   },
   {
     name: "communication",
-    icon: Mail,
+    icon: ClipboardList,
+    permission: 'view-directory',
     submenus: [
-      { name: "announcements", href: "/dashboard/announcements", permission: 'view-leaves' },
-      { name: "employee_directory", href: "/dashboard/directory" },
-      { name: "organization_chart", href: "/dashboard/organization" },
+      { name: "tasks", href: "/dashboard/tasks", permission: 'view-tasks' },
+      { name: "announcements", href: "/dashboard/announcements", permission: 'view-announcements' },
+      { name: "employee_directory", href: "/dashboard/directory", permission: 'view-directory' },
+      { name: "organization_chart", href: "/dashboard/organization", permission: 'view-organization' },
     ]
   },
   {
     name: "reports",
     icon: CreditCard,
-    permission: 'view-employees',
+    permission: 'view-reports',
     submenus: [
-      { name: "attendance_report", href: "/dashboard/reports/attendance", permission: 'view-employees' },
-      { name: "reimbursement_report", href: "/dashboard/reports/reimbursements", permission: 'view-employees' },
-      { name: "leave_report", href: "/dashboard/reports/leaves", permission: 'view-employees' },
-      { name: "overtime_report", href: "/dashboard/reports/overtimes", permission: 'view-employees' },
-      { name: "shift_swap_report", href: "/dashboard/reports/shift-swap", permission: 'view-shift-swap-reports' },
-      { name: "payroll_report", href: "/dashboard/reports/payroll", permission: 'view-employees' },
+      { name: "attendance_report", href: "/dashboard/reports/attendance", permission: 'view-attendance-reports' },
+      { name: "leave_report", href: "/dashboard/reports/leaves", permission: 'view-reports' },
+      { name: "reimbursement_report", href: "/dashboard/reports/reimbursements", permission: 'view-reports' },
+      { name: "overtime_report", href: "/dashboard/reports/overtimes", permission: 'view-reports' },
+      { name: "task_report", href: "/dashboard/reports/tasks", permission: 'view-reports' },
+      { name: "payroll_report", href: "/dashboard/reports/payroll", permission: 'view-reports' },
     ]
   },
-  { name: "construction", isHeading: true, permission: 'view-employees' },
+  { name: "construction", isHeading: true, permission: 'view-projects' },
   {
     name: "project_management",
     icon: HardHat,
-    permission: 'view-employees',
+    permission: 'view-projects',
     submenus: [
-      { name: "project_overview", href: "/dashboard/projects", permission: 'view-employees' },
+      { name: "project_overview", href: "/dashboard/projects", permission: 'view-projects' },
     ]
   },
+
   { name: "operational", isHeading: true, permission: 'view-vehicle-logs' },
   {
     name: "fleet_management",
@@ -138,6 +166,7 @@ const sidebarLinks: SidebarLink[] = [
       { name: "mileage_report", href: "/dashboard/fleet-logs?tab=report", permission: 'view-vehicle-reports' },
     ]
   },
+
   { name: "system", isHeading: true, permission: 'manage-roles' },
   {
     name: "settings",
@@ -171,8 +200,8 @@ export default function DashboardLayout({
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, permissions, hasPermission, refreshUser, logout } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
+  const { user, permissions, hasPermission, refreshUser, logout, loading: authLoading } = useAuth();
+  const { language, setLanguage, t, mounted } = useLanguage();
   
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -456,7 +485,27 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const filteredLinks = sidebarLinks.filter(link => hasPermission(link.permission));
+    const filteredLinks = sidebarLinks.filter(link => {
+      // 1. Dashboard is always visible
+      if (link.name === "dashboard") return true;
+
+      // 2. Filter submenus based on permissions only
+      if (link.submenus) {
+        link.submenus = link.submenus.filter(sub => {
+          return hasPermission(sub.permission);
+        });
+
+        // If no submenus left after filtering, don't show the group
+        if (link.submenus.length === 0) return false;
+      }
+
+      // 3. Standalone link or heading validation
+      if (link.href) {
+        return hasPermission(link.permission);
+      }
+
+      return true;
+    });
 
     return (
       <ul className="dash-nav-list">
@@ -465,7 +514,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             // Check for visible content
             const idx = sidebarLinks.indexOf(link);
             const hasVisibleContent = sidebarLinks.slice(idx + 1).some(l => {
-              if (l.isHeading) return false;
+              if (l.isHeading) return false; // Stop at next heading
+
+              if (l.submenus) {
+                return l.submenus.some(s => hasPermission(s.permission));
+              }
               return hasPermission(l.permission);
             });
             if (!hasVisibleContent) return null;
@@ -561,7 +614,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <aside className="dash-sidebar">
         <SidebarBrand />
         <nav className="dash-sidebar-nav">
-          <NavLinks />
+          {authLoading ? (
+            <div className="dash-sidebar-loading">
+              <div className="dash-loading-skeleton" />
+              <div className="dash-loading-skeleton" />
+              <div className="dash-loading-skeleton" />
+              <div className="dash-loading-skeleton" />
+              <div className="dash-loading-skeleton" />
+            </div>
+          ) : mounted ? (
+            <NavLinks />
+          ) : null}
         </nav>
         <div className="dash-sidebar-footer">
           <button
@@ -615,7 +678,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 </button>
               </div>
               <nav className="dash-sidebar-nav">
-                <NavLinks onNavigate={() => setMobileMenuOpen(false)} />
+                {authLoading ? (
+                  <div className="dash-sidebar-loading">
+                    <div className="dash-loading-skeleton" />
+                    <div className="dash-loading-skeleton" />
+                    <div className="dash-loading-skeleton" />
+                    <div className="dash-loading-skeleton" />
+                    <div className="dash-loading-skeleton" />
+                  </div>
+                ) : mounted ? (
+                  <NavLinks onNavigate={() => setMobileMenuOpen(false)} />
+                ) : null}
               </nav>
               <div className="dash-sidebar-footer">
                 <button

@@ -114,6 +114,7 @@ class ProfileController extends Controller
         ], 'Foto profil berhasil diperbarui');
     }
 
+
     public function me(Request $request)
     {
         $user = $request->user()->load('role.permissions');

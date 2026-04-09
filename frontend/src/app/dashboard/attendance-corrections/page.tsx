@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Check, X, Eye, Clock, AlertCircle } from "lucide-react";
-import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
+import { PermissionGuard } from "@/components/PermissionGuard";
 import { TableSkeleton } from "@/components/Skeleton";
+import Pagination from "@/components/Pagination";
+import { FileDown, Plus, Search, Check, X, Eye, Clock, AlertCircle } from "lucide-react";
 
 export default function AttendanceCorrectionsPage() {
   const { hasPermission, user } = useAuth();
@@ -181,7 +182,16 @@ export default function AttendanceCorrectionsPage() {
             <h1 className="dash-page-title">Koreksi Absen</h1>
             <p className="dash-page-desc">Ajukan koreksi mandiri jika lupa absen pulang atau ada kesalahan waktu absen.</p>
           </div>
-          <div className="dash-page-actions">
+          <div className="dash-page-actions flex gap-2">
+            <PermissionGuard slug="approve-leaves">
+              <button
+                onClick={() => window.open(`${axiosInstance.defaults.baseURL}/attendance-corrections/export`, '_blank')}
+                className="dash-btn dash-btn-outline"
+              >
+                <FileDown size={15} />
+                Export Laporan
+              </button>
+            </PermissionGuard>
             <button
               onClick={openCreateModal}
               className="dash-btn dash-btn-primary"

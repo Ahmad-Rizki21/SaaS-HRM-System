@@ -1,36 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/api_service.dart';
 import '../services/fcm_service.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _companyController = TextEditingController();
   bool _isLoading = false;
   bool _obscureText = true;
+  List<dynamic> _companySuggestions = [];
+  bool _showCompanySuggestions = false;
+  bool _isSearching = false;
+  Timer? _searchTimer;
 
   // Warna Tema Maroon
-  final Color maroon = Color(0xFF800000);
-  final Color maroonLight = Color(0xFFAD2831);
-  final Color maroonSoft = Color(
-    0xFFFFF0F0,
-  ); // Background merah muda sangat lembut
+  final Color maroon = const Color(0xFF800000);
+  final Color maroonLight = const Color(0xFFAD2831);
+  final Color naturalGrey = const Color(0xFFF9FAFB); // Changed from reddish maroonSoft
 
   // PageController untuk swipe antara Onboarding & Login
   final PageController _pageController = PageController();
-  int _currentPage = 0;
 
   void _goToLogin() {
     _pageController.animateToPage(
       1,
-      duration: Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
     );
   }
@@ -38,14 +43,53 @@ class _LoginScreenState extends State<LoginScreen> {
   void _goToOnboarding() {
     _pageController.animateToPage(
       0,
-      duration: Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
     );
   }
 
+  void _onCompanyChanged(String value) {
+    if (_searchTimer?.isActive ?? false) _searchTimer!.cancel();
+
+    if (value.trim().length < 2) {
+      setState(() {
+        _companySuggestions = [];
+        _showCompanySuggestions = false;
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _showCompanySuggestions = true;
+      _isSearching = true;
+    });
+
+    _searchTimer = Timer(const Duration(milliseconds: 500), () async {
+      final results = await ApiService.searchCompanies(value);
+      if (mounted) {
+        setState(() {
+          _companySuggestions = results;
+          _isSearching = false;
+        });
+      }
+    });
+  }
+
+  void _selectCompany(String name) {
+    setState(() {
+      _companyController.text = name;
+      _companySuggestions = [];
+      _showCompanySuggestions = false;
+    });
+    FocusScope.of(context).unfocus();
+  }
+
   void _handleLogin() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showSnackBar("Email dan Password wajib diisi!");
+    if (_emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _companyController.text.isEmpty) {
+      _showSnackBar("Email, Password dan Perusahaan wajib diisi!");
       return;
     }
 
@@ -54,19 +98,28 @@ class _LoginScreenState extends State<LoginScreen> {
     final result = await ApiService.login(
       _emailController.text,
       _passwordController.text,
+      _companyController.text,
     );
+
+    if (!mounted) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
     setState(() => _isLoading = false);
 
     if (result['success']) {
-      await FcmService.init(); // Send FCM token to server
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      await FcmService.init();
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      }
     } else {
       _showSnackBar(result['message']);
     }
   }
 
   void _showSnackBar(String message, {bool isError = true}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -88,26 +141,13 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.white,
         body: PageView(
           controller: _pageController,
-          onPageChanged: (index) => setState(() => _currentPage = index),
-          children: [
-            // ==========================================
-            // HALAMAN 1: ONBOARDING (Optimize Workers)
-            // ==========================================
-            _buildOnboardingPage(),
-
-            // ==========================================
-            // HALAMAN 2: FORM LOGIN (Sign In)
-            // ==========================================
-            _buildLoginPage(),
-          ],
+          onPageChanged: (index) => setState(() {}),
+          children: [_buildOnboardingPage(), _buildLoginPage()],
         ),
       ),
     );
   }
 
-  // ============================================
-  // HALAMAN ONBOARDING (Mirip Referensi Kanan)
-  // ============================================
   Widget _buildOnboardingPage() {
     return SafeArea(
       child: Padding(
@@ -115,14 +155,13 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           children: [
             SizedBox(height: 30),
-            // Logo/Brand
             Row(
               children: [
                 Icon(Icons.business, color: maroon, size: 28),
                 SizedBox(width: 8),
                 Flexible(
                   child: Text(
-                    "HRMS - Narwasthu Group",
+                    "HRMS - SaaS Solution",
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -134,8 +173,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
             SizedBox(height: 30),
-
-            // Ilustrasi Vektor
             Expanded(
               flex: 5,
               child: ClipRRect(
@@ -147,8 +184,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             SizedBox(height: 30),
-
-            // Judul "Optimize Workers"
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
@@ -168,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             SizedBox(height: 12),
             Text(
-              "HR management made easily, organize\nyour daily working routine easily",
+              "Management SDM menjadi lebih mudah,\natur rurinitas harian dengan efisien.",
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
                 color: Colors.grey[600],
@@ -176,10 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 1.5,
               ),
             ),
-
             Spacer(flex: 1),
-
-            // Tombol "Sign In" → Pindah ke Halaman Login
             SizedBox(
               width: double.infinity,
               height: 55,
@@ -202,18 +234,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 15),
-
-            // "Sign up" Text
+            SizedBox(height: 25),
           ],
         ),
       ),
     );
   }
 
-  // ============================================
-  // HALAMAN FORM LOGIN (Mirip Referensi Kiri)
-  // ============================================
   Widget _buildLoginPage() {
     return SafeArea(
       child: SingleChildScrollView(
@@ -223,7 +250,6 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 30),
-              // Logo/Brand
               Row(
                 children: [
                   IconButton(
@@ -234,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      "HRMS - Narwasthu Group",
+                      "Login Portal",
                       style: GoogleFonts.outfit(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -245,9 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 50),
-
-              // "Sign in"
+              SizedBox(height: 40),
               Text(
                 "Sign in",
                 style: GoogleFonts.outfit(
@@ -258,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                "Please fill in the credentials",
+                "Masukan kredensial akun Anda",
                 style: GoogleFonts.outfit(
                   color: Colors.grey[500],
                   fontSize: 14,
@@ -266,10 +290,101 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 40),
 
+              // Input Company
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                    color: naturalGrey,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: TextField(
+                      controller: _companyController,
+                      onChanged: _onCompanyChanged,
+                      style: TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        hintText: "Nama Perusahaan (Misal: Narwasthu)",
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        prefixIcon: Icon(
+                          Icons.business_outlined,
+                          color: maroon,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_showCompanySuggestions)
+                    Container(
+                      margin: EdgeInsets.only(top: 5),
+                      padding: EdgeInsets.symmetric(vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      constraints: BoxConstraints(maxHeight: 200),
+                      child: _isSearching
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(15.0),
+                                child: SpinKitThreeBounce(
+                                  color: maroon,
+                                  size: 20,
+                                ),
+                              ),
+                            )
+                          : _companySuggestions.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(15.0),
+                              child: Text(
+                                "Tidak Ada Perusahaan tersebut",
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.outfit(
+                                  color: Colors.grey[500],
+                                  fontSize: 13,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: _companySuggestions.length,
+                              itemBuilder: (context, index) {
+                                final company = _companySuggestions[index];
+                                return ListTile(
+                                  leading: Icon(
+                                    Icons.location_city,
+                                    color: maroon,
+                                    size: 20,
+                                  ),
+                                  title: Text(
+                                    company['name'],
+                                    style: GoogleFonts.outfit(fontSize: 14),
+                                  ),
+                                  onTap: () => _selectCompany(company['name']),
+                                );
+                              },
+                            ),
+                    ),
+                ],
+              ),
+              SizedBox(height: 18),
+
               // Input Email
               Container(
                 decoration: BoxDecoration(
-                  color: maroonSoft,
+                  color: naturalGrey,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: TextField(
@@ -279,7 +394,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: InputDecoration(
                     hintText: "Email",
                     hintStyle: TextStyle(color: Colors.grey[400]),
-                    prefixIcon: Icon(Icons.person_outline, color: maroon),
+                    prefixIcon: Icon(Icons.mail_outline, color: maroon),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 20,
@@ -293,7 +408,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Input Password
               Container(
                 decoration: BoxDecoration(
-                  color: maroonSoft,
+                  color: naturalGrey,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: TextField(
@@ -324,7 +439,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 35),
 
-              // Tombol Login
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -337,7 +451,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                     elevation: 3,
-                    disabledBackgroundColor: maroon.withOpacity(0.6),
+                    disabledBackgroundColor: maroon.withAlpha(153),
                   ),
                   child: _isLoading
                       ? SpinKitThreeBounce(color: Colors.white, size: 20)
@@ -350,25 +464,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                 ),
               ),
-              SizedBox(height: 60),
-
-              // Footer
+              SizedBox(height: 40),
               Center(
-                child: Text.rich(
-                  TextSpan(
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
-                    children: [
-                      TextSpan(
-                        text:
-                            "Jika belum ada akun silahkan hubungi HR yang bersangkutan. ",
-                      ),
-                    ],
+                child: Text(
+                  "Lupa password atau kendala login?\nHubungi Admin Perusahaan Anda.",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    color: Colors.grey[500],
                   ),
                 ),
               ),
+              SizedBox(height: 30),
             ],
           ),
         ),

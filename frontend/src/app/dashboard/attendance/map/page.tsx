@@ -22,10 +22,10 @@ const AttendanceMapPage = () => {
               <div className="bg-[#fef2f2] p-2 rounded-xl text-[#8B0000]">
                 <MapIcon size={20} />
               </div>
-              <CardTitle className="text-lg font-bold">Real-time Heatmap</CardTitle>
+              <CardTitle className="text-lg font-bold text-gray-900!">Real-time Heatmap</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 h-[70vh] min-h-[500px]">
             <AttendanceMap />
           </CardContent>
         </Card>

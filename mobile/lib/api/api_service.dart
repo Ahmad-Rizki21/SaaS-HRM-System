@@ -16,6 +16,10 @@ class ApiService {
   /// Fixes URLs that might contain localhost or older IPs to use the current serverIp
   static String fixUrl(String? url) {
     if (url == null || url.isEmpty) return '';
+
+    // Jika URL adalah path file lokal, jangan gunakan sebagai NetworkImage
+    if (url.startsWith('file') || url.startsWith('/data/user')) return '';
+
     if (!url.startsWith('http')) return '$storageUrl/$url';
 
     // Replace any local/old IPs with the current serverIp
@@ -50,6 +54,7 @@ class ApiService {
   static Future<Map<String, dynamic>> login(
     String email,
     String password,
+    String companyName,
   ) async {
     try {
       String deviceId = await getDeviceId();
@@ -62,6 +67,7 @@ class ApiService {
         body: jsonEncode({
           'email': email,
           'password': password,
+          'company_name': companyName,
           'device_id': deviceId,
         }),
       );
@@ -83,6 +89,23 @@ class ApiService {
         'success': false,
         'message': 'Koneksi Gagal. Pastikan Laptop & HP di Wi-Fi yang sama.',
       };
+    }
+  }
+
+  static Future<List<dynamic>> searchCompanies(String query) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/companies/search?q=$query'),
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 
@@ -418,6 +441,7 @@ class ApiService {
         headers: headers,
         body: jsonEncode({'fcm_token': token}),
       );
+      print("FCM Token update response: ${response.body}");
       return jsonDecode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': e.toString()};
@@ -517,20 +541,51 @@ class ApiService {
 
   // ============ TASKS (TUGAS) ============
 
-  static Future<List<dynamic>?> getTasks() async {
+  static Future<List<dynamic>?> getTasks({String type = 'received'}) async {
     try {
       final headers = await getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/tasks'),
+        Uri.parse('$baseUrl/tasks?type=$type'),
         headers: headers,
       );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return body['data'];
+        // The API returns paginated: { "data": { "data": [...] } }
+        return body['data']['data'];
       }
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> createTask(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/tasks'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteTask(int taskId) async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/tasks/$taskId'),
+        headers: headers,
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
     }
   }
 
@@ -549,6 +604,66 @@ class ApiService {
       return jsonDecode(response.body);
     } catch (e) {
       return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateTaskActivityStatus(
+    int activityId,
+    String status,
+  ) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.put(
+        Uri.parse('$baseUrl/tasks/activities/$activityId/status'),
+        headers: headers,
+        body: jsonEncode({'status': status}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> uploadTaskEvidence(
+    int activityId, {
+    String? photoBefore,
+    String? photoAfter,
+    String? notes,
+  }) async {
+    try {
+      final headers = await getHeaders();
+      final uri = Uri.parse('$baseUrl/tasks/activities/$activityId/evidence');
+
+      var request = http.MultipartRequest('POST', uri);
+      request.headers.addAll(headers);
+
+      if (photoBefore != null && photoBefore.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'photo_before',
+          photoBefore,
+          contentType: MediaType.parse('image/jpeg'),
+        ));
+      }
+
+      if (photoAfter != null && photoAfter.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'photo_after',
+          photoAfter,
+          contentType: MediaType.parse('image/jpeg'),
+        ));
+      }
+
+      if (notes != null) {
+        request.fields['notes'] = notes;
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal: ${e.toString()}'};
     }
   }
 
@@ -741,6 +856,23 @@ class ApiService {
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<List<dynamic>?> getSubordinates() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/employees?is_team=true&per_page=100'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data']['data'];
       }
       return null;
     } catch (e) {
@@ -1100,4 +1232,3 @@ class ApiService {
     }
   }
 }
-

@@ -69,6 +69,8 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `GET` | `/api/salary` | List slip gaji karyawan |
 | `GET` | `/api/tasks` | List tugas/pekerjaan |
 | `POST` | `/api/tasks/{id}/status` | Update status tugas (Todo/Done) |
+| `POST` | `/api/tasks/{id}/activities` | Kirim laporan aktivitas (Bukti Foto & Catatan) |
+| `GET` | `/api/tasks/{id}/activities` | Lihat riwayat aktivitas/bukti kerja tugas |
 
 ## 🚗 Manajemen Fleet & Travel Expense
 | Method | Endpoint | Deskripsi |
@@ -128,6 +130,7 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/profile/update` | Update data profil user |
 | `POST` | `/api/profile/upload-photo` | Upload foto profil |
 | `POST` | `/api/user/change-password` | Ganti password user |
+| `POST` | `/api/notifications/update-fcm-token` | Update token FCM untuk push notification |
 | `POST` | `/api/broadcasting/auth` | Autentikasi koneksi WebSocket (Laravel Reverb) |
 
 ---

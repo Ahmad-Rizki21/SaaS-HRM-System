@@ -43,6 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<dynamic> _announcements = [];
   List<dynamic> _holidays = [];
   bool _hasUnreadNotification = false;
+  int _pendingTaskCount = 0;
   bool _isLoadingContent = true;
 
   final Color primaryColor = Color(0xFF800000);
@@ -86,10 +87,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final ann = await ApiService.getAnnouncements();
       final hol = await ApiService.getHolidays();
+      final tasks = await ApiService.getTasks();
       if (mounted) {
         setState(() {
           _announcements = ann ?? [];
           _holidays = hol ?? [];
+          if (tasks != null) {
+            _pendingTaskCount = tasks.where((t) => t['status'] != 'completed' && t['status'] != 'cancelled').length;
+          }
         });
       }
     } catch (e) {
@@ -743,10 +748,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: CircleAvatar(
                         radius: 25,
                         backgroundColor: primaryColor.withOpacity(0.1),
-                        backgroundImage: _profilePhotoUrl != null
+                        backgroundImage: (_profilePhotoUrl != null && _profilePhotoUrl!.isNotEmpty)
                             ? NetworkImage(_profilePhotoUrl!)
                             : null,
-                        child: _profilePhotoUrl == null
+                        child: (_profilePhotoUrl == null || _profilePhotoUrl!.isEmpty)
                             ? Text(
                                 _userName.isNotEmpty
                                     ? _userName[0].toUpperCase()
@@ -1004,6 +1009,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   );
                 },
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 10),
+
+          // TASK REMINDER (Persistent Note)
+          if (_pendingTaskCount > 0) ...[
+            const SizedBox(height: 15),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+              child: Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red[100],
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.assignment_late, color: Colors.red[900], size: 20),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Tugas Belum Selesai!",
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red[900],
+                            ),
+                          ),
+                          Text(
+                            "Ada $_pendingTaskCount tugas yang perlu Anda selesaikan segera.",
+                            style: GoogleFonts.outfit(
+                              fontSize: 11,
+                              color: Colors.red[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Material(
+                      color: Colors.red[900],
+                      borderRadius: BorderRadius.circular(10),
+                      child: InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => TaskScreen()),
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          child: Text(
+                            "KERJAKAN",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1330,7 +1418,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
               ],
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(icon, color: color, size: 28),
+                if (label == 'Tugas' && _pendingTaskCount > 0)
+                  Positioned(
+                    right: -5,
+                    top: -5,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      child: Text(
+                        "$_pendingTaskCount",
+                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           FittedBox(
@@ -1372,7 +1478,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(icon, color: color, size: 28),
+                if (label == 'Tugas' && _pendingTaskCount > 0)
+                  Positioned(
+                    right: -5,
+                    top: -5,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      child: Text(
+                        "$_pendingTaskCount",
+                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           SizedBox(height: 6),
           Text(

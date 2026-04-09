@@ -18,7 +18,8 @@ class User extends Authenticatable
         'name', 'email', 'password', 'company_id', 'role_id', 'supervisor_id', 'device_id',
         'profile_photo_path', 'face_embedding',
         'nik', 'phone', 'address', 'join_date', 'fcm_token', 'leave_balance', 'is_wfh',
-        'wfh_start_date', 'wfh_end_date'
+        'wfh_start_date', 'wfh_end_date', 'employment_status', 'work_location', 'email_verified_at',
+        'attendance_type'
     ];
 
     protected $hidden = [
@@ -75,6 +76,11 @@ class User extends Authenticatable
         return $this->hasMany(Schedule::class);
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
     public function notifications()
     {
         return $this->hasMany(Notification::class);
@@ -84,8 +90,8 @@ class User extends Authenticatable
     {
         if (!$this->role) return false;
         
-        // Super Admin bypass for standard permissions
-        if ($this->role->name === 'Super Admin') return true;
+        // Master Admin (Role ID 1) bypass all
+        if ($this->role_id === 1) return true;
         
         return $this->role->permissions()->where('slug', $slug)->exists();
     }
@@ -95,7 +101,7 @@ class User extends Authenticatable
      */
     public function canAccessAllCompanies()
     {
-        if (!$this->role) return false;
-        return $this->role->name === 'Super Admin';
+        // Only the actual Provider Master Admin (ID 1) can see all data
+        return $this->role_id === 1;
     }
 }

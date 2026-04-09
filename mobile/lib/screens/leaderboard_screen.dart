@@ -189,8 +189,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
                 child: CircleAvatar(
                   radius: size / 2,
                   backgroundColor: Colors.white,
-                  backgroundImage: user['photo_url'] != null ? NetworkImage(user['photo_url']) : null,
-                  child: user['photo_url'] == null ? Icon(Icons.person, size: size/2, color: Colors.grey) : null,
+                  backgroundImage: (user['photo_url'] != null && user['photo_url'].toString().isNotEmpty)
+                      ? NetworkImage(user['photo_url'])
+                      : null,
+                  child: (user['photo_url'] == null || user['photo_url'].toString().isEmpty)
+                      ? Icon(Icons.person, size: size / 2, color: Colors.grey)
+                      : null,
                 ),
               ),
               Container(
@@ -254,8 +258,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
           CircleAvatar(
             radius: 20,
             backgroundColor: Colors.grey[100],
-            backgroundImage: user['photo_url'] != null ? NetworkImage(user['photo_url']) : null,
-            child: user['photo_url'] == null ? Icon(Icons.person, size: 20, color: Colors.grey) : null,
+            backgroundImage: (user['photo_url'] != null && user['photo_url'].toString().isNotEmpty)
+                ? NetworkImage(user['photo_url'])
+                : null,
+            child: (user['photo_url'] == null || user['photo_url'].toString().isEmpty)
+                ? Icon(Icons.person, size: 20, color: Colors.grey)
+                : null,
           ),
           SizedBox(width: 15),
           Expanded(

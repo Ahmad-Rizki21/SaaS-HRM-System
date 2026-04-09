@@ -16,6 +16,8 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Tambah Pegawai', 'slug' => 'create-employees', 'group' => 'Pegawai'],
             ['name' => 'Ubah Pegawai', 'slug' => 'edit-employees', 'group' => 'Pegawai'],
             ['name' => 'Hapus Pegawai', 'slug' => 'delete-employees', 'group' => 'Pegawai'],
+            ['name' => 'Lihat Direktori', 'slug' => 'view-directory', 'group' => 'Pegawai'],
+            ['name' => 'Lihat Organisasi', 'slug' => 'view-organization', 'group' => 'Pegawai'],
             
             // Cuti
             ['name' => 'Lihat Cuti', 'slug' => 'view-leaves', 'group' => 'Cuti'],
@@ -40,15 +42,21 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Kelola Jadwal', 'slug' => 'manage-schedules', 'group' => 'Operasional'],
             ['name' => 'Kelola Hari Libur', 'slug' => 'manage-holidays', 'group' => 'Operasional'],
             ['name' => 'Kelola Pengumuman', 'slug' => 'manage-announcements', 'group' => 'Operasional'],
+            ['name' => 'Lihat Pengumuman', 'slug' => 'view-announcements', 'group' => 'Operasional'],
+            ['name' => 'Kelola Approval Pusat', 'slug' => 'manage-approvals', 'group' => 'Operasional'],
 
             // KPI & Performa
             ['name' => 'Lihat KPI', 'slug' => 'view-kpis', 'group' => 'Performa'],
             ['name' => 'Kelola KPI', 'slug' => 'manage-kpis', 'group' => 'Performa'],
             
             // Peta Kehadiran & Laporan
+            ['name' => 'Lakukan Absensi', 'slug' => 'apply-attendances', 'group' => 'Kehadiran'],
+            ['name' => 'Lihat Absensi', 'slug' => 'view-attendances', 'group' => 'Kehadiran'],
             ['name' => 'Lihat Map Absensi', 'slug' => 'view-attendance-map', 'group' => 'Kehadiran'],
             ['name' => 'Lihat Laporan Absensi', 'slug' => 'view-attendance-reports', 'group' => 'Kehadiran'],
             ['name' => 'Export Laporan Absensi', 'slug' => 'export-attendance', 'group' => 'Kehadiran'],
+            ['name' => 'Kelola Koreksi Absen', 'slug' => 'manage-attendance-corrections', 'group' => 'Kehadiran'],
+            ['name' => 'Lihat Semua Laporan', 'slug' => 'view-reports', 'group' => 'Kehadiran'],
 
             // Tukar Shift
             ['name' => 'Lihat Tukar Shift', 'slug' => 'view-shift-swaps', 'group' => 'Tukar Shift'],
@@ -77,6 +85,10 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Manajemen Role', 'slug' => 'manage-roles', 'group' => 'Pengaturan'],
             ['name' => 'Lihat Log Aktivitas', 'slug' => 'view-activity-logs', 'group' => 'Pengaturan'],
             ['name' => 'Kelola WFH', 'slug' => 'manage-wfh', 'group' => 'Pengaturan'],
+            
+            // Tugas (Tasks)
+            ['name' => 'Lihat Tugas', 'slug' => 'view-tasks', 'group' => 'Tugas'],
+            ['name' => 'Kelola Tugas', 'slug' => 'manage-tasks', 'group' => 'Tugas'],
         ];
 
         foreach ($permissions as $p) {
@@ -94,41 +106,40 @@ class RolePermissionSeeder extends Seeder
         $admin->permissions()->sync($allPermissions);
         $direktur->permissions()->sync($allPermissions);
         
-        // Manager: View Employees, Approvals, KPI, Map, Schedules, Overtimes, Reports, Shift Swaps, Projects
         $managerPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas'
         ])->whereNotIn('slug', ['delete-employees', 'manage-roles', 'manage-company'])->pluck('id');
         $manager->permissions()->sync($managerPermissions);
 
-        // Supervisor: Approvals, Viewing, and Project oversight
         $supervisorPermissions = Permission::whereIn('slug', [
-            'view-employees', 
+            'view-employees', 'view-directory', 'view-organization',
             'view-leaves', 'approve-leaves', 
             'view-reimbursements', 'approve-reimbursements', 
             'view-overtimes', 'approve-overtimes',
-            'view-kpis', 'view-attendance-map', 'view-attendance-reports',
-            'manage-shifts', 'manage-schedules',
+            'view-kpis', 'view-attendance-map', 'view-attendance-reports', 'view-attendances', 'view-reports',
+            'manage-shifts', 'manage-schedules', 'manage-approvals', 'view-announcements',
             'view-shift-swaps', 'approve-shift-swaps', 'view-shift-swap-reports', 'export-shift-swaps',
             'view-projects', 'approve-project-costs',
-            'view-vehicle-logs', 'approve-vehicle-logs', 'view-vehicle-reports'
+            'view-vehicle-logs', 'approve-vehicle-logs', 'view-vehicle-reports',
+            'view-tasks', 'manage-tasks'
         ])->pluck('id');
         $supervisor->permissions()->sync($supervisorPermissions);
 
-        // HRD Manager: Manage Employees, Leaves, Reimbursements, Overtime, Operations, KPI, Map, Shift Swaps, Projects
         $hrdPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan'
+            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas'
         ])->pluck('id');
         $hrd->permissions()->sync($hrdPermissions);
 
-        // Staff Karyawan: Apply Leaves/Reimbursement/Overtime, View basic records & View Projects
         $staffPermissions = Permission::whereIn('slug', [
-            'view-employees', 
+            'view-directory', 'view-organization', 'view-announcements',
             'view-leaves', 'apply-leaves', 
             'view-reimbursements', 'apply-reimbursements',
             'view-overtimes', 'apply-overtimes',
+            'apply-attendances', 'view-attendances',
             'view-shift-swaps', 'apply-shift-swaps',
             'view-projects',
-            'view-vehicle-logs', 'apply-vehicle-logs'
+            'view-vehicle-logs', 'apply-vehicle-logs',
+            'view-tasks'
         ])->pluck('id');
         $staff->permissions()->sync($staffPermissions);
     }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown, User as UserIcon, Camera } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown, User as UserIcon, Camera, MoreVertical, ArrowRightLeft, UserX, ShieldAlert, CreditCard, Mail, MapPin, Phone, Building2, Calendar, BadgeCheck, Clock } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
@@ -10,6 +10,7 @@ import Pagination from "@/components/Pagination";
 import { TableSkeleton } from "@/components/Skeleton";
 import { useSearchParams } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useRef } from "react";
 
 interface Role {
   id: number;
@@ -30,6 +31,10 @@ interface Employee {
   supervisor_id?: number;
   supervisor?: { id: number; name: string };
   leave_balance?: number;
+  employment_status?: string;
+  work_location?: string;
+  email_verified_at?: string;
+  attendance_type?: string;
 }
 
 interface EmployeeFormData {
@@ -45,6 +50,9 @@ interface EmployeeFormData {
   photo?: File | null;
   supervisor_id?: number | null;
   leave_balance?: number;
+  employment_status?: string;
+  work_location?: string;
+  attendance_type?: string;
 }
 
 interface PaginationData {
@@ -55,7 +63,7 @@ interface PaginationData {
 }
 
 function EmployeesContent() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, permissions, user: currentUser } = useAuth();
   const searchParams = useSearchParams();
   const urlSearch = searchParams.get("search");
   const urlId = searchParams.get("id");
@@ -65,6 +73,7 @@ function EmployeesContent() {
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [searchQuery, setSearchQuery] = useState(urlSearch || "");
   const [page, setPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'unverified' | 'team'>('all');
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -72,7 +81,10 @@ function EmployeesContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<EmployeeFormData>({
     role_id: 3, // Default Employee
-    leave_balance: 12
+    leave_balance: 12,
+    employment_status: 'Permanent',
+    work_location: 'Kantor Pusat',
+    attendance_type: 'office_hour'
   });
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -82,11 +94,28 @@ function EmployeesContent() {
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+  const [actionMenuId, setActionMenuId] = useState<number | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close action menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
+        setActionMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
-    fetchEmployees(page);
-    fetchRoles();
-  }, [searchQuery, page, urlSearch, urlId]);
+    if (hasPermission('view-employees')) {
+      fetchEmployees(page);
+    }
+    if (hasPermission('manage-roles')) {
+      fetchRoles();
+    }
+  }, [searchQuery, page, urlSearch, urlId, permissions, activeFilter]);
 
   const downloadTemplate = () => {
     const templateData: any[] = [
@@ -96,44 +125,29 @@ function EmployeesContent() {
         nik: "123456789", 
         password: "password123", 
         role_id: 3, 
-        tanggal_gabung: "2024-01-01" 
-      },
-      { 
-        nama: "Budi Santoso (Contoh)", 
-        email: "budi@example.com", 
-        nik: "987654321", 
-        password: "password123", 
-        role_id: 3, 
-        tanggal_gabung: "2024-01-02" 
+        tanggal_gabung: "2024-01-01",
+        status_karyawan: "Permanent",
+        lokasi_kerja: "Kantor Pusat"
       }
     ];
 
-    // Beri jarak baris kosong
-    templateData.push({ nama: "", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" });
-    templateData.push({ nama: "", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" });
+    templateData.push({ nama: "", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "", status_karyawan: "", lokasi_kerja: "" });
     
     // Tambahkan baris panduan agar HR gampang baca
-    templateData.push({ nama: ">>> PETUNJUK PENGISIAN KOLOM ROLE_ID <<<", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" });
+    templateData.push({ nama: ">>> PETUNJUK PENGISIAN KOLOM ROLE_ID <<<", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "", status_karyawan: "", lokasi_kerja: "" });
     
     availableRoles.forEach(role => {
       templateData.push({ 
         nama: `👉 Ketik angka ${role.id} untuk posisi ${role.name.toUpperCase()}`, 
-        email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" 
+        email: "", nik: "", password: "", role_id: null, tanggal_gabung: "", status_karyawan: "", lokasi_kerja: "" 
       });
     });
 
-    templateData.push({ nama: "Catatan: Baris panduan ini tidak akan masuk ke sistem saat di-import (otomatis diabaikan).", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "" });
+    templateData.push({ nama: "Catatan: Baris panduan ini tidak akan masuk ke sistem saat di-import (otomatis diabaikan).", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "", status_karyawan: "", lokasi_kerja: "" });
     
     const worksheet = XLSX.utils.json_to_sheet(templateData);
-    
-    // Atur lebar kolom supaya enak dibaca
     worksheet['!cols'] = [
-      { wch: 45 }, // Nama 
-      { wch: 25 }, // Email
-      { wch: 15 }, // NIK
-      { wch: 15 }, // Password
-      { wch: 10 }, // Role
-      { wch: 18 }, // Tanggal
+      { wch: 45 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 18 }, { wch: 20 }, { wch: 20 }
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -173,12 +187,12 @@ function EmployeesContent() {
       alert(err.response?.data?.message || "Gagal mengimpor file.");
     } finally {
       setLoading(false);
-      // reset input
       e.target.value = '';
     }
   };
 
   const fetchRoles = async () => {
+    if (!hasPermission('manage-roles')) return;
     try {
       const response = await axiosInstance.get("/roles");
       setAvailableRoles(response.data.data);
@@ -191,8 +205,8 @@ function EmployeesContent() {
     try {
       setLoading(true);
       const s = urlSearch || searchQuery;
-      // If we have urlId, we might want to fetch just that ID, or pass it to backend
-      const response = await axiosInstance.get(`/employees?page=${page}&search=${s}${urlId ? `&id=${urlId}` : ""}`);
+      const isTeam = activeFilter === 'team';
+      const response = await axiosInstance.get(`/employees?page=${page}&search=${s}${urlId ? `&id=${urlId}` : ""}${isTeam ? '&is_team=true' : ''}`);
       const { data, ...paginator } = response.data.data;
       setEmployees(data || []);
       setPagination(paginator);
@@ -219,7 +233,13 @@ function EmployeesContent() {
 
   const handleOpenAddModal = () => {
     setModalMode("add");
-    setFormData({ role_id: 3, leave_balance: 12 }); // Reset
+    setFormData({ 
+      role_id: 3, 
+      leave_balance: 12,
+      employment_status: 'Permanent',
+      work_location: 'Kantor Pusat',
+      attendance_type: 'office_hour'
+    });
     setIsModalOpen(true);
   };
 
@@ -236,6 +256,9 @@ function EmployeesContent() {
       join_date: emp.join_date || "",
       supervisor_id: emp.supervisor_id || null,
       leave_balance: emp.leave_balance ?? 12,
+      employment_status: emp.employment_status || 'Permanent',
+      work_location: emp.work_location || 'Kantor Pusat',
+      attendance_type: emp.attendance_type || 'office_hour',
     });
     setPhotoPreview(emp.profile_photo_url || null);
     setIsModalOpen(true);
@@ -267,9 +290,8 @@ function EmployeesContent() {
         await axiosInstance.post("/employees", data, {
           headers: { "Content-Type": "multipart/form-data" }
         });
-        alert("Berhasil menambah karyawan baru!");
+        alert("Karyawan baru berhasil ditambahkan! Undangan email sedang dikirim.");
       } else {
-        // Laravel PUT doesn't support FormData file upload easily, so we use POST with _method=PUT
         data.append('_method', 'PUT');
         await axiosInstance.post(`/employees/${formData.id}`, data, {
           headers: { "Content-Type": "multipart/form-data" }
@@ -283,6 +305,28 @@ function EmployeesContent() {
       alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendVerification = async (id?: number) => {
+    try {
+      setIsSubmitting(true);
+      if (id) {
+        await axiosInstance.post(`/employees/${id}/resend-verification`);
+        alert("Email verifikasi berhasil dikirim ulang.");
+      } else {
+        // Bulk resend logic
+        const unverified = employees.filter(e => !e.email_verified_at);
+        for (const emp of unverified) {
+           await axiosInstance.post(`/employees/${emp.id}/resend-verification`);
+        }
+        alert(`Berhasil mengirim ulang ke ${unverified.length} karyawan.`);
+      }
+    } catch (e: any) {
+      alert(e.response?.data?.message || "Gagal mengirim ulang verifikasi.");
+    } finally {
+      setIsSubmitting(false);
+      setActionMenuId(null);
     }
   };
 
@@ -337,45 +381,47 @@ function EmployeesContent() {
     });
   };
 
-  // Filter local jika backend blm support filter search query dari front end
-  const filteredEmployees = employees.filter(emp => 
-    emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    emp.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredEmployees = employees.filter(emp => {
+    const matchesSearch = emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         emp.email.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (activeFilter === 'unverified') {
+      return matchesSearch && !emp.email_verified_at;
+    }
+    return matchesSearch;
+  });
+
+  const unverifiedCount = employees.filter(emp => !emp.email_verified_at).length;
 
   return (
-    <div>
-      {/* Page Header */}
+    <div className="animate-in fade-in duration-700">
       <div className="dash-page-header">
-        <div>
-          <h1 className="dash-page-title">Data Pegawai HRMS</h1>
-          <p className="dash-page-desc">Kelola seluruh data anggota tim dari panel admin master.</p>
+        <div className="flex items-center gap-4">
+           <div className="w-14 h-14 rounded-2xl bg-[#1a1a2e] text-white flex items-center justify-center shadow-xl shadow-gray-200 group transition-transform hover:rotate-3">
+              <UserIcon size={32} />
+           </div>
+           <div>
+              <h1 className="dash-page-title text-gray-900 font-black tracking-tight">Daftar Karyawan</h1>
+              <p className="dash-page-desc font-medium">Manajemen profil, penugasan, dan status verifikasi seluruh anggota tim.</p>
+           </div>
         </div>
         <div className="dash-page-actions flex gap-2">
           <PermissionGuard slug="create-employees">
             <button 
               onClick={downloadTemplate}
-              className="dash-btn dash-btn-outline"
-              title="Download Template Excel"
+              className="dash-btn dash-btn-outline border-gray-200 hover:border-gray-300 text-gray-600 font-bold"
             >
-              <FileDown size={14} />
+              <FileDown size={14} className="mr-1" />
               Template
             </button>
-            
-            <label className="dash-btn dash-btn-outline" style={{ cursor: 'pointer' }}>
-              <FileUp size={14} />
+            <label className="dash-btn dash-btn-outline border-gray-200 hover:border-gray-300 text-gray-600 font-bold cursor-pointer">
+              <FileUp size={14} className="mr-1" />
               Import Data
-              <input 
-                type="file" 
-                accept=".xlsx, .xls, .csv" 
-                className="hidden" 
-                onChange={handleFileUpload} 
-              />
+              <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} />
             </label>
-
             <button 
               onClick={handleOpenAddModal}
-              className="dash-btn dash-btn-primary"
+              className="dash-btn dash-btn-primary shadow-lg shadow-gray-200 bg-[#f97316] hover:bg-[#ea580c] border-none font-black text-white!"
             >
               <Plus size={16} />
               Tambah Karyawan
@@ -384,130 +430,265 @@ function EmployeesContent() {
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between mb-4 bg-white p-3 border border-[#ebedf0] rounded-lg">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+      {/* Verification Notice Banner */}
+      {unverifiedCount > 0 && (
+         <div className="mb-6 bg-blue-50 border border-blue-100 p-4 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-3">
+               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                  <UserIcon size={16} />
+               </div>
+               <p className="text-sm text-blue-900 font-bold">
+                  Kamu punya <span className="text-blue-600 underline font-black">{unverifiedCount} karyawan</span> yang belum diverifikasi, silakan kirim undangan segera.
+               </p>
+            </div>
+            <button 
+              onClick={() => handleResendVerification()}
+              className="text-xs font-black text-blue-700 hover:text-blue-800 tracking-tight flex items-center gap-1 uppercase"
+            >
+               Kirim Ulang Semua Undangan <Plus size={14} className="rotate-45" />
+            </button>
+         </div>
+      )}
+
+      {/* Toolbar & Filters */}
+      <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+        <div className="flex items-center gap-1 p-1 bg-gray-100/50 rounded-xl w-full md:w-fit border border-gray-200/50">
+           <button 
+             onClick={() => setActiveFilter('all')}
+             className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${activeFilter === 'all' ? 'bg-white text-orange-600 shadow-sm border border-orange-100' : 'text-gray-400 hover:text-gray-600'}`}
+           >
+              Semua Karyawan
+           </button>
+           <button 
+             onClick={() => setActiveFilter('team')}
+             className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${activeFilter === 'team' ? 'bg-white text-orange-600 shadow-sm border border-orange-100' : 'text-gray-400 hover:text-gray-600'}`}
+           >
+              Tim Saya
+           </button>
+           <button 
+             onClick={() => setActiveFilter('unverified')}
+             className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${activeFilter === 'unverified' ? 'bg-white text-orange-600 shadow-sm border border-orange-100' : 'text-gray-400 hover:text-gray-600'}`}
+           >
+              Belum diverifikasi ({unverifiedCount})
+           </button>
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-fit">
+          <div className="relative flex-1 md:w-72 group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={16} />
             <input
               type="text"
-              placeholder="Cari nama atau email..."
+              placeholder="Cari Nama/NIK/Kode..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-4 text-sm bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
+              className="w-full h-11 pl-10 pr-4 text-xs font-bold bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-200 focus:ring-4 focus:ring-orange-50/50 transition-all shadow-sm"
             />
           </div>
           {selectedIds.length > 0 && hasPermission('delete-employees') && (
             <button 
               onClick={() => setBulkDeleteModalOpen(true)}
-              className="dash-btn bg-red-50 text-red-600 border-red-100 hover:bg-red-100 h-9 px-3 text-xs"
+              className="bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 h-11 px-5 text-xs font-black rounded-xl animate-in zoom-in-95"
             >
-              <Trash2 size={14} className="mr-1.5" />
-              Hapus ({selectedIds.length})
+              <Trash2 size={14} className="mr-2 inline" />
+              Hapus Sele ({selectedIds.length})
             </button>
           )}
         </div>
       </div>
 
-      {/* Table */}
-      <div className="dash-table-container">
-        {loading ? (
-          <div className="p-6"><TableSkeleton rows={6} cols={6} /></div>
-        ) : filteredEmployees.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm">
-            Tidak ada data karyawan ditemukan.
-          </div>
-        ) : (
-          <div className="dash-table-wrapper">
-            <table className="dash-table">
+      {/* Modern Premium Table */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-100/50 overflow-hidden relative">
+        <div className="overflow-x-auto custom-scrollbar scroll-smooth">
+          {loading ? (
+             <div className="p-12"><TableSkeleton rows={8} cols={8} /></div>
+          ) : (
+            <table className="w-full text-left border-collapse min-w-[1200px]">
               <thead>
-                <tr>
-                  <th className="w-10">
+                <tr className="bg-gray-50/50 border-b border-gray-50">
+                  <th className="px-6 py-5 w-10 sticky left-0 bg-gray-50/50 z-20">
                     <input 
                       type="checkbox" 
                       onChange={handleSelectAll}
                       checked={selectedIds.length === filteredEmployees.length && filteredEmployees.length > 0}
-                      className="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                      className="rounded-md border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
                     />
                   </th>
-                  <th>Info Pekerja</th>
-                  {hasPermission('edit-employees') && <th>NIK</th>}
-                  <th>Posisi/Peran</th>
-                  <th>Tanggal Gabung</th>
-                  {(hasPermission('edit-employees') || hasPermission('delete-employees')) && <th className="text-right">Aksi</th>}
+                  <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest sticky left-10 bg-gray-50/50 z-20 min-w-[250px]">Karyawan</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest min-w-[200px]">Detail Kontak</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest min-w-[180px]">Posisi / Peran</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center min-w-[150px]">Bergabung</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center min-w-[140px]">Status</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center min-w-[160px]">Lokasi</th>
+                  <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center min-w-[180px]">Email Verification</th>
+                  {hasPermission('manage-employees') && (
+                    <th className="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right sticky right-0 bg-gray-50/50 z-20 w-16">Opsi</th>
+                  )}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-50">
                 {filteredEmployees.map((emp) => (
-                  <tr key={emp.id} className={selectedIds.includes(emp.id) ? "bg-red-50/10" : ""}>
-                    <td>
+                  <tr key={emp.id} className="group hover:bg-orange-50/10 transition-all">
+                    <td className="px-6 py-4 sticky left-0 bg-white group-hover:bg-orange-50/10 z-10">
                       <input 
                         type="checkbox" 
                         checked={selectedIds.includes(emp.id)}
                         onChange={() => handleSelectRow(emp.id)}
-                        className="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                        className="rounded-md border-gray-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
                       />
                     </td>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="size-9 border border-gray-100">
-                          <AvatarImage src={emp.profile_photo_url} alt={emp.name} />
-                          <AvatarFallback className="bg-gray-100 text-gray-500 font-bold uppercase text-[10px]">
-                            {emp.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-gray-900 leading-tight">{emp.name}</span>
-                          <span className="text-[10px] text-gray-400 font-medium">EMP-{emp.id.toString().padStart(4, '0')}</span>
-                        </div>
-                      </div>
+                    <td className="px-6 py-4 sticky left-10 bg-white group-hover:bg-orange-50/10 z-10">
+                       <div className="flex items-center gap-4">
+                          <div className="relative">
+                             <Avatar className="size-11 border-2 border-white shadow-md transition-transform group-hover:scale-110">
+                                <AvatarImage src={emp.profile_photo_url} alt={emp.name} />
+                                <AvatarFallback className="bg-orange-100 text-orange-600 font-black text-xs">
+                                   {emp.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                             </Avatar>
+                             <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm ${emp.email_verified_at ? 'bg-emerald-500' : 'bg-amber-400'}`} />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                             <span className="font-black text-gray-900 text-sm tracking-tight truncate">{emp.name}</span>
+                             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">EMP-{emp.id.toString().padStart(4, '0')}</span>
+                          </div>
+                       </div>
                     </td>
-                    {hasPermission('edit-employees') && (
-                      <td>
-                        <span className="text-sm font-medium text-gray-700 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                          {emp.nik || "Belum diisi"}
-                        </span>
-                      </td>
-                    )}
-                    <td>
-                      <span className={`dash-badge ${getRoleBadgeColor(emp.role?.name)}`}>
-                        {emp.role?.name || (emp.role_id === 1 ? "Super Admin" : emp.role_id === 2 ? "HR" : "Karyawan")}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="flex flex-col">
-                        <span className="text-sm text-gray-600">
-                          {formatDate(emp.join_date)}
-                        </span>
-                        {emp.supervisor && (
-                          <span className="text-[9px] text-gray-400 mt-0.5">Atasan: {emp.supervisor.name}</span>
-                        )}
-                      </div>
-                    </td>
-                    {(hasPermission('edit-employees') || hasPermission('delete-employees')) && (
-                      <td className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {hasPermission('edit-employees') && (
-                            <button 
-                              className="dash-action-btn edit" 
-                              title="Edit"
-                              onClick={() => handleOpenEditModal(emp)}
-                            >
-                              <Edit2 size={15} />
-                            </button>
+                    <td className="px-6 py-4">
+                       <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                             <Mail size={12} className="text-gray-400" />
+                             {emp.email}
+                          </div>
+                          {emp.phone && (
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                               <Phone size={10} />
+                               {emp.phone}
+                            </div>
                           )}
-                          {hasPermission('delete-employees') && (
+                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                       <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 bg-gray-100 px-2 py-0.5 rounded-lg w-fit border border-gray-200">
+                             <Building2 size={10} className="text-gray-400" />
+                             <span className="text-[10px] font-black text-gray-700 uppercase">{emp.role?.name || "Member"}</span>
+                          </div>
+                          {emp.supervisor && (
+                            <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-md w-fit">
+                               Atasan: {emp.supervisor.name}
+                            </span>
+                          )}
+                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                       <div className="flex flex-col items-center gap-1">
+                          <span className="text-xs font-black text-gray-700">{formatDate(emp.join_date)}</span>
+                          <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1">
+                             <Clock size={8} /> {emp.join_date ? Math.floor((new Date().getTime() - new Date(emp.join_date).getTime()) / (1000 * 60 * 60 * 24 * 365)) : 0} Tahun
+                          </span>
+                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                       <span className={`text-[10px] font-black px-3 py-1 rounded-full border border-gray-100 ${emp.employment_status === 'Permanent' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-50 text-gray-500'}`}>
+                          {emp.employment_status || 'Permanent'}
+                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-center text-xs font-bold text-gray-500">
+                       <div className="flex items-center justify-center gap-1">
+                          <MapPin size={12} className="text-red-400" />
+                          {emp.work_location || 'Kantor Pusat'}
+                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                       {emp.email_verified_at ? (
+                          <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl text-[10px] font-black border border-emerald-100 uppercase tracking-tighter">
+                             <BadgeCheck size={14} className="text-emerald-500" />
+                             Verified
+                          </div>
+                       ) : (
+                          <div className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-600 px-3 py-1.5 rounded-xl text-[10px] font-black border border-amber-100 uppercase tracking-tighter shadow-sm">
+                             <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                             Pending
+                          </div>
+                       )}
+                    </td>
+                    {hasPermission('manage-employees') && (
+                      <td className="px-6 py-4 text-right sticky right-0 bg-white group-hover:bg-orange-50/10 z-10">
+                        <div className="relative">
                             <button 
-                              className="dash-action-btn delete" 
-                              title="Hapus"
-                              onClick={() => {
-                                setDeleteId(emp.id);
-                                setDeleteModalOpen(true);
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActionMenuId(actionMenuId === emp.id ? null : emp.id);
                               }}
+                              className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors"
                             >
-                              <Trash2 size={15} />
+                              <MoreVertical size={20} />
                             </button>
-                          )}
+                            
+                            {actionMenuId === emp.id && (
+                              <div 
+                                ref={actionMenuRef}
+                                className="absolute right-full top-0 mr-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-right-4 duration-200"
+                              >
+                                  <div className="p-2 space-y-1">
+                                    <button 
+                                      onClick={() => { handleOpenEditModal(emp); setActionMenuId(null); }}
+                                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors group/item"
+                                    >
+                                        <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 group-hover/item:bg-gray-200 transition-colors">
+                                          <ArrowRightLeft size={18} />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-black text-gray-900">Edit Data Karyawan</p>
+                                          <p className="text-[10px] text-gray-400 font-medium">Ubah data karyawan / Promosi Jabatan</p>
+                                        </div>
+                                    </button>
+                                    
+                                    <button 
+                                      onClick={() => { setDeleteId(emp.id); setDeleteModalOpen(true); setActionMenuId(null); }}
+                                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-red-50/50 rounded-xl transition-colors group/item"
+                                    >
+                                        <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 group-hover/item:bg-red-100 group-hover/item:text-red-600 transition-colors">
+                                          <UserX size={18} />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-black text-gray-900 group-hover/item:text-red-600 transition-colors">Penghentian</p>
+                                          <p className="text-[10px] text-gray-400 font-medium">Proses pengunduran diri</p>
+                                        </div>
+                                    </button>
+
+                                    {!emp.email_verified_at && (
+                                      <button 
+                                        onClick={() => handleResendVerification(emp.id)}
+                                        className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors group/item"
+                                      >
+                                          <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 group-hover/item:bg-gray-200 transition-colors">
+                                            <Mail size={18} />
+                                          </div>
+                                          <div>
+                                            <p className="text-sm font-black text-gray-900">Kirim Undangan</p>
+                                            <p className="text-[10px] text-gray-400 font-medium">Kirim ulang link verifikasi</p>
+                                          </div>
+                                      </button>
+                                    )}
+
+                                    <div className="h-px bg-gray-50 mx-3 my-2" />
+
+                                    <button 
+                                      onClick={() => setActionMenuId(null)}
+                                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors group/item"
+                                    >
+                                        <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 group-hover/item:bg-gray-200 transition-colors">
+                                          <ShieldAlert size={18} />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-black text-gray-900">Tindakan Disiplin</p>
+                                          <p className="text-[10px] text-gray-400 font-medium">Catat pelanggaran atau SP</p>
+                                        </div>
+                                    </button>
+                                  </div>
+                              </div>
+                            )}
                         </div>
                       </td>
                     )}
@@ -515,221 +696,209 @@ function EmployeesContent() {
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
-
-        {/* Pagination Info */}
-        {!loading && pagination && pagination.total > 0 && (
-          <Pagination 
-            currentPage={pagination.current_page} 
-            lastPage={pagination.last_page} 
-            total={pagination.total} 
-            onPageChange={setPage} 
-          />
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Pagination Info */}
+      {!loading && pagination && pagination.total > 0 && (
+        <Pagination 
+          currentPage={pagination.current_page} 
+          lastPage={pagination.last_page} 
+          total={pagination.total} 
+          onPageChange={setPage} 
+        />
+      )}
 
       {/* CRUD Modal for Add & Edit */}
       {isModalOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex justify-between items-center p-5 border-b border-gray-100">
-                <h3 className="font-semibold text-lg text-gray-900">
-                  {modalMode === "add" ? "Tambah Data Karyawan" : "Edit Data Karyawan"}
-                </h3>
-                <button 
-                  onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              
-              <form onSubmit={handleSubmit}>
-                <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
-                  
-                  {/* Photo Profile Section */}
-                  <div className="flex flex-col items-center gap-3 mb-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                    <div className="relative group">
-                      <Avatar className="size-20 border-2 border-white shadow-md">
-                        <AvatarImage src={photoPreview || undefined} />
-                        <AvatarFallback className="bg-white text-gray-300">
-                          <UserIcon size={32} />
-                        </AvatarFallback>
-                      </Avatar>
-                      <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                        <Camera size={18} />
-                        <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
-                      </label>
-                    </div>
-                    <div className="text-center">
-                      <span className="text-xs font-semibold text-gray-600">Foto Profil</span>
-                      <p className="text-[10px] text-gray-400 mt-0.5">Format JPG/PNG, Max 2MB</p>
-                    </div>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-5 border-b border-gray-100">
+              <h3 className="font-semibold text-lg text-gray-900">
+                {modalMode === "add" ? "Tambah Data Karyawan" : "Edit Data Karyawan"}
+              </h3>
+              <button 
+                onClick={handleCloseModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit}>
+              <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                
+                {/* Photo Profile Section */}
+                <div className="flex flex-col items-center gap-3 mb-4 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                  <div className="relative group">
+                    <Avatar className="size-20 border-2 border-white shadow-md">
+                      <AvatarImage src={photoPreview || undefined} />
+                      <AvatarFallback className="bg-white text-gray-300">
+                        <UserIcon size={32} />
+                      </AvatarFallback>
+                    </Avatar>
+                    <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <Camera size={18} />
+                      <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                    </label>
                   </div>
-
-                  {/* Grid fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Nama Lengkap*</label>
-                      <input 
-                        type="text" 
-                        required
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.name || ""}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Email Utama*</label>
-                      <input 
-                        type="email" 
-                        required
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.email || ""}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      />
-                    </div>
+                  <div className="text-center">
+                    <span className="text-xs font-semibold text-gray-600">Foto Profil</span>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Format JPG/PNG, Max 2MB</p>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Nomor Induk Karyawan (NIK)</label>
-                      <input 
-                        type="text" 
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.nik || ""}
-                        onChange={(e) => setFormData({...formData, nik: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Peran Akun*</label>
-                      <select 
-                        required
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.role_id || ""}
-                        onChange={(e) => setFormData({...formData, role_id: parseInt(e.target.value)})}
-                      >
-                        <option value="" disabled>Pilih Peran Akun</option>
-                        {availableRoles.map(role => (
-                          <option key={role.id} value={role.id}>{role.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Nomor Telepon</label>
-                      <input 
-                        type="text" 
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.phone || ""}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Tanggal Gabung</label>
-                      <input 
-                        type="date" 
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.join_date || ""}
-                        onChange={(e) => setFormData({...formData, join_date: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Supervisor / Atasan Langsung</label>
-                      <select 
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.supervisor_id || ""}
-                        onChange={(e) => setFormData({...formData, supervisor_id: e.target.value ? parseInt(e.target.value) : null})}
-                      >
-                        <option value="">Tanpa Atasan (Pusat)</option>
-                        {employees
-                          .filter(e => e.id !== formData.id) // Jangan jadi atasan sendiri
-                          .map(e => (
-                            <option key={e.id} value={e.id}>{e.name} ({e.role?.name})</option>
-                          ))}
-                      </select>
-                      <p className="text-[10px] text-gray-400">Atasan menerima notifikasi absen.</p>
-                    </div>
-                    
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Sisa Cuti Tahunan (Hari)</label>
-                      <input 
-                        type="number" 
-                        min="0"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.leave_balance ?? ""}
-                        onChange={(e) => setFormData({...formData, leave_balance: e.target.value ? parseInt(e.target.value) : 0})}
-                      />
-                      <p className="text-[10px] text-gray-400">Default 12 hari/tahun.</p>
-                    </div>
-                  </div>
-
+                {/* Grid fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Alamat Tempat Tinggal</label>
-                    <textarea 
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e] min-h-[80px]"
-                      value={formData.address || ""}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                    <label className="text-sm font-medium text-gray-700">Nama Lengkap*</label>
+                    <input 
+                      type="text" 
+                      required
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.name || ""}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
                     />
                   </div>
-
-                  {modalMode === "add" && (
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Password Sementara*</label>
-                      <input 
-                        type="password" 
-                        required
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.password || ""}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        placeholder="Minimal 6 karakter"
-                      />
-                      <p className="text-xs text-gray-500">Tentu saja password ini bisa mereka ubah di pengaturan profil nanti.</p>
-                    </div>
-                  )}
-
-                  {modalMode === "edit" && (
-                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-gray-700">Ubah Password <span className="text-gray-400 font-normal">(Opsional)</span></label>
-                      <input 
-                        type="password" 
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                        value={formData.password || ""}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        placeholder="Kosongkan jika tidak ingin merubah"
-                      />
-                    </div>
-                  )}
-
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Email Utama*</label>
+                    <input 
+                      type="email" 
+                      required
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.email || ""}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    />
+                  </div>
                 </div>
-                
-                <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
-                  <button 
-                    type="button" 
-                    onClick={handleCloseModal}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={isSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-[#1a1a2e] rounded-md hover:bg-[#2d2d44] transition-colors disabled:opacity-50"
-                  >
-                    {isSubmitting ? "Menyimpan..." : "Simpan Data"}
-                  </button>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">NIK (Nomor Induk)</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.nik || ""}
+                      onChange={(e) => setFormData({...formData, nik: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Peran Akun*</label>
+                    <select 
+                      required
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.role_id || ""}
+                      onChange={(e) => setFormData({...formData, role_id: parseInt(e.target.value)})}
+                    >
+                      <option value="" disabled>Pilih Peran Akun</option>
+                      {availableRoles.map(role => (
+                        <option key={role.id} value={role.id}>{role.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </form>
-            </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Status Karyawan*</label>
+                    <select 
+                      required
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.employment_status || ""}
+                      onChange={(e) => setFormData({...formData, employment_status: e.target.value})}
+                    >
+                      <option value="Permanent">Permanent</option>
+                      <option value="Contract">Contract</option>
+                      <option value="Probation">Probation</option>
+                      <option value="Intern">Intern</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Lokasi Kerja*</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Contoh: Kantor Pusat"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.work_location || ""}
+                      onChange={(e) => setFormData({...formData, work_location: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Atasan Langsung</label>
+                    <select 
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.supervisor_id || ""}
+                      onChange={(e) => setFormData({...formData, supervisor_id: e.target.value ? parseInt(e.target.value) : null})}
+                    >
+                      <option value="">Tanpa Atasan</option>
+                      {employees.filter(e => e.id !== formData.id).map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Tanggal Bergabung*</label>
+                    <input 
+                      type="date" 
+                      required
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.join_date || ""}
+                      onChange={(e) => setFormData({...formData, join_date: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Pola Kehadiran*</label>
+                    <select 
+                      required
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.attendance_type || "office_hour"}
+                      onChange={(e) => setFormData({...formData, attendance_type: e.target.value})}
+                    >
+                      <option value="office_hour">Office Hour</option>
+                      <option value="shift">Shift / Jadwal Khusus</option>
+                    </select>
+                  </div>
+                </div>
+
+                {modalMode === "add" && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Password Sementara*</label>
+                    <input 
+                      type="password" 
+                      required
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                      value={formData.password || ""}
+                      placeholder="Min 6 karakter"
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
+                <button 
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 text-sm font-black text-white bg-[#1a1a2e] rounded-md hover:bg-[#1a1a2e]/90 disabled:opacity-50 shadow-lg shadow-[#1a1a2e]/20"
+                >
+                  {isSubmitting ? "Menyimpan..." : (modalMode === "add" ? "Tambah & Kirim Undangan" : "Simpan Perubahan")}
+                </button>
+              </div>
+            </form>
           </div>
-        </>
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}
