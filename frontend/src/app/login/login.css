@@ -1,7 +1,6 @@
 /* ============================================
-   LOGIN PAGE - HRMS NARWASTHU GROUP
-   Redesign Inspired by GreatDay HR
-   Premium, warm & modern aesthetic
+   LOGIN PAGE - ON TIME HRMS (OT)
+   Modern & Minimalist Design
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -247,10 +246,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   background: linear-gradient(135deg, #FDF2F2 0%, #FAEAEA 100%);
-  border-radius: 18px;
+  border-radius: 22px;
   margin-bottom: 1rem;
   box-shadow: 0 4px 12px rgba(127, 29, 29, 0.1);
   transition: transform 0.3s ease;
@@ -261,7 +260,7 @@
 }
 
 .login-logo {
-  width: 38px;
+  width: 52px;
   height: auto;
   object-fit: contain;
 }
@@ -284,15 +283,15 @@
 
 .login-subtitle {
   display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.85rem;
+  font-weight: 800;
   color: #991B1B;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-top: 6px;
-  padding: 3px 12px;
+  margin-top: 8px;
+  padding: 4px 16px;
   background: #FDF2F2;
-  border-radius: 20px;
+  border-radius: 24px;
 }
 
 /* === Form === */

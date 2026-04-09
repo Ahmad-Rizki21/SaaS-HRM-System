@@ -157,7 +157,7 @@ export default function DirectoryPage() {
                     <p className="text-[11px] font-black text-[#8B0000] uppercase tracking-wider">{emp.role?.name || 'Karyawan'}</p>
                     <div className="flex items-center gap-1 mt-1 text-gray-400">
                       <Building2 size={10} />
-                      <span className="text-[10px] font-medium">{emp.company?.name || 'Narwasthu Group'}</span>
+                      <span className="text-[10px] font-medium">{emp.company?.name || 'On Time HRMS'}</span>
                     </div>
                   </div>
                 </div>

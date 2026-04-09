@@ -158,16 +158,16 @@ export default function LoginPage() {
               <div className="login-logo-wrapper">
                 <Image
                   src="/logo.png"
-                  alt="Narwasthu Group Logo"
-                  width={48}
-                  height={36}
+                  alt="On Time HRMS Logo"
+                  width={80}
+                  height={60}
                   className="login-logo"
                   priority
                 />
               </div>
               <div className="login-brand">
                 <h1 className="login-title">Welcome Back!</h1>
-                <p className="login-subtitle">HRMS NARWASTHU GROUP</p>
+                <p className="login-subtitle">ON TIME HRMS (OT)</p>
               </div>
             </div>
 
@@ -361,7 +361,7 @@ export default function LoginPage() {
 
             {/* Footer */}
             <div className="login-footer">
-              <p>© 2026 Narwasthu Group. All rights reserved.</p>
+              <p>© 2026 On Time HRMS. All rights reserved.</p>
             </div>
           </div>
         </div>
