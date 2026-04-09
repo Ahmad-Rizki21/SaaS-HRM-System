@@ -1025,7 +1025,56 @@
                                 }
                             }
                         },
-                        "url": "{{base_url}}/api/tasks/1/status"
+                    }
+                },
+                {
+                    "name": "Submit Task Activity",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "description",
+                                    "value": "Selesai melakukan perbaikan",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "image_before",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "image_after",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": "{{base_url}}/api/tasks/1/activities"
+                    }
+                },
+                {
+                    "name": "Get Task Activities",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/tasks/1/activities"
                     }
                 }
             ]
@@ -1512,6 +1561,27 @@
                             }
                         ],
                         "url": "{{base_url}}/api/notifications-clear"
+                    }
+                },
+                {
+                    "name": "Update FCM Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"fcm_token\": \"fzjUstu9SXWFkNQbMCQFwL:APA91...\"\n}"
+                        },
+                        "url": "{{base_url}}/api/notifications/update-fcm-token"
                     }
                 }
             ]

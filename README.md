@@ -26,7 +26,7 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 - **Manajemen Kendaraan (Fleet Logging)**: Pencatatan operasional kendaraan efisien dengan alur 2-step (Keberangkatan & Kepulangan), validasi foto odometer, integrasi modal SOP & SK interaktif, serta notifikasi real-time ke Admin/HR saat kendaraan keluar/masuk.
 - **Portofolio Manager (Mobile)**: Dashboard persetujuan terpadu bagi Manager untuk menyetujui Cuti, Lembur, Reimbursement, dan Log Kendaraan secara mobile.
 - **Performance & Pagination**: Penanganan data skala besar dengan pagination di seluruh API dan proteksi error frontend (Array.isArray).
-- **Manajemen Tugas (Tasks)**: Pembagian tugas ke karyawan melalui dashboard admin/mobile.
+- **Manajemen Tugas (Tasks) & Evidence**: Pembagian tugas ke karyawan melalui dashboard admin/mobile, lengkap dengan fitur pelaporan aktivitas (foto Sebelum & Sesudah) serta verifikasi bukti kerja secara real-time.
 - **Slip Gaji (Salary)**: Akses slip gaji digital bulanan secara aman.
 - **Komunikasi & Pengumuman**: Broadcast pengumuman melalui Dashboard (Kotak Pesan) dan Email Premium (HTML).
 - **Notifikasi Real-time & WebSocket**: Menggunakan native Laravel Reverb dengan notifikasi audio pintar di Web Dashboard.
@@ -50,7 +50,7 @@ SaaS/
 │   └── src/components/     # UI Components (Modern Design)
 ├── mobile/                 # Aplikasi Karyawan (Flutter & Dart)
 │   ├── lib/api/            # Integrasi Mobile-to-Backend
-│   └── lib/screens/        # UI/UX Mobile (Attendance, Notifications, dsb)
+│   └── lib/screens/        # UI/UX Mobile Modern (Inter Font, Natural Theme)
 └── postman/                # Alat bantu testing (collection.json)
 ```
 
