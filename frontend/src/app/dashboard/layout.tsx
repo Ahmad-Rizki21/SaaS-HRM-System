@@ -599,12 +599,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     <div className="dash-sidebar-brand">
       <Image
         src="/logo.png"
-        alt="Narwasthu Group"
-        width={32}
-        height={24}
+        alt="On Time HRMS"
+        width={56}
+        height={42}
         className="dash-sidebar-logo"
       />
-      <span className="dash-sidebar-title">HRMS Narwasthu</span>
+      <span className="dash-sidebar-title">On Time HRMS</span>
     </div>
   );
 
@@ -651,12 +651,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <div className="dash-mobile-brand">
             <Image
               src="/logo.png"
-              alt="Narwasthu Group"
-              width={24}
-              height={18}
+              alt="On Time HRMS"
+              width={42}
+              height={32}
               className="dash-sidebar-logo"
             />
-            <span className="dash-sidebar-title">HRMS Narwasthu</span>
+            <span className="dash-sidebar-title">On Time HRMS</span>
           </div>
         </header>
 

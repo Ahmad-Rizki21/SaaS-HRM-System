@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "HRMS Narwasthu Group",
-  description: "Human Resource Management System - Narwasthu Group",
+  title: "On Time HRMS (OT)",
+  description: "Advanced Human Resource Management System - Efficiency in Time",
 };
 
 export default function RootLayout({

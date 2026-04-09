@@ -133,7 +133,7 @@ export default function ReimbursementReportsPage() {
     doc.setFontSize(18);
     doc.setTextColor(139, 0, 0); // #8B0000
     doc.setFont("helvetica", "bold");
-    doc.text("NARWASTHU GROUP", 45, 20);
+    doc.text("ON TIME HRMS", 45, 20);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -192,7 +192,7 @@ export default function ReimbursementReportsPage() {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setTextColor(150);
-        doc.text(`Halaman ${i} dari ${pageCount} | HRM Narwasthu System`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: "center" });
+        doc.text(`Halaman ${i} dari ${pageCount} | On Time HRMS System`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: "center" });
     }
 
     doc.save(`Laporan_Reimbursement_${new Date().getTime()}.pdf`);
