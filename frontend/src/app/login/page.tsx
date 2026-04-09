@@ -24,6 +24,8 @@ export default function LoginPage() {
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   
+  const [selectedFromSuggestion, setSelectedFromSuggestion] = useState(false);
+  
   const companyInputRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -43,9 +45,12 @@ export default function LoginPage() {
   // Debounced search for companies
   useEffect(() => {
     const fetchCompanies = async () => {
-      if (companyName.trim().length < 2) {
-        setSuggestions([]);
-        setShowSuggestions(false);
+      if (companyName.trim().length < 2 || selectedFromSuggestion) {
+        if (!selectedFromSuggestion) {
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+        setSelectedFromSuggestion(false); // Reset for next typing
         return;
       }
 
@@ -68,8 +73,10 @@ export default function LoginPage() {
   }, [companyName]);
 
   const handleSelectSuggestion = (name: string) => {
+    setSelectedFromSuggestion(true);
     setCompanyName(name);
     setSuggestions([]);
+    setShowSuggestions(false);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
