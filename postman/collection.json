@@ -36,7 +36,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"email\": \"superadmin@example.com\",\n    \"password\": \"password\"\n}",
+                            "raw": "{\n    \"email\": \"superadmin@example.com\",\n    \"password\": \"password\",\n    \"company_name\": \"Narwasthu Artha Tama\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
