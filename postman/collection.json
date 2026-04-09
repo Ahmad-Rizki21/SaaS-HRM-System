@@ -1025,6 +1025,7 @@
                                 }
                             }
                         },
+                        "url": "{{base_url}}/api/tasks/1/status"
                     }
                 },
                 {
