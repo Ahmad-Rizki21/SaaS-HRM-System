@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Traits\Notifiable;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\LeaveNotification;
+use Carbon\Carbon;
 
 class LeaveController extends Controller
 {
@@ -18,12 +19,13 @@ class LeaveController extends Controller
 
         $user = $request->user();
         
-        if ($user->is_manager) {
-            if ($user->company_id && !$user->canAccessAllCompanies()) {
-                $query->where('company_id', $user->company_id);
-            }
+        if ($user->role_id === 1) {
+            // Master Admin sees all
+        } else if ($user->is_manager) {
+            $query->where('company_id', $user->company_id);
         } else {
-            $query->where('user_id', $user->id);
+            $query->where('user_id', $user->id)
+                  ->where('company_id', $user->company_id);
         }
 
         $leaves = $query->orderBy('id', 'desc')->paginate(10);
@@ -34,6 +36,28 @@ class LeaveController extends Controller
             'data' => $leaves,
             'leave_balance' => $user->leave_balance
         ]);
+    }
+
+    public function calendar(Request $request)
+    {
+        $query = Leave::with('user')->where('status', 'approved');
+
+        if ($request->user()->company_id && !$request->user()->canAccessAllCompanies()) {
+            $query->where('company_id', $request->user()->company_id);
+        }
+
+        if ($request->month && $request->year) {
+            $start = Carbon::create($request->year, $request->month, 1)->startOfMonth();
+            $end = Carbon::create($request->year, $request->month, 1)->endOfMonth();
+            
+            $query->where(function($q) use ($start, $end) {
+                $q->whereBetween('start_date', [$start, $end])
+                  ->orWhereBetween('end_date', [$start, $end]);
+            });
+        }
+
+        $leaves = $query->get();
+        return $this->successResponse($leaves, 'Data kalender cuti berhasil diambil.');
     }
 
     public function store(Request $request)
@@ -117,8 +141,12 @@ class LeaveController extends Controller
 
     public function approve(Request $request, $id)
     {
-        abort_if(!$request->user()->hasPermission('approve-leaves'), 403, 'Akses ditolak.');
-        $leave = Leave::findOrFail($id);
+        $user = $request->user();
+        $leave = Leave::where(function($q) use ($user) {
+            if ($user->role_id !== 1) {
+                $q->where('company_id', $user->company_id);
+            }
+        })->findOrFail($id);
         
         $leave->update([
             'status' => 'approved',
@@ -188,9 +216,14 @@ class LeaveController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $leave = Leave::findOrFail($id);
+        $user = $request->user();
+        $leave = Leave::where(function($q) use ($user) {
+            if ($user->role_id !== 1) {
+                $q->where('company_id', $user->company_id);
+            }
+        })->findOrFail($id);
 
-        if ($leave->status !== 'pending') {
+        if ($leave->status !== 'pending' && $user->role_id !== 1) {
             return $this->errorResponse('Cuti yang sudah diproses tidak bisa dihapus.', 403);
         }
 

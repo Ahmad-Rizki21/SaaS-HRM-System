@@ -81,7 +81,7 @@ class AttendanceController extends Controller
                 $status = 'late';
             }
         } else {
-            $status = 'no_schedule';
+            $status = $user->attendance_type === 'shift' ? 'no_schedule' : 'office_hour';
         }
 
         // --- Geofencing Check ---
@@ -246,16 +246,13 @@ class AttendanceController extends Controller
 
         $user = $request->user();
         
-        // Logic for Data Isolation:
-        // 1. Managers/Admin see all company data by default.
-        // 2. Staff (non-manager) only sees their own data.
-        
-        if ($user->is_manager) {
-            if ($user->company_id && !$user->canAccessAllCompanies()) {
-                $query->where('company_id', $user->company_id);
-            }
+        if ($user->canAccessAllCompanies()) {
+            // Master Admin sees all
+        } else if ($user->is_manager) {
+            $query->where('company_id', $user->company_id);
         } else {
-            $query->where('user_id', $user->id);
+            $query->where('user_id', $user->id)
+                  ->where('company_id', $user->company_id);
         }
 
         if ($request->start_date && $request->end_date) {
@@ -290,6 +287,67 @@ class AttendanceController extends Controller
         return $this->successResponse($attendances, 'Data heatmap absensi hari ini berhasil diambil.');
     }
 
+    public function suspiciousRecords(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->is_manager && !str_contains(strtolower($user->role->name), 'admin')) {
+             return $this->errorResponse('Akses ditolak.', 403);
+        }
+
+        $query = Attendance::with('user')->where('company_id', $user->company_id);
+
+        // Filters
+        if ($request->user_id) {
+            $query->where('user_id', $request->user_id);
+        }
+        
+        if ($request->start_date && $request->end_date) {
+            $query->whereDate('check_in', '>=', $request->start_date)
+                  ->whereDate('check_in', '<=', $request->end_date);
+        }
+
+        // Show ALL for now or just the marked ones?
+        // Usually, the report shows ALL with a status of "Suspicious" if any flag caught it.
+        // For the sake of this task, I'll return records where is_suspicious is true
+        // OR simply return all with suspicious reason.
+        
+        $records = $query->where('is_suspicious', true)
+                         ->orderBy('id', 'desc')
+                         ->paginate(20);
+
+        return $this->successResponse($records, 'Data kecurigaan berhasil diambil.');
+    }
+
+    public function summaryRecords(Request $request)
+    {
+        $user = $request->user();
+        $startDate = $request->start_date ?? Carbon::now()->startOfMonth()->toDateString();
+        $endDate = $request->end_date ?? Carbon::now()->toDateString();
+
+        $query = User::where('company_id', $user->company_id);
+        
+        if ($request->user_id) {
+            $query->where('id', $request->user_id);
+        }
+
+        $summary = $query->with(['attendances' => function($q) use ($startDate, $endDate) {
+            $q->whereBetween('check_in', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        }])->get()->map(function($emp) {
+            $atts = $emp->attendances;
+            return [
+                'user_id' => $emp->id,
+                'name' => $emp->name,
+                'total_present' => $atts->count(),
+                'total_late' => $atts->where('status', 'late')->count(),
+                'total_on_time' => $atts->where('status', 'present')->count(),
+                'total_suspicious' => $atts->where('is_suspicious', true)->count(),
+                // Placeholder for alphabetic/absent logic if needed
+            ];
+        });
+
+        return $this->successResponse($summary, 'Ringkasan kehadiran berhasil diambil.');
+    }
+
     public function export(Request $request)
     {
         $user = $request->user();
@@ -304,6 +362,34 @@ class AttendanceController extends Controller
             ), 
             $fileName
         );
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = $request->user();
+        $attendance = Attendance::where('company_id', $user->company_id)->findOrFail($id);
+
+        $request->validate([
+            'check_in' => 'nullable|date',
+            'check_out' => 'nullable|date',
+            'status' => 'nullable|string',
+        ]);
+
+        if ($request->has('check_in')) {
+            $attendance->check_in = $request->check_in;
+        }
+        
+        if ($request->has('check_out')) {
+            $attendance->check_out = $request->check_out;
+        }
+
+        if ($request->has('status')) {
+            $attendance->status = $request->status;
+        }
+
+        $attendance->save();
+
+        return $this->successResponse($attendance, 'Data absensi berhasil dikoreksi.');
     }
 
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)

@@ -63,7 +63,9 @@ class AttendanceExport implements FromQuery, WithMapping, WithHeadings
         } elseif ($statusIndo === 'late') {
             $statusIndo = 'Terlambat';
         } elseif ($statusIndo === 'no_schedule') {
-            $statusIndo = 'Tidak Ada Jadwal';
+            $statusIndo = 'Luar Jadwal';
+        } elseif ($statusIndo === 'office_hour') {
+            $statusIndo = 'Office Hour';
         } else {
             $statusIndo = ucfirst($statusIndo);
         }

@@ -59,16 +59,20 @@ class _LeaveScreenState extends State<LeaveScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      backgroundColor: Colors.transparent, // Ensure no default tint
       builder: (ctx) => StatefulBuilder(
         builder: (stContext, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          ),
           padding: EdgeInsets.only(bottom: MediaQuery.of(stContext).viewInsets.bottom, left: 25, right: 25, top: 25),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Pengajuan Cuti", style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text("Pengajuan Cuti", style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
                 
                 DropdownButtonFormField<String>(
@@ -136,7 +140,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                 ),
                 const SizedBox(height: 15),
                 
-                Text("Tanda Tangan:", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text("Tanda Tangan:", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14)),
                 const SizedBox(height: 10),
                 Container(
                   decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(10)),
@@ -206,7 +210,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Cuti Karyawan", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text("Cuti Karyawan", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -250,7 +254,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
                             const SizedBox(height: 5),
                             Text(
                               "$_leaveBalance Hari",
-                              style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                              style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),

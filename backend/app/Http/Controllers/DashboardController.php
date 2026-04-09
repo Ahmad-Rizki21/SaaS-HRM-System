@@ -23,37 +23,82 @@ class DashboardController extends Controller
         $companyId = $user->company_id;
         
         // --- 1. Top Statistics ---
-        $totalEmployees = User::where('company_id', $companyId)->count();
+        $isStaff = in_array($user->role?->name, ['Staff Karyawan', 'Karyawan', 'Staff']);
         
-        $presentToday = Attendance::where('company_id', $companyId)
-            ->whereDate('check_in', $today)
-            ->count();
+        if ($user->role_id === 1) {
+            // Master Admin View: System-wide Global Aggregate
+            $totalEmployees = User::count();
+            $presentToday = Attendance::whereDate('check_in', $today)->count();
+            $lateToday = Attendance::whereDate('check_in', $today)->where('status', 'late')->count();
+            $onLeaveToday = Leave::where('status', 'approved')->whereDate('start_date', '<=', $today)->whereDate('end_date', '>=', $today)->count();
             
-        $lateToday = Attendance::where('company_id', $companyId)
-            ->whereDate('check_in', $today)
-            ->where('status', 'late')
-            ->count();
+            $summary = [
+                'total_employees' => $totalEmployees,
+                'present_today' => $presentToday,
+                'late_today' => $lateToday,
+                'on_leave_today' => $onLeaveToday,
+                'absent_today' => max($totalEmployees - $presentToday - $onLeaveToday, 0),
+            ];
+        } else if ($isStaff) {
+            // Staff view: Personal stats
+            $totalPresent = Attendance::where('user_id', $user->id)
+                ->where('status', 'present')
+                ->whereMonth('check_in', Carbon::now()->month)
+                ->count();
             
-        $onLeaveToday = Leave::where('company_id', $companyId)
-            ->where('status', 'approved')
-            ->whereDate('start_date', '<=', $today)
-            ->whereDate('end_date', '>=', $today)
-            ->count();
+            $onLeaveToday = Leave::where('user_id', $user->id)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '<=', $today)
+                ->whereDate('end_date', '>=', $today)
+                ->count();
+
+            $summary = [
+                'total_employees' => User::where('company_id', $companyId)->count(),
+                'present_today' => $totalPresent,
+                'late_today' => Attendance::where('user_id', $user->id)->whereDate('check_in', $today)->where('status', 'late')->count(),
+                'on_leave_today' => $onLeaveToday,
+                'absent_today' => 0,
+            ];
+        } else {
+            // Company Admin view: Company-specific stats
+            $totalEmployees = User::where('company_id', $companyId)->count();
+            $presentToday = Attendance::where('company_id', $companyId)->whereDate('check_in', $today)->count();
+            $lateToday = Attendance::where('company_id', $companyId)->whereDate('check_in', $today)->where('status', 'late')->count();
+            $onLeaveToday = Leave::where('company_id', $companyId)->where('status', 'approved')->whereDate('start_date', '<=', $today)->whereDate('end_date', '>=', $today)->count();
             
-        $absentToday = max($totalEmployees - $presentToday - $onLeaveToday, 0);
+            $summary = [
+                'total_employees' => $totalEmployees,
+                'present_today' => $presentToday,
+                'late_today' => $lateToday,
+                'on_leave_today' => $onLeaveToday,
+                'absent_today' => max($totalEmployees - $presentToday - $onLeaveToday, 0),
+            ];
+        }
 
         // --- 2. Pending Approvals ---
-        $pendingLeaves = Leave::where('company_id', $companyId)->where('status', 'pending')->count();
-        $pendingOvertimes = Overtime::where('company_id', $companyId)->where('status', 'pending')->count();
-        $pendingReimbursements = Reimbursement::where('company_id', $companyId)->where('status', 'pending')->count();
+        if ($isStaff) {
+            $pendingLeaves = Leave::where('user_id', $user->id)->where('status', 'pending')->count();
+            $pendingOvertimes = Overtime::where('user_id', $user->id)->where('status', 'pending')->count();
+            $pendingReimbursements = Reimbursement::where('user_id', $user->id)->where('status', 'pending')->count();
+        } else {
+            $pendingLeaves = Leave::where('company_id', $companyId)->where('status', 'pending')->count();
+            $pendingOvertimes = Overtime::where('company_id', $companyId)->where('status', 'pending')->count();
+            $pendingReimbursements = Reimbursement::where('company_id', $companyId)->where('status', 'pending')->count();
+        }
 
         // --- 3. Attendance Trends (Last 7 Days) ---
         $last7Days = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i)->toDateString();
-            $count = Attendance::where('company_id', $companyId)
-                ->whereDate('check_in', $date)
-                ->count();
+            $query = Attendance::whereDate('check_in', $date);
+            
+            if ($isStaff) {
+                $query->where('user_id', $user->id);
+            } else {
+                $query->where('company_id', $companyId);
+            }
+            
+            $count = $query->count();
             $last7Days[] = [
                 'date' => $date,
                 'day' => Carbon::parse($date)->format('D'),
@@ -92,30 +137,36 @@ class DashboardController extends Controller
             });
 
         // --- 6. Employee Distribution by Role ---
-        $roleDistribution = DB::table('users')
-            ->where('users.company_id', $companyId)
-            ->join('roles', 'users.role_id', '=', 'roles.id')
-            ->select('roles.name as role', DB::raw('count(*) as count'))
-            ->groupBy('roles.name')
-            ->get();
+        $roleDistribution = [];
+        if (!$isStaff) {
+            $roleDistribution = DB::table('users')
+                ->where('users.company_id', $companyId)
+                ->join('roles', 'users.role_id', '=', 'roles.id')
+                ->select('roles.name as role', DB::raw('count(*) as count'))
+                ->groupBy('roles.name')
+                ->get();
+        }
 
         // --- 7. Today's Attendance List ---
-        $todayAttendance = Attendance::where('company_id', $companyId)
-            ->whereDate('check_in', $today)
-            ->with('user:id,role_id,name,nik,profile_photo_path')
-            ->latest('check_in')
-            ->limit(10)
-            ->get()
-            ->map(function ($attendance) {
-                return [
-                    'id' => $attendance->id,
-                    'user_name' => $attendance->user->name,
-                    'nik' => $attendance->user->nik,
-                    'check_in' => $attendance->check_in ? Carbon::parse($attendance->check_in)->format('H:i') : '-',
-                    'status' => $attendance->status,
-                    'photo_url' => $attendance->user->profile_photo_url
-                ];
-            });
+        $todayAttendance = [];
+        if (!$isStaff) {
+            $todayAttendance = Attendance::where('company_id', $companyId)
+                ->whereDate('check_in', $today)
+                ->with('user:id,role_id,name,nik,profile_photo_path')
+                ->latest('check_in')
+                ->limit(10)
+                ->get()
+                ->map(function ($attendance) {
+                    return [
+                        'id' => $attendance->id,
+                        'user_name' => $attendance->user->name,
+                        'nik' => $attendance->user->nik,
+                        'check_in' => $attendance->check_in ? Carbon::parse($attendance->check_in)->format('H:i') : '-',
+                        'status' => $attendance->status,
+                        'photo_url' => $attendance->user->profile_photo_url
+                    ];
+                });
+        }
 
         // --- 8. Monthly Attendance Stats ---
         $monthStart = Carbon::now()->startOfMonth();
@@ -124,19 +175,25 @@ class DashboardController extends Controller
             return !$date->isWeekend();
         }, $monthEnd);
 
-        $monthlyAttendance = Attendance::where('company_id', $companyId)
-            ->whereBetween('check_in', [$monthStart, $monthEnd]);
-
-        $totalPresentMonth = (clone $monthlyAttendance)->distinct('user_id')->count('user_id');
-        $totalLateMonth = (clone $monthlyAttendance)->where('status', 'late')->count();
+        $monthlyAttendanceQuery = Attendance::whereBetween('check_in', [$monthStart, $monthEnd]);
+        
+        if ($isStaff) {
+            $monthlyAttendanceQuery->where('user_id', $user->id);
+            $totalPresentMonth = (clone $monthlyAttendanceQuery)->count();
+            $totalLateMonth = (clone $monthlyAttendanceQuery)->where('status', 'late')->count();
+        } else {
+            $monthlyAttendanceQuery->where('company_id', $companyId);
+            $totalPresentMonth = (clone $monthlyAttendanceQuery)->distinct('user_id')->count('user_id');
+            $totalLateMonth = (clone $monthlyAttendanceQuery)->where('status', 'late')->count();
+        }
         
         // Calculate Total Hours (Simple calculation for demo)
-        $totalHours = (clone $monthlyAttendance)->sum(DB::raw('TIMESTAMPDIFF(HOUR, check_in, check_out)'));
+        $totalHours = (clone $monthlyAttendanceQuery)->sum(DB::raw('TIMESTAMPDIFF(HOUR, check_in, check_out)'));
 
         $attendanceStats = [
-            'percentage' => $totalEmployees > 0 ? round(($totalPresentMonth / ($totalEmployees * $totalWorkDays ?: 1)) * 100, 1) : 0,
+            'percentage' => $isStaff ? round(($totalPresentMonth / ($totalWorkDays ?: 1)) * 100, 1) : (User::where('company_id', $companyId)->count() > 0 ? round(($totalPresentMonth / (User::where('company_id', $companyId)->count() * $totalWorkDays ?: 1)) * 100, 1) : 0),
             'late_count' => $totalLateMonth,
-            'total_hours' => $totalHours,
+            'total_hours' => round($totalHours, 1),
             'work_days' => $totalWorkDays
         ];
 
@@ -159,13 +216,7 @@ class DashboardController extends Controller
         $calendarEvents = $calendarHolidays->concat($calendarLeaves);
 
         return $this->successResponse([
-            'summary' => [
-                'total_employees' => $totalEmployees,
-                'present_today' => $presentToday,
-                'late_today' => $lateToday,
-                'on_leave_today' => $onLeaveToday,
-                'absent_today' => $absentToday,
-            ],
+            'summary' => $summary,
             'pending_approvals' => [
                 'leaves' => $pendingLeaves,
                 'overtimes' => $pendingOvertimes,

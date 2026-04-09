@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../api/api_service.dart';
 import 'notification_service.dart';
 
 class FcmService {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  static final StreamController<RemoteMessage> _messageStreamController = StreamController<RemoteMessage>.broadcast();
+  static Stream<RemoteMessage> get onMessageReceived => _messageStreamController.stream;
 
   static Future<void> init() async {
     // Request permissions for iOS and Android 13+
@@ -34,6 +37,9 @@ class FcmService {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print("Got a message whilst in the foreground!");
       if (message.notification != null) {
+        // Broadcast to listeners (UI)
+        _messageStreamController.add(message);
+
         // Use existing NotificationService to show the banner
         NotificationService().showNotification(
           message.hashCode,

@@ -70,7 +70,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
                   children: [
                     Text(
                       "Ajukan Klaim",
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -331,7 +331,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
       appBar: AppBar(
         title: Text(
           "Klaim Biaya",
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,

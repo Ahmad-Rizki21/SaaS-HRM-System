@@ -10,6 +10,7 @@ interface LanguageContextType {
    * Translate key with optional default value
    */
   t: (key: TranslationKey | string, defaultValue?: string) => string;
+  mounted: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -18,11 +19,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Initialize from local storage or default to 'id'
   const [language, setLanguageState] = useState<Language>("id");
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     const savedLanguage = localStorage.getItem("app_lang") as Language;
     if (savedLanguage && (savedLanguage === "id" || savedLanguage === "en")) {
       setLanguageState(savedLanguage);
     }
+    setMounted(true);
   }, []);
 
   const setLanguage = (lang: Language) => {
@@ -36,7 +40,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, mounted }}>
       {children}
     </LanguageContext.Provider>
   );

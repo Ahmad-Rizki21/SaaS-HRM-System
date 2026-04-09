@@ -270,7 +270,15 @@ export default function LeavesPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+            <div className="p-4 bg-orange-50 border-b border-orange-100 flex items-center justify-between">
+               <div className="flex items-center gap-2 text-orange-700">
+                  <Plane size={16} />
+                  <span className="text-xs font-bold uppercase tracking-wider">Sisa Cuti Tahunan Anda</span>
+               </div>
+               <span className="text-lg font-black text-orange-800">{user?.leave_balance ?? 0} Hari</span>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">Tipe Cuti</label>
                 <select 

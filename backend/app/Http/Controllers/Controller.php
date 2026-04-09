@@ -35,4 +35,41 @@ abstract class Controller
             'model_id' => $model ? $model->id : null,
         ]);
     }
+
+    protected function sendNotification($userId, $title, $message, $type = 'general', $link = null, $category = 'GENERAL')
+    {
+        $notification = \App\Models\Notification::create([
+            'user_id' => $userId,
+            'title' => $title,
+            'message' => $message,
+            'type' => $type,
+            'category' => $category,
+            'link' => $link,
+            'is_read' => false
+        ]);
+
+        // Send FCM Push Notification
+        try {
+            $user = \App\Models\User::find($userId);
+            if ($user && $user->fcm_token) {
+                \App\Services\FCMService::sendNotification($user, $title, $message, [
+                    'type' => $type,
+                    'category' => $category,
+                    'link' => $link,
+                    'notification_id' => (string) $notification->id
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("FCM failed in Controller: " . $e->getMessage());
+        }
+
+        // Real-time broadcast for UI update
+        try {
+            event(new \App\Events\NotificationCreated($notification));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Broadcast failed in Controller: " . $e->getMessage());
+        }
+
+        return $notification;
+    }
 }

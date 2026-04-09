@@ -26,14 +26,14 @@ class ScheduleController extends Controller
 
         if ($request->date) {
             $query->where('date', $request->date);
+        } elseif ($request->start_date && $request->end_date) {
+            $query->whereBetween('date', [$request->start_date, $request->end_date]);
         } elseif ($request->month && $request->year) {
             $query->whereMonth('date', $request->month)
                   ->whereYear('date', $request->year);
         } else {
-            // Default: Show only current month to prevent loading thousands of records
-            // Remove month filter if user_id is specified? Or keep it?
-            // Usually we want the future/current schedules of that user.
-            $query->whereYear('date', '>=', now()->year);
+            // Default: Show only from current year onwards
+             $query->whereYear('date', '>=', now()->year);
         }
 
         return $this->successResponse($query->paginate($request->per_page ?? 10), 'Daftar jadwal berhasil diambil.');
@@ -66,5 +66,20 @@ class ScheduleController extends Controller
         $schedule = Schedule::findOrFail($id);
         $schedule->delete();
         return $this->successResponse(null, 'Jadwal berhasil dihapus.');
+    }
+    public function export(Request $request)
+    {
+        $user = $request->user();
+        $fileName = 'schedule_report_' . now()->format('Y_m_d_His') . '.xlsx';
+        
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\ScheduleExport(
+                $user->company_id, 
+                $request->user_id, 
+                $request->start_date, 
+                $request->end_date
+            ), 
+            $fileName
+        );
     }
 }

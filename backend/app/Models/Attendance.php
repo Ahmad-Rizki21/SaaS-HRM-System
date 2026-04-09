@@ -16,7 +16,11 @@ class Attendance extends Model
         'latitude_in', 'longitude_in',
         'latitude_out', 'longitude_out',
         'image_in', 'image_out',
-        'status'
+        'status', 'is_suspicious', 'suspicious_reason'
+    ];
+
+    protected $casts = [
+        'is_suspicious' => 'boolean'
     ];
 
     protected $appends = ['date', 'check_in_time', 'check_out_time', 'check_in_location', 'image_in_url', 'image_out_url'];
@@ -24,6 +28,11 @@ class Attendance extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function getDateAttribute()

@@ -85,6 +85,10 @@ export default function DashboardPage() {
   const [viewEmployeeId, setViewEmployeeId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Normal dashboard behavior - no special redirect for admin
+  }, [user]);
+
+  useEffect(() => {
     async function fetchData() {
       try {
         const dashRes = await axiosInstance.get("/dashboard/summary");

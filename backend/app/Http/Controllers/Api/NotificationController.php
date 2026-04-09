@@ -69,6 +69,8 @@ class NotificationController extends Controller
         $user = Auth::user();
         $user->update(['fcm_token' => $request->fcm_token]);
 
+        \Illuminate\Support\Facades\Log::info("FCM Token (NotificationController) updated for User ID: {$user->id}");
+
         return response()->json([
             'status' => 'success',
             'message' => 'FCM Token updated successfully'

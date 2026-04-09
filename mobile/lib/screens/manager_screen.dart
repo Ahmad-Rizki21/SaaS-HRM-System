@@ -275,9 +275,14 @@ class _ManagerScreenState extends State<ManagerScreen> with SingleTickerProvider
           child: ListTile(
             contentPadding: EdgeInsets.all(10),
             leading: CircleAvatar(
-              radius: 25,
-              backgroundImage: sub['photo_url'] != null ? NetworkImage(sub['photo_url']) : null,
-              child: sub['photo_url'] == null ? Text(sub['name'][0]) : null,
+              radius: 14,
+              backgroundColor: primaryColor.withOpacity(0.1),
+              backgroundImage: (sub['photo_url'] != null && sub['photo_url'].toString().isNotEmpty) 
+                  ? NetworkImage(sub['photo_url']) 
+                  : null,
+              child: (sub['photo_url'] == null || sub['photo_url'].toString().isEmpty) 
+                  ? Icon(Icons.person, size: 16, color: primaryColor) 
+                  : null,
             ),
             title: Text(sub['name'], style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
             subtitle: Column(

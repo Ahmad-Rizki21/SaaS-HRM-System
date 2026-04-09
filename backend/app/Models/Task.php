@@ -17,6 +17,8 @@ class Task extends Model
         'priority'
     ];
 
+    protected $appends = ['progress_percentage'];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -25,5 +27,18 @@ class Task extends Model
     public function assigner()
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(TaskActivity::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Get progress percentage based on completed activities
+     */
+    public function getProgressPercentageAttribute()
+    {
+        return TaskActivity::calculateTaskProgress($this->id);
     }
 }

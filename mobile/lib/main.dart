@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/notification_screen.dart';
+import 'screens/task_screen.dart';
 import 'services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
                 '/login': (context) => LoginScreen(),
                 '/dashboard': (context) => DashboardScreen(),
                 '/notifications': (context) => NotificationScreen(),
+                '/tasks': (context) => TaskScreen(),
               },
             );
           },
@@ -70,9 +72,13 @@ class MyApp extends StatelessWidget {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF800000), primary: const Color(0xFF800000)),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF800000), 
+        primary: const Color(0xFF800000),
+        surface: Colors.white,
+      ),
       scaffoldBackgroundColor: const Color(0xFFFBFBFB),
-      textTheme: GoogleFonts.outfitTextTheme(Theme.of(context).textTheme.apply(bodyColor: Colors.black87, displayColor: Colors.black87)),
+      textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme.apply(bodyColor: Colors.black87, displayColor: Colors.black87)),
     );
   }
 
@@ -80,9 +86,13 @@ class MyApp extends StatelessWidget {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF800000), brightness: Brightness.dark, primary: const Color(0xFF800000)),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF800000), 
+        brightness: Brightness.dark, 
+        primary: const Color(0xFF800000),
+      ),
       scaffoldBackgroundColor: const Color(0xFF121212),
-      textTheme: GoogleFonts.outfitTextTheme(Theme.of(context).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white)),
+      textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white)),
     );
   }
 }

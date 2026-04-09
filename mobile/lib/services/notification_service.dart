@@ -47,6 +47,7 @@ class NotificationService {
     );
 
     await _notificationsPlugin.initialize(initializationSettings);
+
     _isInitialized = true;
   }
 
@@ -93,7 +94,7 @@ class NotificationService {
         importance: Importance.max,
         priority: Priority.high,
         playSound: true,
-        sound: RawResourceAndroidNotificationSound('notif_sound'), // File wav di res/raw
+        // sound: RawResourceAndroidNotificationSound('notif_sound'), // Temporarily commented to ensure default works
         showWhen: true,
       );
 

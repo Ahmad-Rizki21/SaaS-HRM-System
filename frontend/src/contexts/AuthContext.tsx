@@ -11,6 +11,8 @@ interface User {
   name: string;
   email: string;
   role_id: number;
+  company_id?: number;
+  leave_balance?: number;
   profile_photo_url?: string;
   is_manager?: boolean;
   role?: {
@@ -40,10 +42,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUser = async () => {
     try {
       const response = await axiosInstance.get("/user");
-      const userData = response.data.data?.user || response.data;
-      setUser(userData);
-      const slugs = userData.role?.permissions?.map((p: any) => p.slug) || [];
-      setPermissions(slugs);
+      // Handle both { data: { user: ... } } and { data: ... }
+      const userData = response.data?.user || response.data?.data?.user || response.data?.data || response.data;
+
+      if (userData) {
+        setUser(userData);
+        const slugs = userData.role?.permissions?.map((p: any) => p.slug) || [];
+        setPermissions(slugs);
+      }
     } catch (e) {
       console.error("Gagal ambil data user", e);
     } finally {
@@ -62,12 +68,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasPermission = (permission?: string) => {
     if (!permission) return true;
-    if (user?.role?.name === "Super Admin") return true;
+    // Bypass for Master Admin (role_id = 1) or Super Admin role
+    if (user?.role_id === 1 || user?.role?.name === 'Super Admin') return true;
     return permissions.includes(permission);
   };
 
   return (
-    <AuthContext.Provider value={{ user, permissions, loading, hasPermission, refreshUser: fetchUser, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      permissions,
+      loading,
+      hasPermission,
+      refreshUser: fetchUser,
+      logout
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -25,11 +25,17 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskActivityController;
 use App\Http\Controllers\ShiftSwapController;
 use App\Http\Controllers\ManagerController;
 use App\Http\Controllers\PerformanceReviewController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\VehicleLogController;
+use App\Http\Controllers\MassLeaveController;
+use App\Http\Controllers\Api\Mobile\MobileDashboardController;
+use App\Http\Controllers\Api\Mobile\MobileAttendanceController;
+use App\Http\Controllers\Api\Mobile\MobileTaskController;
+
 
 // Health Check (Docker)
 Route::get('/health', function () {
@@ -54,6 +60,8 @@ Route::get('/health', function () {
 
 // Auth
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/companies/search', [AuthController::class, 'searchCompanies']);
+Route::get('/verify-email/{token}', [AuthController::class, 'verifyEmail']);
 
 // Broadcast Route
 \Illuminate\Support\Facades\Broadcast::routes(['middleware' => ['auth:sanctum']]);
@@ -66,92 +74,161 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::get('/dashboard/summary', [DashboardController::class, 'index']);
     Route::get('/dashboard/leaderboard', [DashboardController::class, 'leaderboard']);
 
+    // --- MOBILE ROUTES ---
+    Route::group(['prefix' => 'mobile'], function () {
+        // Dashboard
+        Route::get('/dashboard', [MobileDashboardController::class, 'index']);
+        
+        // Attendance
+        Route::get('/attendance/today', [MobileAttendanceController::class, 'today']);
+        Route::get('/attendance/history', [MobileAttendanceController::class, 'history']);
+        Route::post('/attendance/check-in', [MobileAttendanceController::class, 'checkIn']);
+        Route::post('/attendance/check-out', [MobileAttendanceController::class, 'checkOut']);
+
+        // Tasks
+        Route::get('/tasks', [MobileTaskController::class, 'index']);
+        Route::get('/tasks/{id}', [MobileTaskController::class, 'show']);
+    });
+
     // Company Settings
     Route::get('/company', [CompanyController::class, 'show']);
     Route::post('/company/update', [CompanyController::class, 'update']);
 
-    // Shifts
-    Route::get('/shifts', [ShiftController::class, 'index']);
-    Route::post('/shifts', [ShiftController::class, 'store']);
-    Route::put('/shifts/{id}', [ShiftController::class, 'update']);
-    Route::delete('/shifts/{id}', [ShiftController::class, 'destroy']);
+    // Shifts (Operational)
+    Route::middleware('permission:manage-shifts')->group(function () {
+        Route::get('/shifts', [ShiftController::class, 'index']);
+        Route::post('/shifts', [ShiftController::class, 'store']);
+        Route::put('/shifts/{id}', [ShiftController::class, 'update']);
+        Route::delete('/shifts/{id}', [ShiftController::class, 'destroy']);
+    });
 
-    // Holidays
-    Route::get('/holidays', [HolidayController::class, 'index']);
-    Route::post('/holidays', [HolidayController::class, 'store']);
-    Route::put('/holidays/{id}', [HolidayController::class, 'update']);
-    Route::delete('/holidays/{id}', [HolidayController::class, 'destroy']);
+    // Holidays (Operational)
+    Route::middleware('permission:manage-holidays')->group(function () {
+        Route::get('/holidays', [HolidayController::class, 'index']);
+        Route::post('/holidays', [HolidayController::class, 'store']);
+        Route::put('/holidays/{id}', [HolidayController::class, 'update']);
+        Route::delete('/holidays/{id}', [HolidayController::class, 'destroy']);
+    });
 
-    // Schedules
-    Route::get('/schedules', [ScheduleController::class, 'index']);
-    Route::post('/schedules', [ScheduleController::class, 'store']);
-    Route::delete('/schedules/{id}', [ScheduleController::class, 'destroy']);
+    // Schedules (Operational)
+    Route::middleware('permission:manage-schedules')->group(function () {
+        Route::get('/schedules', [ScheduleController::class, 'index']);
+        Route::post('/schedules', [ScheduleController::class, 'store']);
+        Route::delete('/schedules/{id}', [ScheduleController::class, 'destroy']);
+    });
 
     // Attendance
-    Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
-    Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
-    Route::get('/attendance/today', [AttendanceController::class, 'today']);
-    Route::get('/attendance/history', [AttendanceController::class, 'history']);
-    Route::get('/attendance/heatmap', [AttendanceController::class, 'heatmap']);
-    Route::get('/attendance/export', [AttendanceController::class, 'export']);
+    Route::middleware('permission:apply-attendances')->group(function () {
+        Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
+        Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
+        Route::get('/attendance/today', [AttendanceController::class, 'today']);
+    });
+
+    Route::middleware('permission:view-attendances')->group(function () {
+        Route::get('/attendance/history', [AttendanceController::class, 'history']);
+        Route::get('/attendance/heatmap', [AttendanceController::class, 'heatmap']);
+    });
+
+    Route::middleware('permission:view-reports')->group(function () {
+        Route::get('/attendance/suspicious', [AttendanceController::class, 'suspiciousRecords']);
+        Route::get('/attendance/summary', [AttendanceController::class, 'summaryRecords']);
+    });
+
+    Route::middleware('permission:export-attendance')->get('/attendance/export', [AttendanceController::class, 'export']);
 
     // Attendance Corrections (Koreksi Absen)
-    Route::get('/attendance-corrections', [\App\Http\Controllers\AttendanceCorrectionController::class, 'index']);
-    Route::post('/attendance-corrections', [\App\Http\Controllers\AttendanceCorrectionController::class, 'store']);
-    Route::post('/attendance-corrections/{id}/approve', [\App\Http\Controllers\AttendanceCorrectionController::class, 'approve']);
-    Route::post('/attendance-corrections/{id}/reject', [\App\Http\Controllers\AttendanceCorrectionController::class, 'reject']);
+    Route::middleware('permission:view-attendances')->get('/attendance-corrections', [\App\Http\Controllers\AttendanceCorrectionController::class, 'index']);
+    Route::middleware('permission:apply-attendances')->post('/attendance-corrections', [\App\Http\Controllers\AttendanceCorrectionController::class, 'store']);
+    Route::middleware('permission:manage-attendance-corrections')->group(function () {
+        Route::put('/attendance/{id}', [AttendanceController::class, 'update']);
+        Route::post('/attendance-corrections/{id}/approve', [\App\Http\Controllers\AttendanceCorrectionController::class, 'approve']);
+        Route::post('/attendance-corrections/{id}/reject', [\App\Http\Controllers\AttendanceCorrectionController::class, 'reject']);
+    });
 
     // Leave
-    Route::get('/leave', [LeaveController::class, 'index']);
-    Route::post('/leave', [LeaveController::class, 'store']);
-    Route::post('/leave/{id}/approve', [LeaveController::class, 'approve']);
-    Route::post('/leave/{id}/reject', [LeaveController::class, 'reject']);
-    Route::delete('/leave/{id}', [LeaveController::class, 'destroy']);
+    Route::middleware('permission:view-leaves')->group(function () {
+        Route::get('/leave', [LeaveController::class, 'index']);
+        Route::get('/leave/calendar', [LeaveController::class, 'calendar']);
+        Route::delete('/leave/{id}', [LeaveController::class, 'destroy']);
+    });
+    Route::middleware('permission:apply-leaves')->post('/leave', [LeaveController::class, 'store']);
+    Route::middleware('permission:approve-leaves')->group(function () {
+        Route::post('/leave/{id}/approve', [LeaveController::class, 'approve']);
+        Route::post('/leave/{id}/reject', [LeaveController::class, 'reject']);
+    });
 
     // Overtimes
-    Route::get('/overtimes/export', [\App\Http\Controllers\OvertimeController::class, 'export']);
-    Route::get('/overtimes', [OvertimeController::class, 'index']);
-    Route::post('/overtimes', [OvertimeController::class, 'store']);
-    Route::post('/overtimes/{id}/approve', [OvertimeController::class, 'approve']);
-    Route::post('/overtimes/{id}/reject', [OvertimeController::class, 'reject']);
-    Route::delete('/overtimes/{id}', [OvertimeController::class, 'destroy']);
+    Route::middleware('permission:view-overtimes')->group(function () {
+        Route::get('/overtimes/export', [\App\Http\Controllers\OvertimeController::class, 'export']);
+        Route::get('/overtimes', [OvertimeController::class, 'index']);
+        Route::delete('/overtimes/{id}', [OvertimeController::class, 'destroy']);
+    });
+    Route::middleware('permission:apply-overtimes')->post('/overtimes', [OvertimeController::class, 'store']);
+    Route::middleware('permission:approve-overtimes')->group(function () {
+        Route::post('/overtimes/{id}/approve', [OvertimeController::class, 'approve']);
+        Route::post('/overtimes/{id}/reject', [OvertimeController::class, 'reject']);
+    });
 
     // Reimbursements
-    Route::get('/reimbursements', [ReimbursementController::class, 'index']);
-    Route::post('/reimbursements', [ReimbursementController::class, 'store']);
-    Route::post('/reimbursements/{id}/approve', [ReimbursementController::class, 'approve']);
-    Route::post('/reimbursements/{id}/reject', [ReimbursementController::class, 'reject']);
-    Route::delete('/reimbursements/{id}', [ReimbursementController::class, 'destroy']);
+    Route::middleware('permission:view-reimbursements')->group(function () {
+        Route::get('/reimbursements', [ReimbursementController::class, 'index']);
+        Route::delete('/reimbursements/{id}', [ReimbursementController::class, 'destroy']);
+    });
+    Route::middleware('permission:apply-reimbursements')->post('/reimbursements', [ReimbursementController::class, 'store']);
+    Route::middleware('permission:approve-reimbursements')->group(function () {
+        Route::post('/reimbursements/{id}/approve', [ReimbursementController::class, 'approve']);
+        Route::post('/reimbursements/{id}/reject', [ReimbursementController::class, 'reject']);
+    });
 
     // Announcements
-    Route::get('/announcements', [AnnouncementController::class, 'index']);
-    Route::post('/announcements', [AnnouncementController::class, 'store']);
-    Route::put('/announcements/{id}', [AnnouncementController::class, 'update']);
-    Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
+    Route::middleware('permission:view-announcements')->get('/announcements', [AnnouncementController::class, 'index']);
+    Route::middleware('permission:manage-announcements')->group(function () {
+        Route::post('/announcements', [AnnouncementController::class, 'store']);
+        Route::put('/announcements/{id}', [AnnouncementController::class, 'update']);
+        Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
+    });
 
     // Activity Logs
-    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+    Route::middleware('permission:view-activity-logs')->get('/activity-logs', [ActivityLogController::class, 'index']);
 
     // Employees (Manage Employee)
-    Route::get('/employees', [EmployeeController::class, 'index']);
-    Route::post('/employees', [EmployeeController::class, 'store']);
-    Route::post('/employees/import', [EmployeeController::class, 'import']);
-    Route::get('/employees/{id}', [EmployeeController::class, 'show']);
-    Route::put('/employees/{id}', [EmployeeController::class, 'update']);
-    // Bulk Delete
-    Route::post('/employees/bulk-delete', [EmployeeController::class, 'bulkDestroy']);
-    Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
-    Route::post('/employees/{id}/toggle-wfh', [EmployeeController::class, 'toggleWfh']);
-    Route::post('/employees/bulk-wfh', [EmployeeController::class, 'bulkWfh']);
+    Route::middleware('permission:view-employees')->get('/employees', [EmployeeController::class, 'index']);
+    Route::middleware('permission:create-employees')->post('/employees', [EmployeeController::class, 'store']);
+    Route::middleware('permission:create-employees')->post('/employees/import', [EmployeeController::class, 'import']);
+    Route::middleware('permission:view-employees')->get('/employees/{id}', [EmployeeController::class, 'show']);
+    Route::middleware('permission:edit-employees')->put('/employees/{id}', [EmployeeController::class, 'update']);
+    Route::middleware('permission:delete-employees')->group(function () {
+        Route::post('/employees/bulk-delete', [EmployeeController::class, 'bulkDestroy']);
+        Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+    });
+    Route::middleware('permission:edit-employees')->post('/employees/{id}/toggle-wfh', [EmployeeController::class, 'toggleWfh']);
+    Route::middleware('permission:edit-employees')->post('/employees/{id}/resend-verification', [EmployeeController::class, 'resendVerification']);
+    Route::middleware('permission:manage-wfh')->post('/employees/bulk-wfh', [EmployeeController::class, 'bulkWfh']);
+
+    // Schedules & Shift
+    Route::get('/shifts', [\App\Http\Controllers\ShiftController::class, 'index']);
+    Route::post('/shifts', [\App\Http\Controllers\ShiftController::class, 'store']);
+    Route::get('/schedules', [\App\Http\Controllers\ScheduleController::class, 'index']);
+    Route::post('/schedules', [\App\Http\Controllers\ScheduleController::class, 'store']);
+    // Schedules & Shift (Additional management)
+    Route::middleware('permission:manage-schedules')->group(function () {
+        Route::post('/schedules/generate', [\App\Http\Controllers\ScheduleController::class, 'generate']);
+        Route::get('/schedules/export', [\App\Http\Controllers\ScheduleController::class, 'export']);
+    });
+
+    // Attendance Correction Export
+    Route::get('/attendance-corrections/export', [\App\Http\Controllers\AttendanceCorrectionController::class, 'export']);
 
     // Roles & Permissions
-    Route::get('/roles', [RoleController::class, 'index']);
-    Route::post('/roles', [RoleController::class, 'store']);
-    Route::get('/roles/{id}', [RoleController::class, 'show']);
-    Route::put('/roles/{id}', [RoleController::class, 'update']);
-    Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
-    Route::get('/permissions', [RoleController::class, 'permissions']);
-    Route::post('/roles/{id}/permissions', [RoleController::class, 'syncPermissions']);
+    Route::middleware('permission:manage-roles')->group(function () {
+        Route::get('/roles', [RoleController::class, 'index']);
+        Route::post('/roles', [RoleController::class, 'store']);
+        Route::get('/roles/{id}', [RoleController::class, 'show']);
+        Route::put('/roles/{id}', [RoleController::class, 'update']);
+        Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+        Route::get('/permissions', [RoleController::class, 'permissions']);
+        Route::post('/roles/{id}/permissions', [RoleController::class, 'syncPermissions']);
+    });
 
     // Profile Update Requests
     Route::get('/profile-requests', [ProfileRequestController::class, 'index']);
@@ -171,14 +248,28 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
 
     // Tasks (Tugas)
     Route::get('/tasks', [TaskController::class, 'index']);
+    Route::get('/tasks/{id}', [TaskController::class, 'show']);
+    Route::post('/tasks', [TaskController::class, 'store']);
     Route::post('/tasks/{id}/status', [TaskController::class, 'updateStatus']);
+    Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
+
+    // Task Activities & Evidence
+    Route::post('/tasks/{id}/activities', [TaskActivityController::class, 'storeActivities']);
+    Route::get('/tasks/activities/{id}', [TaskActivityController::class, 'show']);
+    Route::post('/tasks/activities/{id}/evidence', [TaskActivityController::class, 'uploadEvidence']);
+    Route::put('/tasks/activities/{id}/status', [TaskActivityController::class, 'updateStatus']);
+    Route::delete('/tasks/activities/{id}', [TaskActivityController::class, 'destroy']);
 
     // KPI Reviews (Previously Performance)
-    Route::get('/kpi-reviews', [PerformanceReviewController::class, 'index']);
-    Route::post('/kpi-reviews', [PerformanceReviewController::class, 'store']);
-    Route::get('/kpi-reviews/{id}', [PerformanceReviewController::class, 'show']);
-    Route::put('/kpi-reviews/{id}', [PerformanceReviewController::class, 'update']);
-    Route::delete('/kpi-reviews/{id}', [PerformanceReviewController::class, 'destroy']);
+    Route::middleware('permission:view-kpis')->group(function () {
+        Route::get('/kpi-reviews', [PerformanceReviewController::class, 'index']);
+        Route::get('/kpi-reviews/{id}', [PerformanceReviewController::class, 'show']);
+    });
+    Route::middleware('permission:manage-kpis')->group(function () {
+        Route::post('/kpi-reviews', [PerformanceReviewController::class, 'store']);
+        Route::put('/kpi-reviews/{id}', [PerformanceReviewController::class, 'update']);
+        Route::delete('/kpi-reviews/{id}', [PerformanceReviewController::class, 'destroy']);
+    });
 
     // Managerial Routes
     Route::group(['prefix' => 'manager'], function () {
@@ -194,24 +285,41 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::post('/user/change-password', [AuthController::class, 'changePassword']);
 
     // Employee Directory & Org Chart
-    Route::get('/directory', [EmployeeController::class, 'directory']);
-    Route::get('/organization-chart', [\App\Http\Controllers\OrganizationController::class, 'getChart']);
+    // Employee Directory & Org Chart
+    Route::middleware('permission:view-directory')->get('/directory', [EmployeeController::class, 'directory']);
+    Route::middleware('permission:view-organization')->get('/organization-chart', [\App\Http\Controllers\OrganizationController::class, 'getChart']);
+
+    // MassLeave
+    Route::middleware('permission:approve-leaves')->group(function () {
+        Route::get('/mass-leave', [MassLeaveController::class, 'index']);
+        Route::post('/mass-leave', [MassLeaveController::class, 'store']);
+        Route::post('/mass-leave/{id}/approve', [MassLeaveController::class, 'approve']);
+        Route::post('/mass-leave/{id}/reject', [MassLeaveController::class, 'reject']);
+    });
 
     // Shift Swap (Tukar Shift)
-    Route::get('/shift-swap', [ShiftSwapController::class, 'index']);
-    Route::post('/shift-swap', [ShiftSwapController::class, 'store']);
-    Route::post('/shift-swap/{id}/respond', [ShiftSwapController::class, 'respond']);
-    Route::post('/shift-swap/{id}/approve', [ShiftSwapController::class, 'approve']);
-    Route::get('/shift-swap/report', [ShiftSwapController::class, 'report']);
-    Route::get('/shift-swap/export', [ShiftSwapController::class, 'export']);
+    Route::middleware('permission:view-shift-swaps')->group(function () {
+        Route::get('/shift-swap', [ShiftSwapController::class, 'index']);
+        Route::get('/shift-swap/report', [ShiftSwapController::class, 'report']);
+        Route::get('/shift-swap/export', [ShiftSwapController::class, 'export']);
+    });
+    Route::middleware('permission:apply-shift-swaps')->group(function () {
+        Route::post('/shift-swap', [ShiftSwapController::class, 'store']);
+        Route::post('/shift-swap/{id}/respond', [ShiftSwapController::class, 'respond']);
+    });
+    Route::middleware('permission:approve-shift-swaps')->post('/shift-swap/{id}/approve', [ShiftSwapController::class, 'approve']);
 
-    // Projects (Kontrol Eksekusi Proyek & Aktualisasi RAB)
-    Route::get('/projects/dashboard', [ProjectController::class, 'dashboard']);
-    Route::get('/projects', [ProjectController::class, 'index']);
-    Route::post('/projects', [ProjectController::class, 'store']);
-    Route::get('/projects/{id}', [ProjectController::class, 'show']);
-    Route::put('/projects/{id}', [ProjectController::class, 'update']);
-    Route::delete('/projects/{id}', [ProjectController::class, 'destroy']);
+    // Projects
+    Route::middleware('permission:view-projects')->group(function () {
+        Route::get('/projects/dashboard', [ProjectController::class, 'dashboard']);
+        Route::get('/projects', [ProjectController::class, 'index']);
+        Route::get('/projects/{id}', [ProjectController::class, 'show']);
+    });
+    Route::middleware('permission:create-projects')->post('/projects', [ProjectController::class, 'store']);
+    Route::middleware('permission:edit-projects')->group(function () {
+        Route::put('/projects/{id}', [ProjectController::class, 'update']);
+        Route::delete('/projects/{id}', [ProjectController::class, 'destroy']);
+    });
 
     // Project Budget (RAB)
     Route::post('/projects/{projectId}/budgets', [ProjectController::class, 'storeBudget']);
@@ -238,15 +346,21 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::delete('/projects/{projectId}/cash-flows/{cashFlowId}', [ProjectController::class, 'destroyCashFlow']);
 
     // Fleet Logging (Manajemen Kendaraan & Travel Expense)
-    Route::get('/vehicle-logs', [VehicleLogController::class, 'index']);
-    Route::get('/vehicle-logs/vehicles', [VehicleLogController::class, 'vehicles']);
-    Route::get('/vehicle-logs/report', [VehicleLogController::class, 'report']);
-    Route::get('/vehicle-logs/{id}', [VehicleLogController::class, 'show']);
-    Route::post('/vehicle-logs/departure', [VehicleLogController::class, 'storeDeparture']);
-    Route::post('/vehicle-logs/{id}/return', [VehicleLogController::class, 'storeReturn']);
-    Route::post('/vehicle-logs/{id}/approve', [VehicleLogController::class, 'approve']);
-    Route::post('/vehicle-logs/{id}/reject', [VehicleLogController::class, 'reject']);
-    Route::delete('/vehicle-logs/{id}', [VehicleLogController::class, 'destroy']);
+    Route::middleware('permission:view-vehicle-logs')->group(function () {
+        Route::get('/vehicle-logs', [VehicleLogController::class, 'index']);
+        Route::get('/vehicle-logs/vehicles', [VehicleLogController::class, 'vehicles']);
+        Route::get('/vehicle-logs/{id}', [VehicleLogController::class, 'show']);
+    });
+    Route::middleware('permission:view-vehicle-reports')->get('/vehicle-logs/report', [VehicleLogController::class, 'report']);
+    Route::middleware('permission:apply-vehicle-logs')->group(function () {
+        Route::post('/vehicle-logs/departure', [VehicleLogController::class, 'storeDeparture']);
+        Route::post('/vehicle-logs/{id}/return', [VehicleLogController::class, 'storeReturn']);
+    });
+    Route::middleware('permission:approve-vehicle-logs')->group(function () {
+        Route::post('/vehicle-logs/{id}/approve', [VehicleLogController::class, 'approve']);
+        Route::post('/vehicle-logs/{id}/reject', [VehicleLogController::class, 'reject']);
+    });
+    Route::middleware('permission:view-vehicle-logs')->delete('/vehicle-logs/{id}', [VehicleLogController::class, 'destroy']);
 });
 
 // Exports (Authenticated via query token or header inside controller)

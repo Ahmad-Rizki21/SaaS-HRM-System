@@ -33,6 +33,10 @@ class AttendanceCorrectionController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->start_date && $request->end_date) {
+            $query->whereBetween('created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+        }
+
         $corrections = $query->orderBy('id', 'desc')->paginate(10);
         return $this->successResponse($corrections, 'Data koreksi absen berhasil diambil.');
     }
@@ -126,8 +130,8 @@ class AttendanceCorrectionController extends Controller
         }
 
         $admins = $adminQuery->get();
-
         foreach ($admins as $admin) {
+            /** @var \App\Models\User $admin */
             $this->notify(
                 $admin,
                 'KOREKSI ABSEN BARU',
@@ -216,5 +220,22 @@ class AttendanceCorrectionController extends Controller
         );
 
         return $this->successResponse(null, 'Koreksi absen ditolak.');
+    }
+
+    public function export(Request $request)
+    {
+        $user = $request->user();
+        $fileName = 'correction_report_' . now()->format('Y_m_d_His') . '.xlsx';
+        
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\AttendanceCorrectionExport(
+                $user->company_id, 
+                $request->user_id,
+                $request->status, 
+                $request->start_date, 
+                $request->end_date
+            ), 
+            $fileName
+        );
     }
 }

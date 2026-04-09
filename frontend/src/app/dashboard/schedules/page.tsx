@@ -14,21 +14,25 @@ import {
   ChevronRight,
   Clock,
   User,
-  MoreVertical,
-  Settings
+  Columns,
+  Settings,
+  ChevronDown,
+  FileDown
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { TableSkeleton } from "@/components/Skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Schedule {
   id: number;
   user_id: number;
   shift_id: number;
   date: string;
-  user?: { name: string; email: string };
+  user?: { name: string; email: string; profile_photo_url?: string };
   shift?: { name: string; start_time: string; end_time: string; color?: string };
 }
+
 
 interface Shift {
   id: number;
@@ -49,7 +53,7 @@ export default function SchedulesPage() {
   const [employees, setEmployees] = useState<User[]>([]);
   
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"table" | "calendar">("calendar");
+  const [viewMode, setViewMode] = useState<"table" | "calendar" | "roster">("roster");
   const [currentDate, setCurrentDate] = useState(new Date());
   const { user, hasPermission } = useAuth();
 
@@ -241,13 +245,19 @@ export default function SchedulesPage() {
           <h1 className="dash-page-title">Penjadwalan & Shift</h1>
           <p className="dash-page-desc">Atur penugasan shift harian karyawan di unit NOC dan operasional.</p>
         </div>
-        <div className="dash-page-actions">
+        <div className="dash-page-actions flex gap-2">
            <div className="flex bg-white rounded-xl p-1 border border-gray-100 shadow-sm mr-2">
               <button 
                 onClick={() => setViewMode("calendar")}
                 className={`p-2 rounded-lg transition-all ${viewMode === 'calendar' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
               >
                 <LayoutGrid size={18} />
+              </button>
+              <button 
+                onClick={() => setViewMode("roster")}
+                className={`p-2 rounded-lg transition-all ${viewMode === 'roster' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <Columns size={18} />
               </button>
               <button 
                 onClick={() => setViewMode("table")}
@@ -257,6 +267,13 @@ export default function SchedulesPage() {
               </button>
            </div>
           <PermissionGuard slug="manage-schedules">
+            <button 
+              onClick={() => window.open(`${axiosInstance.defaults.baseURL}/schedules/export`, '_blank')}
+              className="dash-btn dash-btn-outline"
+            >
+              <FileDown size={15} />
+              Export Roster
+            </button>
             <button 
               onClick={() => setIsShiftModalOpen(true)}
               className="dash-btn dash-btn-outline group"
@@ -326,6 +343,121 @@ export default function SchedulesPage() {
 
           <div className="grid grid-cols-7">
             {renderCalendar()}
+          </div>
+        </div>
+      ) : viewMode === "roster" ? (
+        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
+          <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-linear-to-r from-white to-gray-50/50">
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-black text-gray-900 tracking-tight">Roster Mingguan</h2>
+              <div className="flex gap-1">
+                <button 
+                  onClick={() => setCurrentDate(new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000))}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-900"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button 
+                  onClick={() => setCurrentDate(new Date())}
+                  className="px-3 text-xs font-bold text-gray-500 hover:text-[#8B0000] transition-colors"
+                >
+                  Minggu Ini
+                </button>
+                <button 
+                  onClick={() => setCurrentDate(new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000))}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-900"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[1000px]">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 z-20 bg-white p-4 border-b border-r border-gray-100 w-64 text-[10px] font-black text-gray-400 uppercase tracking-widest">Karyawan</th>
+                  {[...Array(7)].map((_, i) => {
+                    const d = new Date(currentDate);
+                    d.setDate(d.getDate() - d.getDay() + i + 1); // Monday to Sunday
+                    const isToday = new Date().toDateString() === d.toDateString();
+                    return (
+                      <th key={i} className={`p-4 border-b border-gray-100 text-center min-w-[140px] ${isToday ? 'bg-red-50/30' : ''}`}>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{d.toLocaleDateString('id-ID', { weekday: 'short' })}</p>
+                        <p className={`text-lg font-black tracking-tight ${isToday ? 'text-[#8B0000]' : 'text-gray-900'}`}>{d.getDate()}</p>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {employees.filter(emp => {
+                   const roleName = emp.role?.name?.toLowerCase() || '';
+                   return roleName.includes('karyawan') || roleName.includes('staff') || roleName.includes('noc');
+                }).map(emp => (
+                  <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors group">
+                    <td className="sticky left-0 z-20 bg-white border-b border-r border-gray-100 p-4 group-hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="size-8 rounded-xl border border-gray-200">
+                          <AvatarImage src={(emp as any).profile_photo_url} />
+                          <AvatarFallback className="bg-[#8B0000]/5 text-[#8B0000] font-black text-[10px]">
+                            {emp.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-bold text-gray-900 text-sm leading-none">{emp.name}</p>
+                          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">{(emp as any).position || emp.role?.name}</p>
+                        </div>
+                      </div>
+                    </td>
+                    {[...Array(7)].map((_, i) => {
+                      const d = new Date(currentDate);
+                      d.setDate(d.getDate() - d.getDay() + i + 1);
+                      const dStr = d.toISOString().split('T')[0];
+                      const s = schedules.find(sc => sc.user_id === emp.id && sc.date === dStr);
+                      return (
+                        <td key={i} className="p-2 border-b border-gray-100">
+                          {s ? (
+                            <div 
+                              className={`p-3 rounded-2xl border flex flex-col gap-1 transition-all cursor-pointer relative group/item
+                                ${s.shift?.name?.toLowerCase().includes('noc') 
+                                  ? 'bg-blue-50/50 border-blue-100 text-blue-700 hover:bg-blue-50 hover:shadow-md' 
+                                  : 'bg-orange-50/50 border-orange-100 text-orange-700 hover:bg-orange-50 hover:shadow-md'}`}
+                              onClick={() => { if(hasPermission('manage-schedules')) handleDeleteSchedule(s.id); }}
+                            >
+                               <span className="text-[9px] font-black uppercase tracking-widest leading-none">{s.shift?.name}</span>
+                               <span className="text-[10px] font-bold opacity-70 leading-none">{s.shift?.start_time} - {s.shift?.end_time}</span>
+                               <div className="absolute top-2 right-2 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                  <Trash2 size={10} className="text-gray-400 hover:text-red-600" />
+                               </div>
+                            </div>
+                          ) : (
+                            <PermissionGuard slug="manage-schedules">
+                              <button 
+                                onClick={() => handleOpenAddSchedule(dStr)}
+                                className="w-full h-12 rounded-2xl border border-dashed border-gray-100 flex items-center justify-center text-gray-300 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-600 transition-all group/btn"
+                              >
+                                <Plus size={16} className="group-hover/btn:scale-125 transition-transform" />
+                              </button>
+                            </PermissionGuard>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="p-6 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">NOC SHIFT</span>
+                  <div className="ml-4 w-2 h-2 rounded-full bg-orange-500"></div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">OFFICE HOURS</span>
+              </div>
+              <p className="text-[9px] font-black text-gray-300 uppercase italic">SaaS HRM Group - NOC & Operational Dashboard</p>
           </div>
         </div>
       ) : (

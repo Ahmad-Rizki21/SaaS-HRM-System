@@ -77,7 +77,7 @@ class _ShiftSwapScreenState extends State<ShiftSwapScreen> with SingleTickerProv
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text("Tukar Shift", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text("Tukar Shift", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0.5,
@@ -337,7 +337,7 @@ class __AddSwapModalState extends State<_AddSwapModal> {
           children: [
             Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
-            Text("Ajukan Tukar Shift", style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text("Ajukan Tukar Shift", style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 5),
             Text("Pilih rekan kerja dan jadwal yang ingin ditukar", style: TextStyle(color: Colors.grey[500], fontSize: 12)),
             const SizedBox(height: 20),

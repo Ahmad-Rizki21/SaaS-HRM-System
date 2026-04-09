@@ -82,7 +82,7 @@ class _AttendanceCorrectionScreenState
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("Ajukan Koreksi Absen",
-                            style: GoogleFonts.outfit(
+                            style: GoogleFonts.inter(
                                 fontSize: 20, fontWeight: FontWeight.bold)),
                         IconButton(
                           icon: const Icon(Icons.close),
@@ -440,7 +440,7 @@ class _AttendanceCorrectionScreenState
       backgroundColor: const Color(0xFFFBFBFB),
       appBar: AppBar(
         title: Text("Koreksi Absen",
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0.5,
