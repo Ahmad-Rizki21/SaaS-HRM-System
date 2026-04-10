@@ -11,6 +11,9 @@ export const translations = {
     mass_leaves: "Cuti Bersama",
     reimbursements: "Klaim Biaya",
     tasks: "Tugas",
+    permit_management: "Manajemen Perizinan",
+    permit_requests: "Permohonan Izin",
+    permit_report: "Laporan Perizinan",
     announcements: "Pengumuman",
     holidays: "Hari Libur",
     employees: "Pegawai",
@@ -88,6 +91,11 @@ export const translations = {
     fleet_management: "Manajemen Kendaraan",
     fleet_logs: "Log Kendaraan",
     mileage_report: "Laporan Mileage",
+    payroll: "Payroll (Gaji)",
+    payroll_process: "Proses Payroll",
+    payroll_history: "Riwayat Payroll",
+    payroll_settings: "Pengaturan Payroll",
+    my_payroll_slip: "Slip Gaji Saya",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -106,6 +114,9 @@ export const translations = {
     mass_leaves: "Mass Leave",
     reimbursements: "Reimbursements",
     tasks: "Tasks",
+    permit_management: "Permit Management",
+    permit_requests: "Permit Requests",
+    permit_report: "Permit Reports",
     announcements: "Announcements",
     holidays: "Holidays",
     employees: "Employees",
@@ -183,6 +194,11 @@ export const translations = {
     fleet_management: "Fleet Management",
     fleet_logs: "Vehicle Logs",
     mileage_report: "Mileage Report",
+    payroll: "Payroll",
+    payroll_process: "Process Payroll",
+    payroll_history: "Payroll History",
+    payroll_settings: "Payroll Settings",
+    my_payroll_slip: "My Payroll Slip",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

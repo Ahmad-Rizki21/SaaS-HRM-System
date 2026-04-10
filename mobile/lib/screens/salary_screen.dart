@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -24,6 +25,11 @@ class _SalaryScreenState extends State<SalaryScreen> {
     setState(() => _isLoading = true);
     final data = await ApiService.getSalaries();
     if (mounted) {
+      if (data == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal mengambil data gaji. Periksa koneksi ke server.")),
+        );
+      }
       setState(() {
         _salaries = data ?? [];
         _isLoading = false;
@@ -92,24 +98,48 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                 child: Column(
                                   children: [
                                     _buildDetailRow("Gaji Pokok", double.parse(salary['basic_salary'].toString())),
-                                    _buildDetailRow("Tunjangan", double.parse(salary['allowance'].toString())),
-                                    _buildDetailRow("Potongan", -double.parse(salary['deduction'].toString()), isNegative: true),
+                                    
+                                    // Total Work Hours info
+                                    ..._buildWorkHoursInfo(salary),
+
+                                    if (double.parse(salary['allowance'].toString()) > 0)
+                                      _buildDetailRow("Tunjangan", double.parse(salary['allowance'].toString())),
+                                    
+                                    // Parse details for BPJS & Tax
+                                    ..._buildExtraDetails(salary),
+
                                     const Divider(height: 30),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        const Text("Total Diterima", style: TextStyle(fontWeight: FontWeight.bold)),
-                                        Text(currencyFormatter.format(netSalary), style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        Text("Total Diterima", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        Text(currencyFormatter.format(netSalary), style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: primaryColor)),
                                       ],
                                     ),
                                   ],
                                 ),
                               ),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(color: Colors.grey[50], borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
-                                child: Center(child: Text("LIHAT DETAIL SLIP", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 12))),
+                              GestureDetector(
+                                onTap: () => ApiService.downloadSalarySlip(salary['id']),
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor.withOpacity(0.9), 
+                                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                                    boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))],
+                                  ),
+                                  child: const Center(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.picture_as_pdf, color: Colors.white, size: 16),
+                                        SizedBox(width: 8),
+                                        Text("UNDUH SLIP PDF", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -120,14 +150,108 @@ class _SalaryScreenState extends State<SalaryScreen> {
     );
   }
 
+  List<Widget> _buildWorkHoursInfo(dynamic salary) {
+    List<Widget> widgets = [];
+    try {
+      if (salary['details'] != null) {
+        final details = salary['details'] is String 
+            ? jsonDecode(salary['details']) 
+            : salary['details'];
+        
+        if (details['total_work_hours'] != null) {
+          widgets.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                "Total Jam Kerja: ${details['total_work_hours']} Jam", 
+                style: GoogleFonts.outfit(fontSize: 10, color: Colors.blue[800], fontStyle: FontStyle.italic)
+              ),
+            )
+          );
+        }
+        if (details['total_overtime_hours'] != null && details['total_overtime_hours'] > 0) {
+          widgets.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                "Total Lembur: ${details['total_overtime_hours']} Jam", 
+                style: GoogleFonts.outfit(fontSize: 10, color: Colors.orange[800], fontStyle: FontStyle.italic)
+              ),
+            )
+          );
+        }
+      }
+    } catch (e) {}
+    return widgets;
+  }
+
+  List<Widget> _buildExtraDetails(dynamic salary) {
+    List<Widget> widgets = [];
+    try {
+      if (salary['details'] != null) {
+        final details = salary['details'] is String 
+            ? jsonDecode(salary['details']) 
+            : salary['details'];
+        
+        // BPJS
+        if (details['bpjs'] != null && details['bpjs']['total_deduction_emp'] != null) {
+          final bpjsEmp = double.parse(details['bpjs']['total_deduction_emp'].toString());
+          if (bpjsEmp > 0) {
+            widgets.add(_buildDetailRow("Potongan BPJS", -bpjsEmp, isNegative: true));
+          }
+        }
+        
+        // Overtime (Lembur)
+        if (details['overtime'] != null) {
+          final lembur = double.parse(details['overtime'].toString());
+          if (lembur > 0) {
+            widgets.add(_buildDetailRow("Uang Lembur", lembur));
+          }
+        }
+
+        // Tax (PPh 21)
+        if (details['tax'] != null) {
+          final tax = double.parse(details['tax'].toString());
+          if (tax > 0) {
+            widgets.add(_buildDetailRow("Pajak PPh 21", -tax, isNegative: true));
+          }
+        }
+
+        // Attendance/Other Deductions if any in net deduction but not BPJS/Tax?
+        // Let's just show the net deduction if it's large and we can't break it down fully
+        final totalDeduction = double.parse(salary['deduction'].toString());
+        final parsedDeductions = (double.tryParse(details['tax']?.toString() ?? '0') ?? 0) + 
+                                 (double.tryParse(details['bpjs']?['total_deduction_emp']?.toString() ?? '0') ?? 0);
+        
+        final diff = totalDeduction - parsedDeductions;
+        if (diff > 100) { // arbitrary threshold
+             widgets.add(_buildDetailRow("Potongan Lainnya", -diff, isNegative: true));
+        }
+      } else {
+        // Fallback to simple deduction
+        widgets.add(_buildDetailRow("Potongan", -double.parse(salary['deduction'].toString()), isNegative: true));
+      }
+    } catch (e) {
+      print("Error parsing extra details: $e");
+    }
+    return widgets;
+  }
+
   Widget _buildDetailRow(String label, double amount, {bool isNegative = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(currencyFormatter.format(amount), style: TextStyle(color: isNegative ? Colors.red : Colors.black, fontWeight: FontWeight.w500)),
+          Text(label, style: GoogleFonts.outfit(color: Colors.grey[600], fontSize: 13)),
+          Text(
+            isNegative ? "- ${currencyFormatter.format(amount.abs())}" : currencyFormatter.format(amount), 
+            style: GoogleFonts.outfit(
+              color: isNegative ? Colors.red[700] : Colors.black87, 
+              fontWeight: FontWeight.w600,
+              fontSize: 13
+            )
+          ),
         ],
       ),
     );

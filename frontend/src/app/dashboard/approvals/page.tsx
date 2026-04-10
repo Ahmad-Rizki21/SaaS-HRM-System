@@ -7,7 +7,7 @@ import { ListPageSkeleton } from "@/components/Skeleton";
 
 interface ApprovalItem {
   id: number;
-  type: "leave" | "reimbursement" | "profile" | "overtime";
+  type: "leave" | "reimbursement" | "profile" | "overtime" | "permit";
   user_name: string;
   category: string; // "Cuti Tahunan", "Bensin", etc.
   description: string;
@@ -22,7 +22,7 @@ interface ApprovalItem {
 export default function ApprovalsPage() {
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "leave" | "reimbursement" | "profile" | "overtime">("all");
+  const [filter, setFilter] = useState<"all" | "leave" | "reimbursement" | "profile" | "overtime" | "permit">("all");
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -46,11 +46,12 @@ export default function ApprovalsPage() {
   const fetchApprovals = async () => {
     try {
       setLoading(true);
-      const [leaveRes, reimRes, profileRes, overtimeRes] = await Promise.all([
+      const [leaveRes, reimRes, profileRes, overtimeRes, permitRes] = await Promise.all([
         axiosInstance.get("/leave?status=pending"),
         axiosInstance.get("/reimbursements?status=pending"),
         axiosInstance.get("/profile-requests?status=pending"),
-        axiosInstance.get("/overtimes?status=pending")
+        axiosInstance.get("/overtimes?status=pending"),
+        axiosInstance.get("/permits?status=pending")
       ]);
 
       const lData = leaveRes.data.data;
@@ -106,7 +107,21 @@ export default function ApprovalsPage() {
         created_at: p.created_at
       }));
 
-      const merged = [...leaves, ...reimbursements, ...profiles, ...overtimes]
+      const peData = permitRes.data.data;
+      const permits = (Array.isArray(peData) ? peData : (peData?.data || [])).map((pe: any) => ({
+        id: pe.id,
+        type: "permit",
+        user_name: pe.user?.name || "Karyawan",
+        description: pe.reason,
+        category: pe.type,
+        start_date: pe.start_date,
+        end_date: pe.end_date,
+        status: pe.status,
+        attachment: null,
+        created_at: pe.created_at
+      }));
+
+      const merged = [...leaves, ...reimbursements, ...profiles, ...overtimes, ...permits]
         .filter(item => item.status === "pending")
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
@@ -141,6 +156,7 @@ export default function ApprovalsPage() {
       else if (item.type === 'reimbursement') endpoint = '/reimbursements';
       else if (item.type === 'profile') endpoint = '/profile-requests';
       else if (item.type === 'overtime') endpoint = '/overtimes';
+      else if (item.type === 'permit') endpoint = '/permits';
 
       console.log(`Processing ${action} for ${item.type} ID: ${item.id}`);
       await axiosInstance.post(`${endpoint}/${item.id}/${action}`, { remark: remarkInput });
@@ -185,6 +201,7 @@ export default function ApprovalsPage() {
           <button onClick={() => setFilter("leave")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'leave' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Cuti</button>
           <button onClick={() => setFilter("reimbursement")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'reimbursement' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Klaim</button>
           <button onClick={() => setFilter("overtime")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'overtime' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Lembur</button>
+          <button onClick={() => setFilter("permit")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'permit' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Izin</button>
           <button onClick={() => setFilter("profile")} className={`px-4 py-2 text-sm font-bold rounded-lg transition ${filter === 'profile' ? 'bg-[#8B0000] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}>Profil</button>
         </div>
       </div>
@@ -207,6 +224,7 @@ export default function ApprovalsPage() {
                 'bg-orange-50 text-orange-600'
               }`}>
                 {item.type === 'leave' ? <Calendar size={28} /> : 
+                 item.type === 'permit' ? <CheckCircle size={28} /> : 
                  item.type === 'reimbursement' ? <DollarSign size={28} /> : 
                  item.type === 'overtime' ? <Clock size={28} /> : 
                  <User size={28} />}

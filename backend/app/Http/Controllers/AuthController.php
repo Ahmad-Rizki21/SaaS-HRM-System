@@ -144,4 +144,69 @@ class AuthController extends Controller
             return $this->errorResponse('Gagal verifikasi email.', 500);
         }
     }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return $this->errorResponse('Email tidak ditemukan.', 404);
+        }
+
+        $token = \Illuminate\Support\Str::random(64);
+        
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $request->email],
+            ['token' => \Illuminate\Support\Facades\Hash::make($token), 'created_at' => now()]
+        );
+
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        $resetUrl = $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode($request->email);
+
+        try {
+            \Illuminate\Support\Facades\Mail::send('emails.reset-password', ['resetUrl' => $resetUrl], function($message) use($request) {
+                $message->to($request->email);
+                $message->subject('Reset Password HRMS Narwastu Arthatama');
+            });
+            return $this->successResponse(null, 'Tautan reset password telah dikirim ke email Anda.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengirim email reset password: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'token' => 'required',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$record || !\Illuminate\Support\Facades\Hash::check($request->token, $record->token)) {
+            return $this->errorResponse('Token tidak valid atau sudah kadaluarsa.', 400);
+        }
+
+        // Token is typically valid for 60 minutes
+        if (now()->diffInMinutes($record->created_at) > 60) {
+            return $this->errorResponse('Token sudah kadaluarsa.', 400);
+        }
+
+        User::where('email', $request->email)->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password)
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->delete();
+
+        return $this->successResponse(null, 'Password berhasil direset. Silakan login dengan password baru Anda.');
+    }
 }

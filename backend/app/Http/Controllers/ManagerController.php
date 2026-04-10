@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Leave;
+use App\Models\Permit;
 use App\Models\Overtime;
 use App\Models\Reimbursement;
 use App\Models\User;
@@ -27,6 +28,7 @@ class ManagerController extends Controller
         $leaveCount = Leave::whereIn('user_id', $subordinateIds)->where('status', 'pending')->count();
         $overtimeCount = Overtime::whereIn('user_id', $subordinateIds)->where('status', 'pending')->count();
         $reimbursementCount = Reimbursement::whereIn('user_id', $subordinateIds)->where('status', 'pending')->count();
+        $permitCount = Permit::whereIn('user_id', $subordinateIds)->where('status', 'pending')->count();
         $vehicleCount = \App\Models\VehicleLog::whereIn('user_id', $subordinateIds)->where('status', 'completed')->count();
 
         return response()->json([
@@ -35,8 +37,9 @@ class ManagerController extends Controller
                 'leave' => $leaveCount,
                 'overtime' => $overtimeCount,
                 'reimbursement' => $reimbursementCount,
+                'permit' => $permitCount,
                 'vehicle_log' => $vehicleCount,
-                'total' => $leaveCount + $overtimeCount + $reimbursementCount + $vehicleCount
+                'total' => $leaveCount + $overtimeCount + $reimbursementCount + $permitCount + $vehicleCount
             ]
         ]);
     }
@@ -54,6 +57,7 @@ class ManagerController extends Controller
             'leave' => Leave::with('user')->whereIn('user_id', $subordinateIds)->where('status', 'pending'),
             'overtime' => Overtime::with('user')->whereIn('user_id', $subordinateIds)->where('status', 'pending'),
             'reimbursement' => Reimbursement::with('user')->whereIn('user_id', $subordinateIds)->where('status', 'pending'),
+            'permit' => Permit::with('user')->whereIn('user_id', $subordinateIds)->where('status', 'pending'),
             'vehicle_log' => \App\Models\VehicleLog::with('user')->whereIn('user_id', $subordinateIds)->where('status', 'completed'),
             default => null
         };
@@ -74,7 +78,7 @@ class ManagerController extends Controller
     public function updateRequestStatus(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:leave,overtime,reimbursement,vehicle_log',
+            'type' => 'required|in:leave,overtime,reimbursement,permit,vehicle_log',
             'id' => 'required|integer',
             'status' => 'required|in:approved,rejected',
             'remark' => 'nullable|string'
@@ -87,6 +91,7 @@ class ManagerController extends Controller
             'leave' => Leave::class,
             'overtime' => Overtime::class,
             'reimbursement' => Reimbursement::class,
+            'permit' => Permit::class,
             'vehicle_log' => \App\Models\VehicleLog::class,
         };
 
@@ -108,6 +113,7 @@ class ManagerController extends Controller
             'leave' => 'Cuti',
             'overtime' => 'Lembur',
             'reimbursement' => 'Reimbursement',
+            'permit' => 'Izin',
             'vehicle_log' => 'Vehicle Log',
         };
 
@@ -116,7 +122,7 @@ class ManagerController extends Controller
             "PENGAJUAN {$typeText} {$statusText}",
             "Pengajuan {$typeText} Anda telah {$statusText} oleh Manager." . ($request->remark ? " Catatan: {$request->remark}" : ""),
             $request->status === 'approved' ? 'success' : 'danger',
-            $request->type === 'leave' ? '/dashboard/leaves' : ($request->type === 'overtime' ? '/dashboard/overtimes' : ($request->type === 'reimbursement' ? '/dashboard/reimbursements' : '/dashboard/fleet-logs'))
+            $request->type === 'leave' ? '/dashboard/leaves' : ($request->type === 'overtime' ? '/dashboard/overtimes' : ($request->type === 'reimbursement' ? '/dashboard/reimbursements' : ($request->type === 'permit' ? '/dashboard/permits' : '/dashboard/fleet-logs')))
         );
 
         return response()->json([
@@ -132,13 +138,16 @@ class ManagerController extends Controller
     public function getTeamAttendance()
     {
         $userId = Auth::id();
-        $subordinates = User::where('supervisor_id', $userId)->with(['role'])->get();
         $today = Carbon::today()->toDateString();
+        
+        $subordinates = User::where('supervisor_id', $userId)
+            ->with(['role', 'attendances' => function($q) use ($today) {
+                $q->whereDate('check_in', $today);
+            }])
+            ->get();
 
-        $teamAttendance = $subordinates->map(function($sub) use ($today) {
-            $attendance = Attendance::where('user_id', $sub->id)
-                ->whereDate('check_in', $today)
-                ->first();
+        $teamAttendance = $subordinates->map(function($sub) {
+            $attendance = $sub->attendances->first();
 
             return [
                 'id' => $sub->id,

@@ -288,8 +288,7 @@ export default function LeavesPage() {
                   required
                 >
                   <option value="Cuti Tahunan">Cuti Tahunan</option>
-                  <option value="Sakit">Sakit</option>
-                  <option value="Melahirkan">Melahirkan</option>
+                  <option value="Cuti Melahirkan">Cuti Melahirkan</option>
                   <option value="Cuti Alasan Penting">Cuti Alasan Penting</option>
                   <option value="Lainnya">Lainnya</option>
                 </select>

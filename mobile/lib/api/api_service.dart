@@ -9,7 +9,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiService {
   // Toggle between Home (192.168.1.9) and Office (2.2.2.76)
-  static const String serverIp = '2.2.2.209';
+  static const String serverIp = '2.2.2.3';
   static const String baseUrl = 'http://$serverIp:8000/api';
   static const String storageUrl = 'http://$serverIp:8000/storage';
 
@@ -484,6 +484,42 @@ class ApiService {
     }
   }
 
+  // ============ PERMITS (PERIZINAN) ============
+
+  static Future<List<dynamic>?> getPermits() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/permits'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data']['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitPermit(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/permits'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
   // ============ OVERTIME (LEMBUR) ============
 
   static Future<List<dynamic>?> getOvertimes() async {
@@ -525,17 +561,42 @@ class ApiService {
   static Future<List<dynamic>?> getSalaries() async {
     try {
       final headers = await getHeaders();
-      final response = await http.get(
-        Uri.parse('$baseUrl/salary'),
-        headers: headers,
-      );
+      final url = Uri.parse('$baseUrl/payroll/my-history');
+      print("Fetching Salaries from: $url");
+      final response = await http.get(url, headers: headers);
+      print("Salary Response Status: ${response.statusCode}");
+      print("Salary Response Body: ${response.body}");
+
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return body['data'];
+        final data = body['data'];
+        if (data is List) return data;
+        if (data is Map && data['data'] is List) return data['data'];
+        return [];
       }
       return null;
     } catch (e) {
+      print("Error fetching salaries: $e");
       return null;
+    }
+  }
+
+  static Future<void> downloadSalarySlip(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+
+    // Encode token to handle special characters like '|'
+    final encodedToken = Uri.encodeComponent(token ?? '');
+    final url = Uri.parse(
+      '$baseUrl/payroll/download-slip/$id?token=$encodedToken',
+    );
+
+    print("Launching PDF URL: $url");
+
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      print("Could not launch $url: $e");
     }
   }
 
@@ -639,19 +700,23 @@ class ApiService {
       request.headers.addAll(headers);
 
       if (photoBefore != null && photoBefore.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'photo_before',
-          photoBefore,
-          contentType: MediaType.parse('image/jpeg'),
-        ));
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'photo_before',
+            photoBefore,
+            contentType: MediaType.parse('image/jpeg'),
+          ),
+        );
       }
 
       if (photoAfter != null && photoAfter.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'photo_after',
-          photoAfter,
-          contentType: MediaType.parse('image/jpeg'),
-        ));
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'photo_after',
+            photoAfter,
+            contentType: MediaType.parse('image/jpeg'),
+          ),
+        );
       }
 
       if (notes != null) {

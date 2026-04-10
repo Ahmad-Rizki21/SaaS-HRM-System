@@ -13,6 +13,18 @@ use Intervention\Image\Laravel\Facades\Image;
 class TaskActivityController extends Controller
 {
     /**
+     * List activities for a specific task
+     */
+    public function index($taskId)
+    {
+        $activities = TaskActivity::with(['evidence'])
+            ->where('task_id', $taskId)
+            ->orderBy('sort_order', 'asc')
+            ->get();
+
+        return $this->successResponse($activities, 'Daftar kegiatan tugas berhasil diambil.');
+    }
+    /**
      * Add activities to a task
      */
     public function storeActivities(Request $request, $taskId)

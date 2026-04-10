@@ -242,14 +242,13 @@ class DashboardController extends Controller
         $cacheKey = "leaderboard_full_v2_company_{$companyId}_{$now->format('Y-m')}";
         
         $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 7200, function () use ($companyId, $now) {
-            $targetMonth = $now;
-            $monthStart = $targetMonth->startOfMonth()->toDateString();
-            $monthEnd = $targetMonth->endOfMonth()->toDateString();
+            $monthStart = $now->copy()->startOfMonth()->toDateString();
+            $monthEnd = $now->copy()->endOfMonth()->toDateString();
             
             // 1. Ambil Attendance (April)
             $topAttendance = $this->getTopAttendance($companyId, $monthStart, $monthEnd);
             $topOvertime = $this->getTopOvertime($companyId, $monthStart, $monthEnd);
-            $monthLabel = $targetMonth->translatedFormat('F Y');
+            $monthLabel = $now->translatedFormat('F Y');
 
             // 2. Jika absen kosong, coba mundur ke bulan lalu (Maret)
             if ($topAttendance->isEmpty() && $topOvertime->isEmpty()) {
@@ -281,7 +280,7 @@ class DashboardController extends Controller
         return DB::table('attendances')
             ->join('users', 'attendances.user_id', '=', 'users.id')
             ->where('attendances.company_id', $companyId)
-            ->where('attendances.status', 'present')
+            ->whereIn('attendances.status', ['present', 'late', 'office_hour'])
             ->whereBetween('attendances.check_in', [$start, $end . ' 23:59:59'])
             ->select('users.id', 'users.name', 'users.profile_photo_path', DB::raw('COUNT(attendances.id) as score'))
             ->groupBy('users.id', 'users.name', 'users.profile_photo_path')

@@ -24,6 +24,11 @@ class PermissionMiddleware
             ], 401);
         }
 
+        // Ensure role is loaded for the user since it's needed for permissions and is_manager attribute
+        if (!$user->relationLoaded('role')) {
+            $user->load('role');
+        }
+
         if (!$user->role || !$user->hasPermission($permission)) {
             return response()->json([
                 'status' => 'error',

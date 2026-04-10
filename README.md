@@ -27,7 +27,7 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 - **Portofolio Manager (Mobile)**: Dashboard persetujuan terpadu bagi Manager untuk menyetujui Cuti, Lembur, Reimbursement, dan Log Kendaraan secara mobile.
 - **Performance & Pagination**: Penanganan data skala besar dengan pagination di seluruh API dan proteksi error frontend (Array.isArray).
 - **Manajemen Tugas (Tasks) & Evidence**: Pembagian tugas ke karyawan melalui dashboard admin/mobile, lengkap dengan fitur pelaporan aktivitas (foto Sebelum & Sesudah) serta verifikasi bukti kerja secara real-time.
-- **Slip Gaji (Salary)**: Akses slip gaji digital bulanan secara aman.
+- **Payrol & Slip Gaji Digital (PPh 21 TER)**: Sistem penggajian otomatis yang mendukung skema Pajak PPh 21 TER (PP 58 2023), BPJS (Kesehatan, JHT, JP, dsb), integrasi uang lembur (Overtime), dan rincian jam kerja. Karyawan dapat mengunduh slip PDF langsung dari aplikasi mobile secara aman.
 - **Komunikasi & Pengumuman**: Broadcast pengumuman melalui Dashboard (Kotak Pesan) dan Email Premium (HTML).
 - **Notifikasi Real-time & WebSocket**: Menggunakan native Laravel Reverb dengan notifikasi audio pintar di Web Dashboard.
 - **Interactive Calendar Dashboard**: Dashboard kalender multifungsi dengan grafik pengajuan tertunda & integrasi API Pihak ketiga.

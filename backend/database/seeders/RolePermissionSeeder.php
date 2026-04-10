@@ -25,6 +25,12 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Setujui Cuti', 'slug' => 'approve-leaves', 'group' => 'Cuti'],
             ['name' => 'Hapus Cuti', 'slug' => 'delete-leaves', 'group' => 'Cuti'],
             
+            // Perizinan
+            ['name' => 'Lihat Perizinan', 'slug' => 'view-permits', 'group' => 'Perizinan'],
+            ['name' => 'Ajukan Perizinan', 'slug' => 'apply-permits', 'group' => 'Perizinan'],
+            ['name' => 'Setujui Perizinan', 'slug' => 'approve-permits', 'group' => 'Perizinan'],
+            ['name' => 'Hapus Perizinan', 'slug' => 'delete-permits', 'group' => 'Perizinan'],
+            
             // Reimbursement
             ['name' => 'Lihat Klaim', 'slug' => 'view-reimbursements', 'group' => 'Reimbursement'],
             ['name' => 'Ajukan Klaim', 'slug' => 'apply-reimbursements', 'group' => 'Reimbursement'],
@@ -89,6 +95,11 @@ class RolePermissionSeeder extends Seeder
             // Tugas (Tasks)
             ['name' => 'Lihat Tugas', 'slug' => 'view-tasks', 'group' => 'Tugas'],
             ['name' => 'Kelola Tugas', 'slug' => 'manage-tasks', 'group' => 'Tugas'],
+
+            // Payroll
+            ['name' => 'Lihat Payroll', 'slug' => 'view-salaries', 'group' => 'Payroll'],
+            ['name' => 'Kelola Payroll', 'slug' => 'manage-payroll', 'group' => 'Payroll'],
+            ['name' => 'Lihat Laporan Payroll', 'slug' => 'view-payroll-reports', 'group' => 'Payroll'],
         ];
 
         foreach ($permissions as $p) {
@@ -107,13 +118,14 @@ class RolePermissionSeeder extends Seeder
         $direktur->permissions()->sync($allPermissions);
         
         $managerPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas'
+            'Pegawai', 'Cuti', 'Perizinan', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas', 'Payroll'
         ])->whereNotIn('slug', ['delete-employees', 'manage-roles', 'manage-company'])->pluck('id');
         $manager->permissions()->sync($managerPermissions);
 
         $supervisorPermissions = Permission::whereIn('slug', [
             'view-employees', 'view-directory', 'view-organization',
             'view-leaves', 'approve-leaves', 
+            'view-permits', 'approve-permits',
             'view-reimbursements', 'approve-reimbursements', 
             'view-overtimes', 'approve-overtimes',
             'view-kpis', 'view-attendance-map', 'view-attendance-reports', 'view-attendances', 'view-reports',
@@ -126,20 +138,22 @@ class RolePermissionSeeder extends Seeder
         $supervisor->permissions()->sync($supervisorPermissions);
 
         $hrdPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas'
+            'Pegawai', 'Cuti', 'Perizinan', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas', 'Payroll'
         ])->pluck('id');
         $hrd->permissions()->sync($hrdPermissions);
 
         $staffPermissions = Permission::whereIn('slug', [
             'view-directory', 'view-organization', 'view-announcements',
             'view-leaves', 'apply-leaves', 
+            'view-permits', 'apply-permits',
             'view-reimbursements', 'apply-reimbursements',
             'view-overtimes', 'apply-overtimes',
+            'view-kpis',
             'apply-attendances', 'view-attendances',
             'view-shift-swaps', 'apply-shift-swaps',
             'view-projects',
             'view-vehicle-logs', 'apply-vehicle-logs',
-            'view-tasks'
+            'view-tasks', 'view-salaries'
         ])->pluck('id');
         $staff->permissions()->sync($staffPermissions);
     }

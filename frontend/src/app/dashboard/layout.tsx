@@ -105,6 +105,14 @@ const sidebarLinks: SidebarLink[] = [
     ]
   },
   {
+    name: "permit_management",
+    icon: ClipboardList,
+    permission: 'view-leaves',
+    submenus: [
+      { name: "permit_requests", href: "/dashboard/permits", permission: 'view-leaves' },
+    ]
+  },
+  {
     name: "applications",
     icon: FileText,
     permission: 'view-reimbursements',
@@ -140,10 +148,22 @@ const sidebarLinks: SidebarLink[] = [
     submenus: [
       { name: "attendance_report", href: "/dashboard/reports/attendance", permission: 'view-attendance-reports' },
       { name: "leave_report", href: "/dashboard/reports/leaves", permission: 'view-reports' },
+      { name: "permit_report", href: "/dashboard/reports/permits", permission: 'view-reports' },
       { name: "reimbursement_report", href: "/dashboard/reports/reimbursements", permission: 'view-reports' },
       { name: "overtime_report", href: "/dashboard/reports/overtimes", permission: 'view-reports' },
       { name: "task_report", href: "/dashboard/reports/tasks", permission: 'view-reports' },
       { name: "payroll_report", href: "/dashboard/reports/payroll", permission: 'view-reports' },
+    ]
+  },
+  {
+    name: "payroll",
+    icon: CreditCard,
+    permission: 'view-salaries',
+    submenus: [
+      { name: "payroll_process", href: "/dashboard/payroll/process", permission: 'manage-payroll' },
+      { name: "payroll_history", href: "/dashboard/payroll", permission: 'view-salaries' },
+      { name: "my_payroll_slip", href: "/dashboard/payroll/my-payroll", permission: 'view-salaries' },
+      { name: "payroll_settings", href: "/dashboard/payroll/settings", permission: 'manage-payroll' },
     ]
   },
   { name: "construction", isHeading: true, permission: 'view-projects' },
