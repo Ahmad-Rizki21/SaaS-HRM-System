@@ -9,9 +9,9 @@ import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiService {
   // Toggle between Home (192.168.1.9) and Office (2.2.2.76)
-  static const String serverIp = '2.2.2.3';
-  static const String baseUrl = 'http://$serverIp:8000/api';
-  static const String storageUrl = 'http://$serverIp:8000/storage';
+  static const String serverIp = 'ontime.jelantik.com';
+  static const String baseUrl = 'https://$serverIp/api';
+  static const String storageUrl = 'https://$serverIp/storage';
 
   /// Fixes URLs that might contain localhost or older IPs to use the current serverIp
   static String fixUrl(String? url) {

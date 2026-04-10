@@ -17,4 +17,9 @@ class Company extends Model
     {
         return $this->hasMany(Office::class);
     }
+
+    public function getEmployeeLimit()
+    {
+        return $this->employee_limit ?? 999999;
+    }
 }
