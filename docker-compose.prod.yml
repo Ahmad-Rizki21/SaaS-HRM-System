@@ -47,10 +47,11 @@ services:
     networks:
       - hrms-prod-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
+      test: mysqladmin ping -p${MYSQL_ROOT_PASSWORD} || exit 1
+      interval: 15s
+      timeout: 10s
       retries: 5
+      start_period: 60s
 
   # ── Redis ──────────────────────────────────────────
   redis:
