@@ -4,7 +4,10 @@ vendor/
 .env.backup
 .env.production
 composer.lock
-package-lock.json
+# package-lock.json (Keep for CI/CD)
+!package-lock.json
+!frontend/package-lock.json
+!backend/package-lock.json
 public/storage
 storage/*.key
 storage/logs/*.log
