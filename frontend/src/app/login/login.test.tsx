@@ -10,6 +10,7 @@ describe('LoginPage', () => {
 
   it('renders login subtitle', () => {
     render(<LoginPage />)
-    expect(screen.getByText(/ON TIME HRMS/i)).toBeInTheDocument()
+    const elements = screen.getAllByText(/ON TIME HRMS/i)
+    expect(elements.length).toBeGreaterThan(0)
   })
 })

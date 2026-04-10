@@ -12,13 +12,14 @@ class PermitTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function it_can_create_a_permit_request()
+    public function test_it_can_create_a_permit_request()
     {
-        $user = User::factory()->create();
+        $company = \App\Models\Company::create(['name' => 'Test Co']);
+        $user = User::factory()->create(['company_id' => $company->id]);
         
         $permit = Permit::create([
             'user_id' => $user->id,
-            'company_id' => $user->company_id,
+            'company_id' => $company->id,
             'type' => 'sick',
             'start_date' => now()->toDateString(),
             'end_date' => now()->toDateString(),

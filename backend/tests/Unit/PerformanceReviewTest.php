@@ -12,15 +12,16 @@ class PerformanceReviewTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    public function it_can_publish_a_kpi_review()
+    public function test_it_can_publish_a_kpi_review()
     {
-        $user = User::factory()->create();
-        $reviewer = User::factory()->create();
+        $company = \App\Models\Company::create(['name' => 'Test Co']);
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $reviewer = User::factory()->create(['company_id' => $company->id]);
         
         $review = PerformanceReview::create([
             'user_id' => $user->id,
             'reviewer_id' => $reviewer->id,
-            'company_id' => $user->company_id,
+            'company_id' => $company->id,
             'period' => '2026-04',
             'score_total' => 85.5,
             'status' => 'published'
