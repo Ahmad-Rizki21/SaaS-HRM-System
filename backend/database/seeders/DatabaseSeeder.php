@@ -18,10 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             UserSeeder::class,
-            DummyPayrollDataSeeder::class, // Adds extra employees & settings
-            AttendanceSeeder::class,
-            LeaveSeeder::class,
-            OvertimeSeeder::class,
         ]);
     }
 }
