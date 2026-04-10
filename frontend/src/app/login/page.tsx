@@ -125,14 +125,15 @@ export default function LoginPage() {
         <div className="login-left-panel">
           <div className="login-left-content">
             <div className="login-illustration-wrapper">
-              <Image
-                src="/login-illustration.png"
-                alt="HR Management Illustration"
-                width={400}
-                height={350}
-                className="login-illustration"
-                priority
-              />
+                <Image
+                  src="/login-illustration.png"
+                  alt="HR Management Illustration"
+                  width={400}
+                  height={350}
+                  className="login-illustration"
+                  priority
+                  unoptimized={true}
+                />
             </div>
             <div className="login-left-text">
               <h2>Kelola SDM Lebih Efisien dengan Digital HRMS</h2>
@@ -163,6 +164,7 @@ export default function LoginPage() {
                   height={60}
                   className="login-logo"
                   priority
+                  unoptimized={true}
                 />
               </div>
               <div className="login-brand">
