@@ -63,11 +63,21 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `GET` | `/api/manager/pending-requests` | List seluruh pengajuan tertunda dari subordinat (Cuti, Lembur, Klaim, Log Kendaraan) |
 | `DELETE` | `/api/manager/pending-requests/{id}` | Hapus/Batalkan pengajuan tertunda dari subordinat |
 
-## 💰 Gaji & Tugas
+## 💰 Gaji & Payroll
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |
-| `GET` | `/api/salary` | List slip gaji karyawan |
-| `GET` | `/api/tasks` | List tugas/pekerjaan |
+| `GET` | `/api/salary` | List slip gaji karyawan (Admin View) |
+| `GET` | `/api/payroll/my-history` | List riwayat slip gaji pribadi (Employee View) |
+| `GET` | `/api/payroll/settings` | [Admin] Ambil konfigurasi BPJS & Pajak TER |
+| `POST` | `/api/payroll/settings` | [Admin] Update konfigurasi Payroll |
+| `POST` | `/api/payroll/generate` | [Admin] Generate gaji bulanan massal |
+| `GET` | `/api/payroll/history` | [Admin] Lihat rekapitulasi data payroll |
+| `GET` | `/api/payroll/export` | [Admin] Export rekap gaji ke Excel |
+| `GET` | `/api/payroll/download-slip/{id}` | Download Slip PDF (Support `?token=...` via Browser) |
+
+## 📋 Tugas & Pekerjaan
+| Method | Endpoint | Deskripsi |
+| :--- | :--- | :--- |
 | `POST` | `/api/tasks/{id}/status` | Update status tugas (Todo/Done) |
 | `POST` | `/api/tasks/{id}/activities` | Kirim laporan aktivitas (Bukti Foto & Catatan) |
 | `GET` | `/api/tasks/{id}/activities` | Lihat riwayat aktivitas/bukti kerja tugas |

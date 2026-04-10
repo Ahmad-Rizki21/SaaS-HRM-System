@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'attendance_screen.dart';
 import 'settings_tab.dart';
 import 'leave_screen.dart';
+import 'permit_screen.dart';
 import 'overtime_screen.dart';
 import 'salary_screen.dart';
 import 'task_screen.dart';
@@ -469,6 +470,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'onTap': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => LeaveScreen()),
+        ),
+      },
+      'permit': {
+        'icon': Icons.assignment_turned_in_outlined,
+        'label': 'Izin',
+        'color': Colors.blueGrey[800],
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PermitScreen()),
         ),
       },
       'klaim': {

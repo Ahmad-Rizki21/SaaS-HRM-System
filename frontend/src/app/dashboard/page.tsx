@@ -176,7 +176,7 @@ export default function DashboardPage() {
               <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Sisa Jatah Cuti</p>
-                  <div className="text-3xl font-black text-gray-900">12 <span className="text-sm font-medium text-gray-400">Hari</span></div>
+                  <div className="text-3xl font-black text-gray-900">{user?.leave_balance ?? 0} <span className="text-sm font-medium text-gray-400">Hari</span></div>
                 </div>
                 <button className="text-xs font-bold text-[#8B0000] flex items-center gap-1 mt-4 hover:gap-2 transition-all">
                   AJUKAN CUTI <Plus size={14} />

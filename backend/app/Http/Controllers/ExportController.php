@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PerformanceReview;
 use App\Models\Leave;
+use App\Models\Permit;
 use App\Models\Reimbursement;
 use App\Models\Overtime;
 use Illuminate\Http\Request;
@@ -77,5 +78,22 @@ class ExportController extends Controller
 
         $pdf = Pdf::loadView('reports.overtime', compact('overtime'));
         return $pdf->download("Lembur_{$overtime->user->name}_{$overtime->date}.pdf");
+    }
+
+    public function permitPdf($id, Request $request)
+    {
+        if (!$request->user() && $request->has('token')) {
+            $user = \App\Models\User::whereHas('tokens', function($q) use ($request) {
+                $q->where('token', hash('sha256', explode('|', $request->token)[1] ?? ''));
+            })->first();
+            if ($user) $request->setUserResolver(fn() => $user);
+        }
+
+        $permit = Permit::with(['user', 'user.role'])
+            ->where('company_id', $request->user()->company_id)
+            ->findOrFail($id);
+
+        $pdf = Pdf::loadView('reports.permit', compact('permit'));
+        return $pdf->download("Izin_{$permit->user->name}_{$permit->start_date}.pdf");
     }
 }

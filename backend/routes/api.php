@@ -12,6 +12,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\PermitController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ReimbursementController;
 use App\Http\Controllers\AnnouncementController;
@@ -59,9 +60,12 @@ Route::get('/health', function () {
 });
 
 // Auth
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/companies/search', [AuthController::class, 'searchCompanies']);
 Route::get('/verify-email/{token}', [AuthController::class, 'verifyEmail']);
+Route::get('/payroll/download-slip/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'downloadSlip']);
 
 // Broadcast Route
 \Illuminate\Support\Facades\Broadcast::routes(['middleware' => ['auth:sanctum']]);
@@ -82,8 +86,8 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
         // Attendance
         Route::get('/attendance/today', [MobileAttendanceController::class, 'today']);
         Route::get('/attendance/history', [MobileAttendanceController::class, 'history']);
-        Route::post('/attendance/check-in', [MobileAttendanceController::class, 'checkIn']);
-        Route::post('/attendance/check-out', [MobileAttendanceController::class, 'checkOut']);
+        Route::post('/attendance/check-in', [MobileAttendanceController::class, 'checkIn'])->middleware('throttle:attendance');
+        Route::post('/attendance/check-out', [MobileAttendanceController::class, 'checkOut'])->middleware('throttle:attendance');
 
         // Tasks
         Route::get('/tasks', [MobileTaskController::class, 'index']);
@@ -119,8 +123,8 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
 
     // Attendance
     Route::middleware('permission:apply-attendances')->group(function () {
-        Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn']);
-        Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut']);
+        Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn'])->middleware('throttle:attendance');
+        Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])->middleware('throttle:attendance');
         Route::get('/attendance/today', [AttendanceController::class, 'today']);
     });
 
@@ -155,6 +159,17 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::middleware('permission:approve-leaves')->group(function () {
         Route::post('/leave/{id}/approve', [LeaveController::class, 'approve']);
         Route::post('/leave/{id}/reject', [LeaveController::class, 'reject']);
+    });
+
+    // Permits (Perizinan)
+    Route::middleware('permission:view-permits')->group(function () {
+        Route::get('/permits', [PermitController::class, 'index']);
+        Route::delete('/permits/{id}', [PermitController::class, 'destroy']);
+    });
+    Route::middleware('permission:apply-permits')->post('/permits', [PermitController::class, 'store']);
+    Route::middleware('permission:approve-permits')->group(function () {
+        Route::post('/permits/{id}/approve', [PermitController::class, 'approve']);
+        Route::post('/permits/{id}/reject', [PermitController::class, 'reject']);
     });
 
     // Overtimes
@@ -245,6 +260,16 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
 
     // Salary (Gaji)
     Route::get('/salary', [SalaryController::class, 'index']);
+    
+    // Payroll System (Comprehensive)
+    Route::group(['prefix' => 'payroll'], function () {
+        Route::get('/settings', [\App\Http\Controllers\Api\PayrollController::class, 'getSettings']);
+        Route::post('/settings', [\App\Http\Controllers\Api\PayrollController::class, 'updateSettings']);
+        Route::post('/generate', [\App\Http\Controllers\Api\PayrollController::class, 'generate']);
+        Route::get('/history', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
+        Route::get('/export', [\App\Http\Controllers\Api\PayrollController::class, 'export']);
+        Route::get('/my-history', [\App\Http\Controllers\Api\PayrollController::class, 'myPayroll']);
+    });
 
     // Tasks (Tugas)
     Route::get('/tasks', [TaskController::class, 'index']);
@@ -254,6 +279,7 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
 
     // Task Activities & Evidence
+    Route::get('/tasks/{id}/activities', [TaskActivityController::class, 'index']);
     Route::post('/tasks/{id}/activities', [TaskActivityController::class, 'storeActivities']);
     Route::get('/tasks/activities/{id}', [TaskActivityController::class, 'show']);
     Route::post('/tasks/activities/{id}/evidence', [TaskActivityController::class, 'uploadEvidence']);
@@ -345,13 +371,12 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::post('/projects/{projectId}/cash-flows', [ProjectController::class, 'storeCashFlow']);
     Route::delete('/projects/{projectId}/cash-flows/{cashFlowId}', [ProjectController::class, 'destroyCashFlow']);
 
-    // Fleet Logging (Manajemen Kendaraan & Travel Expense)
     Route::middleware('permission:view-vehicle-logs')->group(function () {
-        Route::get('/vehicle-logs', [VehicleLogController::class, 'index']);
+        Route::get('/vehicle-logs/report', [VehicleLogController::class, 'report']);
         Route::get('/vehicle-logs/vehicles', [VehicleLogController::class, 'vehicles']);
+        Route::get('/vehicle-logs', [VehicleLogController::class, 'index']);
         Route::get('/vehicle-logs/{id}', [VehicleLogController::class, 'show']);
     });
-    Route::middleware('permission:view-vehicle-reports')->get('/vehicle-logs/report', [VehicleLogController::class, 'report']);
     Route::middleware('permission:apply-vehicle-logs')->group(function () {
         Route::post('/vehicle-logs/departure', [VehicleLogController::class, 'storeDeparture']);
         Route::post('/vehicle-logs/{id}/return', [VehicleLogController::class, 'storeReturn']);
@@ -368,3 +393,4 @@ Route::get('/export/kpi/{id}', [ExportController::class, 'kpiPdf']);
 Route::get('/export/leave/{id}', [ExportController::class, 'leavePdf']);
 Route::get('/export/reimbursement/{id}', [ExportController::class, 'reimbursementPdf']);
 Route::get('/export/overtime/{id}', [ExportController::class, 'overtimePdf']);
+Route::get('/export/permit/{id}', [ExportController::class, 'permitPdf']);

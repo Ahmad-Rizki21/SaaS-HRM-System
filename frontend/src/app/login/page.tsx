@@ -247,7 +247,7 @@ export default function LoginPage() {
                   <label htmlFor="password" className="login-label">
                     Password
                   </label>
-                  <a href="#" className="login-forgot">
+                  <a href="/forgot-password" className="login-forgot">
                     Forgot Password?
                   </a>
                 </div>

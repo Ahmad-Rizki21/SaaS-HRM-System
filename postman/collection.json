@@ -1987,6 +1987,113 @@
                     }
                 }
             ]
+        },
+        {
+            "name": "Payroll System",
+            "description": "Endpoints for managing payroll settings, processing monthly salaries, and accessing digital payslips.",
+            "item": [
+                {
+                    "name": "Get Payroll Settings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/payroll/settings"
+                    }
+                },
+                {
+                    "name": "Update Payroll Settings",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"bpjs_kesehatan_per\": 4,\n    \"bpjs_kesehatan_emp\": 1,\n    \"bpjs_jht_per\": 3.7,\n    \"bpjs_jht_emp\": 2,\n    \"bpjs_jp_per\": 2,\n    \"bpjs_jp_emp\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/payroll/settings"
+                    }
+                },
+                {
+                    "name": "Generate Monthly Payroll",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"month\": \"March\",\n    \"year\": 2026\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": "{{base_url}}/api/payroll/generate"
+                    }
+                },
+                {
+                    "name": "Get Payroll History (Admin)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/payroll/history?month=March&year=2026"
+                    }
+                },
+                {
+                    "name": "Get My Payroll (Employee)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/payroll/my-history"
+                    }
+                },
+                {
+                    "name": "Download Slip PDF",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/payroll/download-slip/1?token={{token}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "payroll", "download-slip", "1"],
+                            "query": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token}}"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
         }
     ]
 }

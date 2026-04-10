@@ -72,6 +72,15 @@ class EmployeeController extends Controller
             'employment_status' => 'nullable|string',
             'work_location' => 'nullable|string',
             'attendance_type' => 'nullable|string|in:office_hour,shift',
+            'ktp_no' => 'nullable|string',
+            'place_of_birth' => 'nullable|string',
+            'date_of_birth' => 'nullable|date',
+            'gender' => 'nullable|in:Laki-laki,Perempuan',
+            'marital_status' => 'nullable|string',
+            'religion' => 'nullable|string',
+            'blood_type' => 'nullable|string|max:5',
+            'emergency_contact_name' => 'nullable|string',
+            'emergency_contact_phone' => 'nullable|string',
         ]);
 
         $path = null;
@@ -94,6 +103,15 @@ class EmployeeController extends Controller
         $employee->attendance_type = $request->attendance_type ?? 'office_hour';
         $employee->profile_photo_path = $path;
         $employee->supervisor_id = $request->supervisor_id;
+        $employee->ktp_no = $request->ktp_no;
+        $employee->place_of_birth = $request->place_of_birth;
+        $employee->date_of_birth = $request->date_of_birth;
+        $employee->gender = $request->gender;
+        $employee->marital_status = $request->marital_status;
+        $employee->religion = $request->religion;
+        $employee->blood_type = $request->blood_type;
+        $employee->emergency_contact_name = $request->emergency_contact_name;
+        $employee->emergency_contact_phone = $request->emergency_contact_phone;
         $employee->save();
 
         // Send Welcome & Verification Email
@@ -115,7 +133,7 @@ class EmployeeController extends Controller
             if ($user->role_id !== 1) {
                 $query->where('company_id', $user->company_id);
             }
-        })->findOrFail($id);
+        })->with(['role', 'company', 'supervisor'])->findOrFail($id);
 
         return $this->successResponse($employee, 'Detail karyawan berhasil diambil.');
     }
@@ -132,6 +150,15 @@ class EmployeeController extends Controller
             'role_id' => 'sometimes|exists:roles,id',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'attendance_type' => 'nullable|string|in:office_hour,shift',
+            'ktp_no' => 'nullable|string',
+            'place_of_birth' => 'nullable|string',
+            'date_of_birth' => 'nullable|date',
+            'gender' => 'nullable|in:Laki-laki,Perempuan',
+            'marital_status' => 'nullable|string',
+            'religion' => 'nullable|string',
+            'blood_type' => 'nullable|string|max:5',
+            'emergency_contact_name' => 'nullable|string',
+            'emergency_contact_phone' => 'nullable|string',
         ]);
 
         if ($request->hasFile('photo')) {

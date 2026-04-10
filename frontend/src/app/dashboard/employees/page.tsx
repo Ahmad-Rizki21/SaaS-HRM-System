@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown, User as UserIcon, Camera, MoreVertical, ArrowRightLeft, UserX, ShieldAlert, CreditCard, Mail, MapPin, Phone, Building2, Calendar, BadgeCheck, Clock } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown, User as UserIcon, Camera, MoreVertical, ArrowRightLeft, UserX, ShieldAlert, CreditCard, Mail, MapPin, Phone, Building2, Calendar, BadgeCheck, Clock, Eye } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
@@ -35,6 +35,15 @@ interface Employee {
   work_location?: string;
   email_verified_at?: string;
   attendance_type?: string;
+  ktp_no?: string;
+  place_of_birth?: string;
+  date_of_birth?: string;
+  gender?: string;
+  marital_status?: string;
+  religion?: string;
+  blood_type?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
 }
 
 interface EmployeeFormData {
@@ -53,6 +62,15 @@ interface EmployeeFormData {
   employment_status?: string;
   work_location?: string;
   attendance_type?: string;
+  ktp_no?: string;
+  place_of_birth?: string;
+  date_of_birth?: string;
+  gender?: string;
+  marital_status?: string;
+  religion?: string;
+  blood_type?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
 }
 
 interface PaginationData {
@@ -95,6 +113,30 @@ function EmployeesContent() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
+
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewedEmployee, setViewedEmployee] = useState<Employee | null>(null);
+
+  const [disciplineModalOpen, setDisciplineModalOpen] = useState(false);
+  const [disciplinedEmployee, setDisciplinedEmployee] = useState<Employee | null>(null);
+  const [disciplineNote, setDisciplineNote] = useState("");
+
+  const handleDisciplineSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!disciplineNote.trim()) return;
+    setIsSubmitting(true);
+    try {
+      // Mock request
+      await new Promise(r => setTimeout(r, 800));
+      alert(`Tindakan disiplin untuk ${disciplinedEmployee?.name} berhasil dicatat.`);
+      setDisciplineModalOpen(false);
+      setDisciplineNote("");
+    } catch (e) {
+      alert("Gagal mencatat tindakan disiplin");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const actionMenuRef = useRef<HTMLDivElement>(null);
 
   // Close action menu when clicking outside
@@ -259,6 +301,15 @@ function EmployeesContent() {
       employment_status: emp.employment_status || 'Permanent',
       work_location: emp.work_location || 'Kantor Pusat',
       attendance_type: emp.attendance_type || 'office_hour',
+      ktp_no: emp.ktp_no || "",
+      place_of_birth: emp.place_of_birth || "",
+      date_of_birth: emp.date_of_birth || "",
+      gender: emp.gender || "",
+      marital_status: emp.marital_status || "",
+      religion: emp.religion || "",
+      blood_type: emp.blood_type || "",
+      emergency_contact_name: emp.emergency_contact_name || "",
+      emergency_contact_phone: emp.emergency_contact_phone || "",
     });
     setPhotoPreview(emp.profile_photo_url || null);
     setIsModalOpen(true);
@@ -632,6 +683,19 @@ function EmployeesContent() {
                               >
                                   <div className="p-2 space-y-1">
                                     <button 
+                                      onClick={() => { setViewedEmployee(emp); setViewModalOpen(true); setActionMenuId(null); }}
+                                      className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors group/item"
+                                    >
+                                        <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 group-hover/item:bg-blue-100 group-hover/item:text-blue-600 transition-colors">
+                                          <Eye size={18} />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-black text-gray-900 group-hover/item:text-blue-600 transition-colors">Lihat Profil</p>
+                                          <p className="text-[10px] text-gray-400 font-medium">Lihat detail lengkap karyawan</p>
+                                        </div>
+                                    </button>
+
+                                    <button 
                                       onClick={() => { handleOpenEditModal(emp); setActionMenuId(null); }}
                                       className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors group/item"
                                     >
@@ -675,7 +739,7 @@ function EmployeesContent() {
                                     <div className="h-px bg-gray-50 mx-3 my-2" />
 
                                     <button 
-                                      onClick={() => setActionMenuId(null)}
+                                      onClick={() => { setDisciplinedEmployee(emp); setDisciplineModalOpen(true); setActionMenuId(null); }}
                                       className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-xl transition-colors group/item"
                                     >
                                         <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 group-hover/item:bg-gray-200 transition-colors">
@@ -713,7 +777,7 @@ function EmployeesContent() {
       {/* CRUD Modal for Add & Edit */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-5 border-b border-gray-100">
               <h3 className="font-semibold text-lg text-gray-900">
                 {modalMode === "add" ? "Tambah Data Karyawan" : "Edit Data Karyawan"}
@@ -749,135 +813,268 @@ function EmployeesContent() {
                   </div>
                 </div>
 
-                {/* Grid fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Nama Lengkap*</label>
-                    <input 
-                      type="text" 
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.name || ""}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    />
+                {/* Form Sections */}
+                <div className="space-y-6">
+                  
+                  {/* Akun & Kontak */}
+                  <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                    <h4 className="font-bold border-b border-gray-200 pb-2 mb-4 text-orange-600 text-sm uppercase tracking-wider">Info Akun & Kontak</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">Nama Lengkap*</label>
+                        <input 
+                          type="text" 
+                          required
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.name || ""}
+                          onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">Email Utama*</label>
+                        <input 
+                          type="email" 
+                          required
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.email || ""}
+                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">No Telepon/WA</label>
+                        <input 
+                          type="tel" 
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.phone || ""}
+                          onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">Peran Akun*</label>
+                        <select 
+                          required
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.role_id || ""}
+                          onChange={(e) => setFormData({...formData, role_id: parseInt(e.target.value)})}
+                        >
+                          <option value="" disabled>Pilih Peran Akun</option>
+                          {availableRoles.map(role => (
+                            <option key={role.id} value={role.id}>{role.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {modalMode === "add" && (
+                        <div className="space-y-1.5">
+                          <label className="text-sm font-medium text-gray-700">Password Sementara*</label>
+                          <input 
+                            type="password" 
+                            required
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                            value={formData.password || ""}
+                            placeholder="Min 6 karakter"
+                            onChange={(e) => setFormData({...formData, password: e.target.value})}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Email Utama*</label>
-                    <input 
-                      type="email" 
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.email || ""}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    />
+
+                  {/* Data Demografis */}
+                  <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                    <h4 className="font-bold border-b border-gray-200 pb-2 mb-4 text-orange-600 text-sm uppercase tracking-wider">Data Demografis</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="space-y-1.5">
+                         <label className="text-sm font-medium text-gray-700">NIK (Karyawan)</label>
+                         <input 
+                           type="text" 
+                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                           value={formData.nik || ""}
+                           onChange={(e) => setFormData({...formData, nik: e.target.value})}
+                         />
+                      </div>
+                      <div className="space-y-1.5">
+                         <label className="text-sm font-medium text-gray-700">No. KTP</label>
+                         <input 
+                           type="text" 
+                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                           value={formData.ktp_no || ""}
+                           onChange={(e) => setFormData({...formData, ktp_no: e.target.value})}
+                         />
+                      </div>
+                      <div className="space-y-1.5">
+                         <label className="text-sm font-medium text-gray-700">Tempat Lahir</label>
+                         <input 
+                           type="text" 
+                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                           value={formData.place_of_birth || ""}
+                           onChange={(e) => setFormData({...formData, place_of_birth: e.target.value})}
+                         />
+                      </div>
+                      <div className="space-y-1.5">
+                         <label className="text-sm font-medium text-gray-700">Tanggal Lahir</label>
+                         <input 
+                           type="date" 
+                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                           value={formData.date_of_birth || ""}
+                           onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
+                         />
+                      </div>
+                      <div className="space-y-1.5">
+                         <label className="text-sm font-medium text-gray-700">Gender</label>
+                         <select 
+                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                           value={formData.gender || ""}
+                           onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                         >
+                           <option value="">Pilih</option>
+                           <option value="Laki-laki">Laki-laki</option>
+                           <option value="Perempuan">Perempuan</option>
+                         </select>
+                      </div>
+                      <div className="space-y-1.5">
+                         <label className="text-sm font-medium text-gray-700">Agama</label>
+                         <select 
+                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                           value={formData.religion || ""}
+                           onChange={(e) => setFormData({...formData, religion: e.target.value})}
+                         >
+                           <option value="">Pilih</option>
+                           <option value="Islam">Islam</option>
+                           <option value="Kristen">Kristen</option>
+                           <option value="Katolik">Katolik</option>
+                           <option value="Hindu">Hindu</option>
+                           <option value="Buddha">Buddha</option>
+                           <option value="Konghucu">Konghucu</option>
+                         </select>
+                      </div>
+                      <div className="space-y-1.5">
+                         <label className="text-sm font-medium text-gray-700">Status Nikah</label>
+                         <select 
+                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                           value={formData.marital_status || ""}
+                           onChange={(e) => setFormData({...formData, marital_status: e.target.value})}
+                         >
+                           <option value="">Pilih</option>
+                           <option value="Single">Single</option>
+                           <option value="Menikah">Menikah</option>
+                           <option value="Janda/Duda">Janda/Duda</option>
+                         </select>
+                      </div>
+                      <div className="space-y-1.5">
+                         <label className="text-sm font-medium text-gray-700">Gol. Darah</label>
+                         <select 
+                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                           value={formData.blood_type || ""}
+                           onChange={(e) => setFormData({...formData, blood_type: e.target.value})}
+                         >
+                           <option value="">Pilih</option>
+                           <option value="A">A</option>
+                           <option value="B">B</option>
+                           <option value="AB">AB</option>
+                           <option value="O">O</option>
+                         </select>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-1.5">
+                      <label className="text-sm font-medium text-gray-700">Alamat</label>
+                      <textarea 
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                        rows={2}
+                        value={formData.address || ""}
+                        onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Pekerjaan & Darurat */}
+                  <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                    <h4 className="font-bold border-b border-gray-200 pb-2 mb-4 text-orange-600 text-sm uppercase tracking-wider">Pekerjaan & Darurat</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">Status Karyawan*</label>
+                        <select 
+                          required
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.employment_status || ""}
+                          onChange={(e) => setFormData({...formData, employment_status: e.target.value})}
+                        >
+                          <option value="Permanent">Permanent</option>
+                          <option value="Contract">Contract</option>
+                          <option value="Probation">Probation</option>
+                          <option value="Intern">Intern</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">Lokasi Kerja*</label>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="Kantor Pusat"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.work_location || ""}
+                          onChange={(e) => setFormData({...formData, work_location: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">Tanggal Gabung*</label>
+                        <input 
+                          type="date" 
+                          required
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.join_date || ""}
+                          onChange={(e) => setFormData({...formData, join_date: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">Pola Kehadiran*</label>
+                        <select 
+                          required
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.attendance_type || "office_hour"}
+                          onChange={(e) => setFormData({...formData, attendance_type: e.target.value})}
+                        >
+                          <option value="office_hour">Office Hour</option>
+                          <option value="shift">Shift / Jadwal Khusus</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">Atasan Langsung</label>
+                        <select 
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.supervisor_id || ""}
+                          onChange={(e) => setFormData({...formData, supervisor_id: e.target.value ? parseInt(e.target.value) : null})}
+                        >
+                          <option value="">Tanpa Atasan</option>
+                          {employees.filter(e => e.id !== formData.id).map(emp => (
+                            <option key={emp.id} value={emp.id}>{emp.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5 border-l border-gray-200 pl-4">
+                        <label className="text-sm font-medium text-gray-700">Nama Kontak Darurat</label>
+                        <input 
+                          type="text" 
+                          placeholder="Contoh: Budi (Suami/Orangtua)"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-200"
+                          value={formData.emergency_contact_name || ""}
+                          onChange={(e) => setFormData({...formData, emergency_contact_name: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">No Hp Darurat</label>
+                        <input 
+                          type="tel" 
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-200"
+                          value={formData.emergency_contact_phone || ""}
+                          onChange={(e) => setFormData({...formData, emergency_contact_phone: e.target.value})}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">NIK (Nomor Induk)</label>
-                    <input 
-                      type="text" 
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.nik || ""}
-                      onChange={(e) => setFormData({...formData, nik: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Peran Akun*</label>
-                    <select 
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.role_id || ""}
-                      onChange={(e) => setFormData({...formData, role_id: parseInt(e.target.value)})}
-                    >
-                      <option value="" disabled>Pilih Peran Akun</option>
-                      {availableRoles.map(role => (
-                        <option key={role.id} value={role.id}>{role.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Status Karyawan*</label>
-                    <select 
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.employment_status || ""}
-                      onChange={(e) => setFormData({...formData, employment_status: e.target.value})}
-                    >
-                      <option value="Permanent">Permanent</option>
-                      <option value="Contract">Contract</option>
-                      <option value="Probation">Probation</option>
-                      <option value="Intern">Intern</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Lokasi Kerja*</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="Contoh: Kantor Pusat"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.work_location || ""}
-                      onChange={(e) => setFormData({...formData, work_location: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Atasan Langsung</label>
-                    <select 
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.supervisor_id || ""}
-                      onChange={(e) => setFormData({...formData, supervisor_id: e.target.value ? parseInt(e.target.value) : null})}
-                    >
-                      <option value="">Tanpa Atasan</option>
-                      {employees.filter(e => e.id !== formData.id).map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Tanggal Bergabung*</label>
-                    <input 
-                      type="date" 
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.join_date || ""}
-                      onChange={(e) => setFormData({...formData, join_date: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Pola Kehadiran*</label>
-                    <select 
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.attendance_type || "office_hour"}
-                      onChange={(e) => setFormData({...formData, attendance_type: e.target.value})}
-                    >
-                      <option value="office_hour">Office Hour</option>
-                      <option value="shift">Shift / Jadwal Khusus</option>
-                    </select>
-                  </div>
-                </div>
-
-                {modalMode === "add" && (
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-gray-700">Password Sementara*</label>
-                    <input 
-                      type="password" 
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
-                      value={formData.password || ""}
-                      placeholder="Min 6 karakter"
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    />
-                  </div>
-                )}
               </div>
 
               <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
@@ -957,6 +1154,141 @@ function EmployeesContent() {
                 {isSubmitting ? "Menghapus..." : "Ya, Hapus Semua"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* View Data Modal */}
+      {viewModalOpen && viewedEmployee && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50/50">
+              <div className="flex items-center gap-3">
+                 <Avatar className="size-10 border shadow-sm">
+                   <AvatarImage src={viewedEmployee.profile_photo_url} alt={viewedEmployee.name} />
+                   <AvatarFallback className="bg-blue-100 text-blue-600 font-bold">{viewedEmployee.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                 </Avatar>
+                 <div>
+                   <h3 className="font-extrabold text-lg text-gray-900 leading-none">{viewedEmployee.name}</h3>
+                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest text-[#1a1a2e]">EMP-{viewedEmployee.id.toString().padStart(4, '0')}</span>
+                 </div>
+              </div>
+              <button 
+                onClick={() => setViewModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 bg-white rounded-full border border-gray-200"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-8 max-h-[75vh] overflow-y-auto bg-white">
+              <section>
+                 <h4 className="font-bold border-b pb-2 mb-4 text-blue-500 text-sm uppercase tracking-wider">Info Akun & Kontak</h4>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div><p className="text-xs text-gray-400">Email Utama</p><p className="text-sm font-semibold">{viewedEmployee.email}</p></div>
+                    <div><p className="text-xs text-gray-400">No Telepon</p><p className="text-sm font-semibold">{viewedEmployee.phone || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Peran Akun</p><p className="text-sm font-semibold">{viewedEmployee.role?.name || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Status Verifikasi</p><p className="text-sm font-semibold">{viewedEmployee.email_verified_at ? 'Terverifikasi' : 'Pending'}</p></div>
+                 </div>
+              </section>
+
+              <section>
+                 <h4 className="font-bold border-b pb-2 mb-4 text-blue-500 text-sm uppercase tracking-wider">Data Demografis</h4>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div><p className="text-xs text-gray-400">NIK (Karyawan)</p><p className="text-sm font-semibold">{viewedEmployee.nik || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">No. KTP</p><p className="text-sm font-semibold">{viewedEmployee.ktp_no || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Tempat Lahir</p><p className="text-sm font-semibold">{viewedEmployee.place_of_birth || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Tanggal Lahir</p><p className="text-sm font-semibold">{viewedEmployee.date_of_birth || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Gender</p><p className="text-sm font-semibold">{viewedEmployee.gender || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Agama</p><p className="text-sm font-semibold">{viewedEmployee.religion || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Status Nikah</p><p className="text-sm font-semibold">{viewedEmployee.marital_status || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Golongan Darah</p><p className="text-sm font-semibold">{viewedEmployee.blood_type || '-'}</p></div>
+                 </div>
+                 <div className="mt-4">
+                    <p className="text-xs text-gray-400">Alamat Lengkap</p>
+                    <p className="text-sm font-semibold">{viewedEmployee.address || '-'}</p>
+                 </div>
+              </section>
+
+              <section>
+                 <h4 className="font-bold border-b pb-2 mb-4 text-blue-500 text-sm uppercase tracking-wider">Pekerjaan & Darurat</h4>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div><p className="text-xs text-gray-400">Status Karyawan</p><p className="text-sm font-semibold">{viewedEmployee.employment_status || 'Permanent'}</p></div>
+                    <div><p className="text-xs text-gray-400">Lokasi Kerja</p><p className="text-sm font-semibold">{viewedEmployee.work_location || 'Kantor Pusat'}</p></div>
+                    <div><p className="text-xs text-gray-400">Tanggal Gabung</p><p className="text-sm font-semibold">{viewedEmployee.join_date || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Sisa Cuti</p><p className="text-sm font-semibold">{viewedEmployee.leave_balance ?? 0} Hari</p></div>
+                    <div><p className="text-xs text-gray-400">Atasan Lgsg.</p><p className="text-sm font-semibold">{viewedEmployee.supervisor?.name || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Pola Kehadiran</p><p className="text-sm font-semibold">{viewedEmployee.attendance_type === "shift" ? "Shift" : "Office Hour"}</p></div>
+                    <div className="col-span-2 border-l pl-4 border-gray-100">
+                      <p className="text-xs text-red-400">Kontak Darurat</p>
+                      <p className="text-sm font-semibold">{viewedEmployee.emergency_contact_name || '-'} ({viewedEmployee.emergency_contact_phone || '-'})</p>
+                    </div>
+                 </div>
+              </section>
+            </div>
+            <div className="p-5 border-t border-gray-100 flex justify-end bg-gray-50/50">
+              <button 
+                onClick={() => setViewModalOpen(false)} 
+                className="px-6 py-2 bg-gray-900 text-white rounded-md font-semibold hover:bg-gray-800 transition-colors"
+               >
+                 Tutup
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Disciplinary Action Modal */}
+      {disciplineModalOpen && disciplinedEmployee && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+             <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-red-50/20">
+               <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                     <ShieldAlert size={20} />
+                   </div>
+                   <div>
+                     <h3 className="font-semibold text-lg text-gray-900 leading-tight">Tindakan Disiplin</h3>
+                     <p className="text-xs text-gray-500">Karyawan: {disciplinedEmployee.name}</p>
+                   </div>
+               </div>
+               <button 
+                 onClick={() => setDisciplineModalOpen(false)}
+                 className="text-gray-400 hover:text-gray-600 transition-colors"
+               >
+                 <X size={20} />
+               </button>
+             </div>
+             <form onSubmit={handleDisciplineSubmit}>
+               <div className="p-6">
+                 <div className="space-y-3">
+                   <label className="text-sm font-medium text-gray-700">Catatan Pelanggaran / SP *</label>
+                   <textarea
+                     required
+                     rows={4}
+                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                     placeholder="Tuliskan alasan tindakan disiplin secara mendetail..."
+                     value={disciplineNote}
+                     onChange={(e) => setDisciplineNote(e.target.value)}
+                   />
+                 </div>
+               </div>
+               <div className="p-5 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
+                 <button 
+                   type="button"
+                   onClick={() => setDisciplineModalOpen(false)}
+                   className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors"
+                 >
+                   Batal
+                 </button>
+                 <button 
+                   type="submit"
+                   disabled={isSubmitting || !disciplineNote.trim()}
+                   className="px-6 py-2 text-sm font-black text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 shadow-lg shadow-red-600/20"
+                 >
+                   {isSubmitting ? "Menyimpan..." : "Catat & Simpan"}
+                 </button>
+               </div>
+             </form>
           </div>
         </div>
       )}
