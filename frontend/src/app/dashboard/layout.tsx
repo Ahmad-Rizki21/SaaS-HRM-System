@@ -623,6 +623,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         width={56}
         height={42}
         className="dash-sidebar-logo"
+        unoptimized={true}
       />
       <span className="dash-sidebar-title">On Time HRMS</span>
     </div>
@@ -675,6 +676,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               width={42}
               height={32}
               className="dash-sidebar-logo"
+              unoptimized={true}
             />
             <span className="dash-sidebar-title">On Time HRMS</span>
           </div>

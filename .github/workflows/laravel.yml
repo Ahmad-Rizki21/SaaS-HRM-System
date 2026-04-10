@@ -1,0 +1,60 @@
+name: Laravel CI/CD
+
+on:
+  push:
+    branches: [ "main", "Dev-Mobile" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: hrm_saas_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+    - uses: actions/checkout@v4
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+      working-directory: backend
+    - name: Install Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+      working-directory: backend
+    - name: Generate key
+      run: php artisan key:generate
+      working-directory: backend
+    - name: Directory Permissions
+      run: chmod -R 777 storage bootstrap/cache
+      working-directory: backend
+    - name: Create Database
+      run: |
+        mkdir -p database
+        touch database/database.sqlite
+      working-directory: backend
+    - name: Execute tests (Unit and Feature tests) via PHPUnit
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: database/database.sqlite
+      run: php artisan test
+      working-directory: backend
+
+  docker-build-and-push:
+    needs: laravel-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and Load
+        run: |
+          docker compose build
