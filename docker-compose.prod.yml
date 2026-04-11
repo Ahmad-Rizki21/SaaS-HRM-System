@@ -9,8 +9,11 @@ services:
     container_name: hrms-backend-prod
     restart: always
     env_file: .env.prod
+    environment:
+      DB_READ_HOST: mysql-slave
     depends_on:
       - mysql-master
+      - mysql-slave
       - redis
     networks:
       - hrms-prod-network
@@ -30,7 +33,7 @@ services:
     networks:
       - hrms-prod-network
 
-  # ── MySQL Master ──────────────────────────────────
+  # ── MySQL Master (Writes) ──────────────────────────────────
   mysql-master:
     image: mysql:8.4
     container_name: hrms-mysql-master-prod
@@ -40,16 +43,49 @@ services:
       MYSQL_DATABASE: ${DB_DATABASE:-hrm_saas}
       MYSQL_USER: ${DB_USERNAME:-hrms_user}
       MYSQL_PASSWORD: ${DB_PASSWORD}
+    command: 
+      - "--server-id=1"
+      - "--log-bin=mysql-bin"
+      - "--binlog-format=ROW"
+      - "--enforce-gtid-consistency=ON"
+      - "--gtid-mode=ON"
     volumes:
       - mysql_master_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     networks:
       - hrms-prod-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
       interval: 20s
       timeout: 10s
-      retries: 10
-      start_period: 60s
+      retries: 5
+
+  # ── MySQL Slave (Reads) ──────────────────────────────────
+  mysql-slave:
+    image: mysql:8.4
+    container_name: hrms-mysql-slave-prod
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    command:
+      - "--server-id=2"
+      - "--log-bin=mysql-bin"
+      - "--relay-log=mysql-relay-bin"
+      - "--read-only=1"
+      - "--enforce-gtid-consistency=ON"
+      - "--gtid-mode=ON"
+    volumes:
+      - mysql_slave_data:/var/lib/mysql
+      - ./docker/mysql/init-slave.sql:/docker-entrypoint-initdb.d/01-init-slave.sql:ro
+    depends_on:
+      - mysql-master
+    networks:
+      - hrms-prod-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
 
   # ── Redis ──────────────────────────────────────────
   redis:
@@ -88,4 +124,5 @@ networks:
 
 volumes:
   mysql_master_data:
+  mysql_slave_data:
   redis_data:
