@@ -1,0 +1,3 @@
+[client]
+user=root
+password=${DB_PASSWORD:-OnTimeNarwastugo2026}
