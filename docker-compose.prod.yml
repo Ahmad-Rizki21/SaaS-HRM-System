@@ -143,8 +143,8 @@ services:
     image: prom/mysqld-exporter:latest
     container_name: hrms-mysql-exporter
     restart: always
-    volumes:
-      - ./docker/mysql/exporter.cnf:/home/.my.cnf:ro
+    environment:
+      - DATA_SOURCE_NAME=root:${DB_PASSWORD:-OnTimeNarwastugo2026}@(mysql-master:3306)/
     ports:
       - "9104:9104"
     depends_on:
