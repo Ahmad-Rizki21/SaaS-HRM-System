@@ -140,13 +140,11 @@ services:
       - hrms-prod-network
 
   mysql-exporter:
-    image: prom/mysqld-exporter:latest
+    image: prom/mysqld-exporter:v0.15.0
     container_name: hrms-mysql-exporter
     restart: always
     environment:
-      USER: "root"
-      PASSWORD: "${DB_PASSWORD:-OnTimeNarwastugo2026}"
-      DATA_SOURCE_NAME: "root:${DB_PASSWORD:-OnTimeNarwastugo2026}@(mysql-master:3306)/"
+      - DATA_SOURCE_NAME=root:${DB_PASSWORD:-OnTimeNarwastugo2026}@(mysql-master:3306)/
     ports:
       - "9104:9104"
     depends_on:
