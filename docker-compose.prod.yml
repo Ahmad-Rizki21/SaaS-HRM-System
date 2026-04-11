@@ -144,6 +144,8 @@ services:
     container_name: hrms-mysql-exporter
     restart: always
     environment:
+      USER: "root"
+      PASSWORD: "${DB_PASSWORD:-OnTimeNarwastugo2026}"
       DATA_SOURCE_NAME: "root:${DB_PASSWORD:-OnTimeNarwastugo2026}@(mysql-master:3306)/"
     ports:
       - "9104:9104"
