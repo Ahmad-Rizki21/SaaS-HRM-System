@@ -140,7 +140,7 @@ services:
       - hrms-prod-network
 
   mysql-exporter:
-    image: prom/mysqld-exporter:latest
+    image: prom/mysqld-exporter:v0.14.0
     container_name: hrms-mysql-exporter
     restart: always
     environment:
