@@ -49,6 +49,7 @@ services:
       - "--binlog-format=ROW"
       - "--enforce-gtid-consistency=ON"
       - "--gtid-mode=ON"
+      - "--mysql-native-password=ON"
     volumes:
       - mysql_master_data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -74,6 +75,7 @@ services:
       - "--read-only=1"
       - "--enforce-gtid-consistency=ON"
       - "--gtid-mode=ON"
+      - "--mysql-native-password=ON"
     volumes:
       - mysql_slave_data:/var/lib/mysql
       - ./docker/mysql/init-slave.sql:/docker-entrypoint-initdb.d/01-init-slave.sql:ro
