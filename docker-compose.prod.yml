@@ -120,6 +120,38 @@ services:
     networks:
       - hrms-prod-network
 
+  # ── Monitoring Agents (Exporters) ─────────────────
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: hrms-node-exporter
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - hrms-prod-network
+
+  mysql-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: hrms-mysql-exporter
+    restart: always
+    environment:
+      DATA_SOURCE_NAME: "root:${DB_PASSWORD:-OnTimeNarwastugo2026}@(mysql-master:3306)/"
+    ports:
+      - "9104:9104"
+    depends_on:
+      - mysql-master
+    networks:
+      - hrms-prod-network
+
 networks:
   hrms-prod-network:
     driver: bridge
