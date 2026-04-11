@@ -14,19 +14,22 @@ if (typeof window !== 'undefined') {
 
     // Use singleton instance
     if (!window.Echo) {
+        const isHttps = window.location.protocol === 'https:';
         window.Echo = new Echo({
             broadcaster: 'reverb',
-            key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'vbovvxvpylkuw8p9x3lp', // Fallback for local testing if env is missing
+            key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'vbovvxvpylkuw8p9x3lp',
             wsHost: window.location.hostname,
-            wsPort: 8080,
-            wssPort: 8080,
-            forceTLS: false,
+            wsPort: isHttps ? 443 : 8080,
+            wssPort: isHttps ? 443 : 8080,
+            forceTLS: isHttps,
             enabledTransports: ['ws', 'wss'],
             authorizer: (channel: any, options: any) => {
                 return {
                     authorize: (socketId: string, callback: Function) => {
                         const token = Cookies.get('token');
-                        fetch(`http://${window.location.hostname}:8000/api/broadcasting/auth`, {
+                        const apiUrl = process.env.NEXT_PUBLIC_API_URL || `${window.location.protocol}//${window.location.hostname}:8000/api`;
+                        
+                        fetch(`${apiUrl}/broadcasting/auth`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

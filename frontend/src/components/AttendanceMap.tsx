@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
-import axios from 'axios';
+import axiosInstance from '@/lib/axios';
 import Cookies from 'js-cookie';
 
 // Fix for default marker icon issue in Leaflet + Next.js
@@ -42,10 +42,7 @@ const AttendanceMap = () => {
 
   const fetchHeatmap = async () => {
     try {
-      const token = Cookies.get('token');
-      const response = await axios.get('http://127.0.0.1:8000/api/attendance/heatmap', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axiosInstance.get('/attendance/heatmap');
       if (response.data.status === 'success') {
         // Add tiny random jitter to handle overlapping markers
         const jittered = response.data.data.map((item: any, idx: number) => ({
