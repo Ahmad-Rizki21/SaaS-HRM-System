@@ -144,6 +144,9 @@ export default function ApprovalsPage() {
               }
               return false;
            }
+           if (item.type === 'permit') {
+               return isHR && item.status === "pending";
+           }
            // Untuk modul lain spt lembur, klaim dll (masih single stage)
            return item.status === "pending" || item.status === "waiting_approval";
         })

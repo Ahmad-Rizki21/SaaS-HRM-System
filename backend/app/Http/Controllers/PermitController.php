@@ -78,24 +78,15 @@ class PermitController extends Controller
             'info'
         );
 
-        // Notify Supervisor
-        if ($request->user()->supervisor_id) {
-            $supervisor = $request->user()->supervisor;
-            if ($supervisor) {
-                $this->notify(
-                    $supervisor,
-                    'PENGAJUAN IZIN BAWAHAN',
-                    "{$request->user()->name} telah mengajukan izin ({$request->type}) pada {$request->start_date}. Mohon segera tinjau.",
-                    'warning',
-                    '/dashboard/approvals'
-                );
-            }
-        }
-
         // Notify Admins
         $admins = \App\Models\User::where('company_id', $request->user()->company_id)
-            ->where('role_id', '>', 1)
-            ->where('id', '!=', $request->user()->supervisor_id)
+            ->where(function($q) {
+                // Anyone who is Admin OR has manager rights (like HR)
+                $q->where('role_id', '>', 1)
+                  ->whereHas('role', function($q2) {
+                       $q2->where('name', 'HRD')->orWhere('name', 'Admin');
+                  });
+            })
             ->get();
             
         foreach ($admins as $admin) {
