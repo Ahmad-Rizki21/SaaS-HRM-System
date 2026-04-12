@@ -75,7 +75,7 @@ class LeaveController extends Controller
             
             $pendingDays = Leave::where('user_id', $request->user()->id)
                   ->where('type', 'Cuti Tahunan')
-                  ->where('status', 'pending')
+                  ->whereIn('status', ['pending', 'pending_supervisor', 'pending_hr'])
                   ->get()
                   ->sum(function($l) {
                       return \Carbon\Carbon::parse($l->start_date)->diffInDays(\Carbon\Carbon::parse($l->end_date)) + 1;
@@ -89,6 +89,8 @@ class LeaveController extends Controller
             }
         }
 
+        $status = $request->user()->supervisor_id ? 'pending_supervisor' : 'pending_hr';
+
         $leave = Leave::create([
             'user_id' => $request->user()->id,
             'company_id' => $request->user()->company_id,
@@ -97,7 +99,7 @@ class LeaveController extends Controller
             'type' => $request->type,
             'reason' => $request->reason,
             'signature' => $request->signature,
-            'status' => 'pending',
+            'status' => $status,
         ]);
 
         $this->notify(
@@ -148,11 +150,43 @@ class LeaveController extends Controller
             }
         })->findOrFail($id);
         
-        $leave->update([
-            'status' => 'approved',
-            'approved_by' => $request->user()->id,
-            'remark' => $request->remark,
-        ]);
+        $isSupervisor = $leave->user->supervisor_id === $user->id;
+        $isHR = $user->hasPermission('approve-leaves') || $user->role_id === 1;
+
+        if ($leave->status === 'pending_supervisor') {
+            if (!$isSupervisor && !$isHR) {
+                return response()->json(['status' => 'error', 'message' => 'Anda tidak berhak.'], 403);
+            }
+            if ($isSupervisor && !$isHR) {
+                $leave->update([
+                    'status' => 'pending_hr',
+                    'supervisor_approved_by' => $user->id,
+                    'supervisor_approved_at' => now(),
+                    'supervisor_remark' => $request->remark,
+                ]);
+                $this->notify($leave->user, 'CUTI DI-APPROVE ATASAN', 'Menunggu HRD.', 'info');
+                return $this->successResponse(null, 'Di-approve oleh atasan. Menunggu proses HRD.');
+            } else if ($isHR) {
+                $leave->update([
+                    'status' => 'approved',
+                    'approved_by' => $user->id,
+                    'remark' => $request->remark,
+                    'supervisor_approved_by' => $user->id,
+                    'supervisor_approved_at' => now(),
+                ]);
+            }
+        } else if (in_array($leave->status, ['pending_hr', 'pending'])) {
+            if (!$isHR) {
+                return response()->json(['status' => 'error', 'message' => 'Hanya HRD.'], 403);
+            }
+            $leave->update([
+                'status' => 'approved',
+                'approved_by' => $user->id,
+                'remark' => $request->remark,
+            ]);
+        } else {
+            return response()->json(['status' => 'error', 'message' => 'Status tidak valid.'], 400);
+        }
 
         if ($leave->type === 'Cuti Tahunan') {
             $days = \Carbon\Carbon::parse($leave->start_date)->diffInDays(\Carbon\Carbon::parse($leave->end_date)) + 1;
@@ -184,14 +218,30 @@ class LeaveController extends Controller
 
     public function reject(Request $request, $id)
     {
-        abort_if(!$request->user()->hasPermission('approve-leaves'), 403, 'Akses ditolak.');
+        $user = $request->user();
         $leave = Leave::findOrFail($id);
-        
-        $leave->update([
-            'status' => 'rejected',
-            'approved_by' => $request->user()->id,
-            'remark' => $request->remark,
-        ]);
+
+        $isSupervisor = $leave->user->supervisor_id === $user->id;
+        $isHR = $user->hasPermission('approve-leaves') || $user->role_id === 1;
+
+        if (!$isSupervisor && !$isHR) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        if ($leave->status === 'pending_supervisor' && $isSupervisor) {
+            $leave->update([
+                'status' => 'rejected',
+                'supervisor_approved_by' => $user->id,
+                'supervisor_approved_at' => now(),
+                'supervisor_remark' => $request->remark,
+            ]);
+        } else {
+            $leave->update([
+                'status' => 'rejected',
+                'approved_by' => $user->id,
+                'remark' => $request->remark,
+            ]);
+        }
 
         $this->notify(
             $leave->user, 
@@ -223,7 +273,7 @@ class LeaveController extends Controller
             }
         })->findOrFail($id);
 
-        if ($leave->status !== 'pending' && $user->role_id !== 1) {
+        if (!in_array($leave->status, ['pending', 'pending_supervisor', 'pending_hr']) && $user->role_id !== 1) {
             return $this->errorResponse('Cuti yang sudah diproses tidak bisa dihapus.', 403);
         }
 
