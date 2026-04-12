@@ -21,7 +21,7 @@ interface ApprovalItem {
 }
 
 export default function ApprovalsPage() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, hasPermission } = useAuth();
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "leave" | "reimbursement" | "profile" | "overtime" | "permit">("all");
@@ -124,7 +124,7 @@ export default function ApprovalsPage() {
         created_at: pe.created_at
       }));
 
-      const isHR = currentUser?.role_id === 1 || currentUser?.permissions?.includes('approve-leaves');
+      const isHR = currentUser?.role_id === 1 || hasPermission('approve-leaves');
 
       const merged = [...leaves, ...reimbursements, ...profiles, ...overtimes, ...permits]
         .filter(item => {
