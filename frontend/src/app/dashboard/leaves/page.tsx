@@ -469,7 +469,7 @@ export default function LeavesPage() {
                   ) : (
                     <div className="h-16 flex items-center justify-center text-xs text-gray-400 italic mb-2">-</div>
                   )}
-                  <p className="text-sm font-semibold uppercase">{selectedItem.supervisor_approver?.name || selectedItem.supervisorApprover?.name || "Atasan Langsung"}</p>
+                  <p className="text-sm font-semibold uppercase">{selectedItem.supervisor_approver?.name || selectedItem.supervisorApprover?.name || selectedItem.user?.supervisor?.name || "Atasan Langsung"}</p>
                   <p className="text-xs text-gray-500 border-t border-gray-300 pt-1 mt-1 w-32 border-dashed">Supervisor</p>
                 </div>
 
