@@ -24,11 +24,11 @@ class PermitController extends Controller
 
         if ($user->role_id === 1) {
             // Master Admin sees all
-        } else if ($user->is_manager) {
+        } else if ($user->is_manager || $user->hasPermission('approve-leaves')) {
             $query->where('company_id', $user->company_id);
             
             // If strictly a manager/supervisor (not HRD/Admin), see only subordinates
-            if (in_array($user->role->name, ['Manager', 'Supervisor'])) {
+            if (!$user->hasPermission('approve-leaves') && in_array($user->role->name, ['Manager', 'Supervisor'])) {
                 $subordinateIds = \App\Models\User::where('supervisor_id', $user->id)->pluck('id');
                 $query->whereIn('user_id', $subordinateIds);
             }

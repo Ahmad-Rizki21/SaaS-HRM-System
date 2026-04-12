@@ -124,7 +124,11 @@ export default function ApprovalsPage() {
         created_at: pe.created_at
       }));
 
-      const isHR = currentUser?.role_id === 1 || hasPermission('approve-leaves');
+      const roleName = currentUser?.role?.name?.toLowerCase() || "";
+      const isHR = currentUser?.role_id === 1 || 
+                   hasPermission('approve-leaves') || 
+                   roleName.includes("hrd") || 
+                   roleName.includes("admin");
 
       const merged = [...leaves, ...reimbursements, ...profiles, ...overtimes, ...permits]
         .filter(item => {

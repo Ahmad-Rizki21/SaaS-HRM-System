@@ -43,7 +43,15 @@ class User extends Authenticatable
     {
         if (!$this->relationLoaded('role')) return false;
         if (!$this->role) return false;
-        return in_array($this->role->name, ['Manager', 'Supervisor', 'HRD', 'Management', 'Direktur', 'Direktour', 'Super Admin']);
+        $roleName = $this->role->name;
+        
+        // Broad list of roles that count as management/HR for data visibility
+        $managerRoles = [
+            'Manager', 'Supervisor', 'HRD', 'HRD Manager', 'Management', 
+            'Direktur', 'Direktur Utama', 'CEO', 'Super Admin', 'Admin'
+        ];
+        
+        return in_array($roleName, $managerRoles) || str_contains(strtolower($roleName), 'manager');
     }
 
     protected function casts(): array
