@@ -122,7 +122,7 @@ export default function ApprovalsPage() {
       }));
 
       const merged = [...leaves, ...reimbursements, ...profiles, ...overtimes, ...permits]
-        .filter(item => item.status === "pending")
+        .filter(item => ["pending", "pending_supervisor", "pending_hr"].includes(item.status))
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setItems(merged);
