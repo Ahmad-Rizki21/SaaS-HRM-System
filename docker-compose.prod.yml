@@ -146,13 +146,13 @@ services:
     environment:
       - DATA_SOURCE_NAME=root:${DB_PASSWORD:-OnTimeNarwastugo2026}@tcp(mysql-master:3306)/
     command:
-      - "--collect.slave_status=false"
-      - "--collect.info_schema.innodb_metrics"
-      - "--collect.info_schema.processlist"
-      - "--collect.info_schema.tables"
-      - "--collect.perf_schema.eventsstatements"
-      - "--collect.perf_schema.indexiowaits"
-      - "--collect.perf_schema.tableiowaits"
+      - "--no-collector.slave_status"
+      - "--collector.info_schema.innodb_metrics"
+      - "--collector.info_schema.processlist"
+      - "--collector.info_schema.tables"
+      - "--collector.perf_schema.eventsstatements"
+      - "--collector.perf_schema.indexiowaits"
+      - "--collector.perf_schema.tableiowaits"
     ports:
       - "9104:9104"
     depends_on:
