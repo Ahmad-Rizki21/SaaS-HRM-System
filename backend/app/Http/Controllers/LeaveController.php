@@ -15,7 +15,7 @@ class LeaveController extends Controller
 
     public function index(Request $request)
     {
-        $query = Leave::with('user');
+        $query = Leave::with(['user', 'supervisorApprover', 'hrApprover']);
 
         $user = $request->user();
         

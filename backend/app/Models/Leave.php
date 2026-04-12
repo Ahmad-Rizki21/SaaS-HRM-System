@@ -20,4 +20,14 @@ class Leave extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function supervisorApprover()
+    {
+        return $this->belongsTo(User::class, 'supervisor_approved_by');
+    }
+
+    public function hrApprover()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
 }
