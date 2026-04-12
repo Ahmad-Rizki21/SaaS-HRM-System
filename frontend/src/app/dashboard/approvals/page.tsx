@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, ExternalLink } from "lucide-react";
 import { ListPageSkeleton } from "@/components/Skeleton";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ApprovalItem {
   id: number;
@@ -20,6 +21,7 @@ interface ApprovalItem {
 }
 
 export default function ApprovalsPage() {
+  const { user: currentUser } = useAuth();
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "leave" | "reimbursement" | "profile" | "overtime" | "permit">("all");
@@ -65,7 +67,8 @@ export default function ApprovalsPage() {
         end_date: l.end_date,
         status: l.status,
         attachment: null,
-        created_at: l.created_at
+        created_at: l.created_at,
+        target_supervisor_id: l.user?.supervisor_id
       }));
 
       const rData = reimRes.data.data;
@@ -121,8 +124,29 @@ export default function ApprovalsPage() {
         created_at: pe.created_at
       }));
 
+      const isHR = currentUser?.role_id === 1 || currentUser?.permissions?.includes('approve-leaves');
+
       const merged = [...leaves, ...reimbursements, ...profiles, ...overtimes, ...permits]
-        .filter(item => ["pending", "pending_supervisor", "pending_hr"].includes(item.status))
+        .filter(item => {
+           if (item.type === 'leave') {
+              if (item.status === 'pending_supervisor') {
+                 // Hanya supervisor dari ybs ATAU HRD (kalau bypass diizinkan, tp lbh baik cm supervisor) yang liat
+                 // Sesuai request: HRD gausah liat dulu sblm diacc supervisor biar ga nyampah di dahsboard HRD
+                 return item.target_supervisor_id === currentUser?.id;
+              }
+              if (item.status === 'pending_hr') {
+                 // Hanya HRD yang lihat
+                 return isHR;
+              }
+              if (item.status === 'pending') {
+                 // Fallback untuk legacy single-stage
+                 return isHR || item.target_supervisor_id === currentUser?.id;
+              }
+              return false;
+           }
+           // Untuk modul lain spt lembur, klaim dll (masih single stage)
+           return item.status === "pending" || item.status === "waiting_approval";
+        })
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setItems(merged);

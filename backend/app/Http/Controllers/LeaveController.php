@@ -21,7 +21,7 @@ class LeaveController extends Controller
         
         if ($user->role_id === 1) {
             // Master Admin sees all
-        } else if ($user->is_manager) {
+        } else if ($user->is_manager || $user->hasPermission('approve-leaves')) {
             $query->where('company_id', $user->company_id);
         } else {
             $query->where('user_id', $user->id)
