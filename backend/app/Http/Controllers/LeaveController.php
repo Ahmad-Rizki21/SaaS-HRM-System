@@ -157,7 +157,7 @@ class LeaveController extends Controller
             if (!$isSupervisor && !$isHR) {
                 return response()->json(['status' => 'error', 'message' => 'Anda tidak berhak.'], 403);
             }
-            if ($isSupervisor && !$isHR) {
+            if ($isSupervisor) {
                 $leave->update([
                     'status' => 'pending_hr',
                     'supervisor_approved_by' => $user->id,
@@ -167,6 +167,7 @@ class LeaveController extends Controller
                 $this->notify($leave->user, 'CUTI DI-APPROVE ATASAN', 'Menunggu HRD.', 'info');
                 return $this->successResponse(null, 'Di-approve oleh atasan. Menunggu proses HRD.');
             } else if ($isHR) {
+                // HR forcefully bypasses supervisor
                 $leave->update([
                     'status' => 'approved',
                     'approved_by' => $user->id,
