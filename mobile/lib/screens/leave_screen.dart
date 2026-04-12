@@ -283,10 +283,23 @@ class _LeaveScreenState extends State<LeaveScreen> {
                           itemCount: _leaves.length,
                           itemBuilder: (context, index) {
                             final leave = _leaves[index];
-                            final status = leave['status'];
+                            final rawStatus = leave['status'];
+                            String statusText = 'MENUNGGU';
                             Color statusColor = Colors.orange;
-                            if (status == 'approved') statusColor = Colors.green;
-                            if (status == 'rejected') statusColor = Colors.red;
+
+                            if (rawStatus == 'pending_supervisor') {
+                              statusText = 'MENUNGGU ATASAN';
+                              statusColor = Colors.orange;
+                            } else if (rawStatus == 'pending_hr') {
+                              statusText = 'MENUNGGU HRD';
+                              statusColor = Colors.orange;
+                            } else if (rawStatus == 'approved') {
+                              statusText = 'DISETUJUI';
+                              statusColor = Colors.green;
+                            } else if (rawStatus == 'rejected') {
+                              statusText = 'DITOLAK';
+                              statusColor = Colors.red;
+                            }
 
                             return Container(
                               margin: const EdgeInsets.only(bottom: 15),
@@ -320,9 +333,9 @@ class _LeaveScreenState extends State<LeaveScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                         decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                                        child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                                        child: Text(statusText, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
                                       ),
-                                      if (status != 'rejected')
+                                      if (rawStatus != 'rejected')
                                         IconButton(
                                           constraints: BoxConstraints(),
                                           padding: EdgeInsets.only(top: 8),
