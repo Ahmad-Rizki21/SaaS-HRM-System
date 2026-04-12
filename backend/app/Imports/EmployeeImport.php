@@ -19,13 +19,21 @@ class EmployeeImport implements ToModel, WithHeadingRow
 
     public function model(array $row)
     {
-        if (empty($row['nama']) || empty($row['email'])) {
-            return null; // Skip invalid row (termasuk row panduan yang kosongan)
+        // Debugging keys if needed: Log::info(array_keys($row));
+        
+        // Cari key yang mengandung 'nama', 'email', dll karena HeadingRow slugifier 
+        // akan mengubah "nama (WAJIB)" menjadi "nama_wajib"
+        $nama = $this->getValue($row, 'nama');
+        $email = $this->getValue($row, 'email');
+
+        if (empty($nama) || empty($email)) {
+            return null; // Skip invalid row or instruction row
         }
         
-        // Bersihkan data
-        $email = trim($row['email']);
-        $nama = trim($row['nama']);
+        // Skip rows that look like instructions
+        if (str_contains($nama, '>>>') || str_contains($nama, 'Panduan') || str_contains($nama, 'Angka')) {
+            return null;
+        }
 
         // Cek kalau email sudah terdaftar
         if (User::where('email', $email)->exists()) {
@@ -33,22 +41,22 @@ class EmployeeImport implements ToModel, WithHeadingRow
         }
 
         // Handle Role
-        $roleId = !empty($row['role_id']) ? $row['role_id'] : 3;
+        $roleId = $this->getValue($row, 'role_id');
+        if (empty($roleId)) $roleId = 3;
 
         // Handle Password
-        $password = !empty($row['password']) ? $row['password'] : 'password123';
+        $password = $this->getValue($row, 'password');
+        if (empty($password)) $password = 'password123';
 
-        // Handle Tanggal Gabung (bisa berupa teks atau digit Excel Serial Date)
-        $joinDateRaw = $row['tanggal_gabung'] ?? null;
+        // Handle Tanggal Gabung
+        $joinDateRaw = $this->getValue($row, 'tanggal_gabung');
         $joinDate = now()->format('Y-m-d');
 
         if (!empty($joinDateRaw)) {
             if (is_numeric($joinDateRaw)) {
                 try {
                     $joinDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($joinDateRaw)->format('Y-m-d');
-                } catch (\Exception $e) {
-                    // Fallback
-                }
+                } catch (\Exception $e) {}
             } else {
                 $joinDate = date('Y-m-d', strtotime($joinDateRaw));
             }
@@ -56,14 +64,32 @@ class EmployeeImport implements ToModel, WithHeadingRow
 
         return new User([
             'company_id' => $this->companyId,
-            'name'       => $nama,
-            'email'      => $email,
-            'nik'        => !empty($row['nik']) ? $row['nik'] : null,
+            'name'       => trim($nama),
+            'email'      => trim($email),
+            'nik'        => (string)$this->getValue($row, 'nik'),
             'password'   => Hash::make($password),
             'role_id'    => $roleId,
             'join_date'  => $joinDate,
-            'employment_status' => !empty($row['status_karyawan']) ? $row['status_karyawan'] : null,
-            'work_location'     => !empty($row['lokasi_kerja']) ? $row['lokasi_kerja'] : null,
+            'phone'      => (string)$this->getValue($row, 'nomor_telepon'),
+            'address'    => $this->getValue($row, 'alamat'),
+            'ktp_no'     => (string)$this->getValue($row, 'nomor_ktp'),
+            'gender'     => $this->getValue($row, 'jenis_kelamin'),
+            'employment_status' => $this->getValue($row, 'status_karyawan') ?: 'Permanent',
+            'work_location'     => $this->getValue($row, 'lokasi_kerja') ?: 'Kantor Pusat',
+            'supervisor_id'     => $this->getValue($row, 'id_atasan'),
         ]);
+    }
+
+    /**
+     * Helper untuk mengambil value dari row berdasarkan prefix key (karena slugging)
+     */
+    private function getValue(array $row, $keyPrefix)
+    {
+        foreach ($row as $key => $value) {
+            if (str_starts_with($key, $keyPrefix)) {
+                return $value;
+            }
+        }
+        return null;
     }
 }

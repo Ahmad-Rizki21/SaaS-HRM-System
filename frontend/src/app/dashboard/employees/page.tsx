@@ -160,42 +160,71 @@ function EmployeesContent() {
   }, [searchQuery, page, urlSearch, urlId, permissions, activeFilter]);
 
   const downloadTemplate = () => {
+    // Definisi data contoh dengan label kolom yang ramah user
     const templateData: any[] = [
       { 
-        nama: "Andi Saputra (Contoh)", 
-        email: "andi@example.com", 
-        nik: "123456789", 
-        password: "password123", 
-        role_id: 3, 
-        tanggal_gabung: "2024-01-01",
-        status_karyawan: "Permanent",
-        lokasi_kerja: "Kantor Pusat"
+        "nama (WAJIB)": "Andi Saputra", 
+        "email (WAJIB)": "andi@example.com", 
+        "nik (OPSIONAL)": "123456789", 
+        "password (WAJIB)": "password123", 
+        "role_id (WAJIB)": 3, 
+        "tanggal_gabung (OPSIONAL)": "2024-01-01",
+        "nomor_telepon (OPSIONAL)": "08123456789",
+        "alamat (OPSIONAL)": "Jl. Merdeka No. 1",
+        "nomor_ktp (OPSIONAL)": "3171234567890001",
+        "jenis_kelamin (Laki-laki/Perempuan)": "Laki-laki",
+        "status_karyawan (Permanent/Contract)": "Permanent",
+        "lokasi_kerja (OPSIONAL)": "Kantor Pusat",
+        "id_atasan (LIHAT DAFTAR)": null
       }
     ];
 
-    templateData.push({ nama: "", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "", status_karyawan: "", lokasi_kerja: "" });
+    // Baris kosong untuk pemisah
+    templateData.push({});
     
-    // Tambahkan baris panduan agar HR gampang baca
-    templateData.push({ nama: ">>> PETUNJUK PENGISIAN KOLOM ROLE_ID <<<", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "", status_karyawan: "", lokasi_kerja: "" });
+    // Bagian Instruksi
+    templateData.push({ "nama (WAJIB)": ">>> PANDUAN PENGISIAN <<<" });
+    templateData.push({ "nama (WAJIB)": "1. Kolom bertanda (WAJIB) tidak boleh kosong." });
+    templateData.push({ "nama (WAJIB)": "2. Untuk Kolom ROLE_ID, gunakan angka dari daftar di bawah ini:" });
     
     availableRoles.forEach(role => {
       templateData.push({ 
-        nama: `👉 Ketik angka ${role.id} untuk posisi ${role.name.toUpperCase()}`, 
-        email: "", nik: "", password: "", role_id: null, tanggal_gabung: "", status_karyawan: "", lokasi_kerja: "" 
+        "nama (WAJIB)": `   - Angka ${role.id} untuk jabatan: ${role.name.toUpperCase()}`
       });
     });
 
-    templateData.push({ nama: "Catatan: Baris panduan ini tidak akan masuk ke sistem saat di-import (otomatis diabaikan).", email: "", nik: "", password: "", role_id: null, tanggal_gabung: "", status_karyawan: "", lokasi_kerja: "" });
+    templateData.push({ "nama (WAJIB)": "3. Untuk Kolom ID_ATASAN, masukkan ID Karyawan yang menjadi bosnya (cek di tabel karyawan)." });
+    templateData.push({ "nama (WAJIB)": "4. Format Tanggal gunakan: YYYY-MM-DD (Contoh: 2024-12-30)." });
+    templateData.push({ "nama (WAJIB)": "5. Hapus baris CONTOH (Andi Saputra) sebelum upload jika tidak diperlukan." });
+    
+    // Buat worksheet dari data JSON
+    // Karena ToModel WithHeadingRow di backend menggunakan slug, pastikan key-nya konsisten
+    // Maatwebsite Excel WithHeadingRow akan mengubah "nama (WAJIB)" menjadi "nama"
     
     const worksheet = XLSX.utils.json_to_sheet(templateData);
+
+    // Atur Lebar Kolom
     worksheet['!cols'] = [
-      { wch: 45 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 18 }, { wch: 20 }, { wch: 20 }
+      { wch: 40 }, // Nama
+      { wch: 25 }, // Email
+      { wch: 15 }, // NIK
+      { wch: 15 }, // Password
+      { wch: 12 }, // Role ID
+      { wch: 20 }, // Tanggal Gabung
+      { wch: 18 }, // No Telp
+      { wch: 30 }, // Alamat
+      { wch: 20 }, // KTP
+      { wch: 20 }, // Gender
+      { wch: 20 }, // Status
+      { wch: 20 }, // Lokasi
+      { wch: 15 }, // ID Atasan
     ];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Template Karyawan");
-    XLSX.writeFile(workbook, "Template_Import_Karyawan.xlsx");
+    XLSX.writeFile(workbook, "Template_Import_Karyawan_Narwastu.xlsx");
   };
+
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
