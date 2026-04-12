@@ -122,7 +122,9 @@ export default function LeavesPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending': return <span className="dash-badge dash-badge-warning">Menunggu</span>;
+      case 'pending': 
+      case 'pending_supervisor': return <span className="dash-badge dash-badge-warning">Menunggu Atasan</span>;
+      case 'pending_hr': return <span className="dash-badge dash-badge-warning">Menunggu HRD</span>;
       case 'approved': return <span className="dash-badge dash-badge-success">Disetujui</span>;
       case 'rejected': return <span className="dash-badge dash-badge-danger">Ditolak</span>;
       default: return <span className="dash-badge dash-badge-neutral">{status}</span>;
@@ -216,7 +218,7 @@ export default function LeavesPage() {
                           >
                             <Eye size={16} />
                           </button>
-                          {leave.status === 'pending' && hasPermission('approve-leaves') && (
+                          {['pending', 'pending_supervisor', 'pending_hr'].includes(leave.status) && (hasPermission('approve-leaves') || user?.is_manager) && (
                             <>
                               <button 
                                 className="dash-action-btn edit" 
@@ -421,44 +423,75 @@ export default function LeavesPage() {
                 </div>
               </div>
 
-              {selectedItem.remark && (
+              {(selectedItem.remark || selectedItem.supervisor_remark) ? (
                 <div className={`p-4 rounded border mb-6 text-sm ${selectedItem.status === 'rejected' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-green-50 border-green-200 text-green-800'}`}>
-                  <span className="block text-xs uppercase tracking-wider font-semibold mb-1 opacity-80">Catatan HR / Supervisor</span>
-                  {selectedItem.remark}
+                  {selectedItem.supervisor_remark && (
+                    <div className="mb-2">
+                       <span className="block text-xs uppercase tracking-wider font-semibold mb-1 opacity-80">Catatan Atasan</span>
+                       <p>{selectedItem.supervisor_remark}</p>
+                    </div>
+                  )}
+                  {selectedItem.remark && (
+                    <div>
+                        <span className="block text-xs uppercase tracking-wider font-semibold mb-1 opacity-80">Catatan HRD</span>
+                        <p>{selectedItem.remark}</p>
+                    </div>
+                  )}
                 </div>
-              )}
+              ) : null}
 
-              <div className="mt-12 flex justify-between items-end px-10">
-                <div className="text-center w-48">
-                  <p className="text-sm font-medium mb-12 border-b border-transparent pb-1">Hormat Saya,</p>
+              <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 px-4">
+                <div className="text-center flex flex-col items-center">
+                  <p className="text-sm font-medium mb-8 border-b border-transparent pb-1">Hormat Saya,</p>
                   {selectedItem.signature ? (
                     <img src={selectedItem.signature} alt="Tanda Tangan" className="h-16 mx-auto mb-2 object-contain" />
                   ) : (
-                    <div className="h-16 flex items-center justify-center text-xs text-gray-400 italic">No Signature</div>
+                    <div className="h-16 flex items-center justify-center text-xs text-gray-400 italic mb-2">No Signature</div>
                   )}
                   <p className="text-sm font-semibold uppercase">{selectedItem.user?.name}</p>
-                  <p className="text-xs text-gray-500 border-t border-gray-300 pt-1 mt-1">Pemohon</p>
+                  <p className="text-xs text-gray-500 border-t border-gray-300 pt-1 mt-1 w-32 border-dashed">Pemohon</p>
                 </div>
 
-                <div className="text-center w-48">
-                  <p className="text-sm font-medium mb-12 border-b border-transparent pb-1">Menyetujui,</p>
-                  {selectedItem.status === 'approved' ? (
-                    <div className="h-16 flex items-center justify-center relative">
-                      <div className="border border-green-500 text-green-600 rounded-full w-14 h-14 flex items-center justify-center rotate-[-12deg] opacity-60">
+                <div className="text-center flex flex-col items-center">
+                  <p className="text-sm font-medium mb-8 border-b border-transparent pb-1">Mengetahui,</p>
+                  {['pending_hr', 'approved'].includes(selectedItem.status) ? (
+                    <div className="h-16 flex items-center justify-center relative mb-2">
+                      <div className="border border-blue-500 text-blue-600 rounded-full w-14 h-14 flex items-center justify-center rotate-[-12deg] opacity-60">
                         <Check size={32} />
                       </div>
                     </div>
-                  ) : selectedItem.status === 'rejected' ? (
-                     <div className="h-16 flex items-center justify-center relative">
+                  ) : selectedItem.status === 'rejected' && selectedItem.supervisor_approved_by ? (
+                      <div className="h-16 flex items-center justify-center relative mb-2">
                       <div className="border border-red-500 text-red-600 rounded-full w-14 h-14 flex items-center justify-center rotate-[-12deg] opacity-60">
                         <X size={32} />
                       </div>
                     </div>
                   ) : (
-                    <div className="h-16"></div>
+                    <div className="h-16 flex items-center justify-center text-xs text-gray-400 italic mb-2">-</div>
                   )}
-                  <p className="text-sm font-semibold uppercase">{selectedItem.approved_by ? "HR/Supervisor" : "___________________"}</p>
-                  <p className="text-xs text-gray-500 border-t border-gray-300 pt-1 mt-1">Authorized Person</p>
+                  <p className="text-sm font-semibold uppercase">Atasan Langsung</p>
+                  <p className="text-xs text-gray-500 border-t border-gray-300 pt-1 mt-1 w-32 border-dashed">Supervisor</p>
+                </div>
+
+                <div className="text-center flex flex-col items-center">
+                  <p className="text-sm font-medium mb-8 border-b border-transparent pb-1">Menyetujui,</p>
+                  {selectedItem.status === 'approved' ? (
+                    <div className="h-16 flex items-center justify-center relative mb-2">
+                      <div className="border border-green-500 text-green-600 rounded-full w-14 h-14 flex items-center justify-center rotate-[-12deg] opacity-60">
+                        <Check size={32} />
+                      </div>
+                    </div>
+                  ) : selectedItem.status === 'rejected' ? (
+                     <div className="h-16 flex items-center justify-center relative mb-2">
+                      <div className="border border-red-500 text-red-600 rounded-full w-14 h-14 flex items-center justify-center rotate-[-12deg] opacity-60">
+                        <X size={32} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-16 flex items-center justify-center text-xs text-gray-400 italic mb-2">-</div>
+                  )}
+                  <p className="text-sm font-semibold uppercase">HRD</p>
+                  <p className="text-xs text-gray-500 border-t border-gray-300 pt-1 mt-1 w-32 border-dashed">Authorized Person</p>
                 </div>
               </div>
 
