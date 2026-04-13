@@ -144,13 +144,16 @@ services:
     container_name: hrms-mysql-exporter
     restart: always
     environment:
-      - DATA_SOURCE_NAME=root:${DB_PASSWORD:-OnTimeNarwastugo2026}@tcp(mysql-master:3306)/
+      MYSQLD_EXPORTER_PASSWORD: ${DB_PASSWORD:-OnTimeNarwastugo2026}
     command:
-      - "--collect.slave_status=false"
+      - "--mysqld.address=mysql-master:3306"
+      - "--mysqld.username=root"
+      - "--no-collect.slave_status"
     ports:
       - "9104:9104"
     depends_on:
-      - mysql-master
+      mysql-master:
+        condition: service_healthy
     networks:
       - hrms-prod-network
 
