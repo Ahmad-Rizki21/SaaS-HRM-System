@@ -409,4 +409,19 @@ class EmployeeController extends Controller
             return $this->errorResponse('Gagal mengirim ulang email verifikasi.', 500);
         }
     }
+
+    public function resetDeviceId(Request $request, $id)
+    {
+        abort_if(!$request->user()->hasPermission('edit-employees'), 403, 'Akses ditolak.');
+
+        $employee = User::findOrFail($id);
+        
+        $oldDeviceId = $employee->device_id;
+        $employee->device_id = null;
+        $employee->save();
+
+        $this->logActivity('RESET_DEVICE_ID', "Mereset Device ID untuk karyawan: {$employee->name} (Old ID: {$oldDeviceId})", $employee);
+
+        return $this->successResponse(null, 'Device ID berhasil direset. Karyawan sekarang bisa login di perangkat baru.');
+    }
 }

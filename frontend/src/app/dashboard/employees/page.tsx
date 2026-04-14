@@ -44,6 +44,7 @@ interface Employee {
   blood_type?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
+  device_id?: string;
 }
 
 interface EmployeeFormData {
@@ -478,6 +479,21 @@ function EmployeesContent() {
     }
   };
 
+  const handleResetDevice = async (id: number) => {
+    if (!confirm("Apakah Anda yakin ingin meriset Device ID karyawan ini? Ini akan memungkinkan karyawan login di perangkat baru.")) return;
+    setIsSubmitting(true);
+    try {
+      await axiosInstance.post(`/employees/${id}/reset-device`);
+      alert("Device ID berhasil direset!");
+      fetchEmployees(pagination?.current_page || 1);
+    } catch (e: any) {
+      alert(e.response?.data?.message || "Gagal mereset Device ID.");
+    } finally {
+      setIsSubmitting(false);
+      setActionMenuId(null);
+    }
+  };
+
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     setIsSubmitting(true);
@@ -822,6 +838,21 @@ function EmployeesContent() {
                                           <p className="text-[10px] text-gray-400 font-medium">Catat pelanggaran atau SP</p>
                                         </div>
                                     </button>
+
+                                    {emp.device_id && (
+                                      <button 
+                                        onClick={() => handleResetDevice(emp.id)}
+                                        className="w-full flex items-center gap-3 p-3 text-left hover:bg-orange-50 rounded-xl transition-colors group/item"
+                                      >
+                                          <div className="w-9 h-9 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 group-hover/item:bg-orange-200 transition-colors">
+                                            <Camera size={18} />
+                                          </div>
+                                          <div>
+                                            <p className="text-sm font-black text-orange-600">Reset Device ID</p>
+                                            <p className="text-[10px] text-gray-400 font-medium">Izinkan login di HP baru</p>
+                                          </div>
+                                      </button>
+                                    )}
                                   </div>
                               </div>
                             )}
