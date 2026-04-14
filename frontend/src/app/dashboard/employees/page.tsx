@@ -201,10 +201,17 @@ function EmployeesContent() {
         "nomor_telepon (OPSIONAL)": "08123456789",
         "alamat (OPSIONAL)": "Jl. Merdeka No. 1",
         "nomor_ktp (OPSIONAL)": "3171234567890001",
+        "tempat_lahir (OPSIONAL)": "Jakarta",
+        "tanggal_lahir (YYYY-MM-DD)": "1995-05-15",
         "jenis_kelamin (Laki-laki/Perempuan)": "Laki-laki",
+        "agama (Islam/Kristen/Katolik/Hindu/Buddha/Konghucu)": "Islam",
+        "status_nikah (Single/Menikah/Janda/Duda)": "Single",
+        "gol_darah (A/B/AB/O)": "O",
         "status_karyawan (Permanent/Contract)": "Permanent",
         "lokasi_kerja (OPSIONAL)": "Kantor Pusat",
-        "id_atasan (LIHAT DAFTAR)": null
+        "id_atasan (LIHAT DAFTAR)": null,
+        "nama_kontak_darurat": "Budi (Ayah)",
+        "nomor_kontak_darurat": "081222333444"
       }
     ];
 
@@ -377,7 +384,7 @@ function EmployeesContent() {
       nik: emp.nik || "",
       phone: emp.phone || "",
       address: emp.address || "",
-      join_date: emp.join_date || "",
+      join_date: emp.join_date ? emp.join_date.substring(0, 10) : "",
       supervisor_id: emp.supervisor_id || null,
       leave_balance: emp.leave_balance ?? 12,
       employment_status: emp.employment_status || 'Permanent',
@@ -385,7 +392,7 @@ function EmployeesContent() {
       attendance_type: emp.attendance_type || 'office_hour',
       ktp_no: emp.ktp_no || "",
       place_of_birth: emp.place_of_birth || "",
-      date_of_birth: emp.date_of_birth || "",
+      date_of_birth: emp.date_of_birth ? emp.date_of_birth.substring(0, 10) : "",
       gender: emp.gender || "",
       marital_status: emp.marital_status || "",
       religion: emp.religion || "",
@@ -1300,7 +1307,7 @@ function EmployeesContent() {
                     <div><p className="text-xs text-gray-400">NIK (Karyawan)</p><p className="text-sm font-semibold">{viewedEmployee.nik || '-'}</p></div>
                     <div><p className="text-xs text-gray-400">No. KTP</p><p className="text-sm font-semibold">{viewedEmployee.ktp_no || '-'}</p></div>
                     <div><p className="text-xs text-gray-400">Tempat Lahir</p><p className="text-sm font-semibold">{viewedEmployee.place_of_birth || '-'}</p></div>
-                    <div><p className="text-xs text-gray-400">Tanggal Lahir</p><p className="text-sm font-semibold">{viewedEmployee.date_of_birth || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Tanggal Lahir</p><p className="text-sm font-semibold">{formatDate(viewedEmployee.date_of_birth)}</p></div>
                     <div><p className="text-xs text-gray-400">Gender</p><p className="text-sm font-semibold">{viewedEmployee.gender || '-'}</p></div>
                     <div><p className="text-xs text-gray-400">Agama</p><p className="text-sm font-semibold">{viewedEmployee.religion || '-'}</p></div>
                     <div><p className="text-xs text-gray-400">Status Nikah</p><p className="text-sm font-semibold">{viewedEmployee.marital_status || '-'}</p></div>
@@ -1317,7 +1324,7 @@ function EmployeesContent() {
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div><p className="text-xs text-gray-400">Status Karyawan</p><p className="text-sm font-semibold">{viewedEmployee.employment_status || 'Permanent'}</p></div>
                     <div><p className="text-xs text-gray-400">Lokasi Kerja</p><p className="text-sm font-semibold">{viewedEmployee.work_location || 'Kantor Pusat'}</p></div>
-                    <div><p className="text-xs text-gray-400">Tanggal Gabung</p><p className="text-sm font-semibold">{viewedEmployee.join_date || '-'}</p></div>
+                    <div><p className="text-xs text-gray-400">Tanggal Gabung</p><p className="text-sm font-semibold">{formatDate(viewedEmployee.join_date)}</p></div>
                     <div><p className="text-xs text-gray-400">Sisa Cuti</p><p className="text-sm font-semibold">{viewedEmployee.leave_balance ?? 0} Hari</p></div>
                     <div><p className="text-xs text-gray-400">Atasan Lgsg.</p><p className="text-sm font-semibold">{viewedEmployee.supervisor?.name || '-'}</p></div>
                     <div><p className="text-xs text-gray-400">Pola Kehadiran</p><p className="text-sm font-semibold">{viewedEmployee.attendance_type === "shift" ? "Shift" : "Office Hour"}</p></div>

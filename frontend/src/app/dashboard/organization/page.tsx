@@ -169,19 +169,20 @@ export default function OrganizationChartPage() {
         <div className="flex-1 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-auto relative p-8">
             {/* Wrapper CSS Organization Chart */}
             <style dangerouslySetInnerHTML={{__html: `
-              .org-tree * {margin: 0; padding: 0;}
+              .org-tree, .org-tree * { margin: 0; padding: 0; box-sizing: border-box; }
               .org-tree ul {
                   display: flex;
+                  flex-direction: row;
                   justify-content: center;
                   padding-top: 20px; 
                   position: relative;
                   transition: all 0.5s;
+                  list-style: none;
               }
               .org-tree li {
                   display: flex; 
                   flex-direction: column; 
                   align-items: center;
-                  float: left; 
                   text-align: center;
                   list-style-type: none;
                   position: relative;
@@ -192,7 +193,7 @@ export default function OrganizationChartPage() {
               .org-tree li::before, .org-tree li::after{
                   content: '';
                   position: absolute; top: 0; right: 50%;
-                  border-top: 2px solid #e5e7eb; /* Tailwind gray-200 */
+                  border-top: 2px solid #e5e7eb;
                   width: 50%; height: 20px;
                   z-index: 1;
               }
@@ -228,14 +229,14 @@ export default function OrganizationChartPage() {
                   z-index: 10;
                   position: relative;
                   text-decoration: none;
-                  display: inline-block;
+                  display: inline-flex;
               }
               /* Efek Hover untuk menerangkan hirarki (Highlight Branch) */
               .org-tree li .org-node:hover+ul li::after, 
               .org-tree li .org-node:hover+ul li::before, 
               .org-tree li .org-node:hover+ul::before, 
               .org-tree li .org-node:hover+ul ul::before {
-                  border-color: #fca5a5; /* Tailwind red-300 */
+                  border-color: #fca5a5;
               }
               
               /* Custom Scrollbar for Tree Container */

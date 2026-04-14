@@ -62,6 +62,19 @@ class EmployeeImport implements ToModel, WithHeadingRow
             }
         }
 
+        // Handle Tanggal Lahir
+        $dobRaw = $this->getValue($row, 'tanggal_lahir');
+        $dob = null;
+        if (!empty($dobRaw)) {
+            if (is_numeric($dobRaw)) {
+                try {
+                    $dob = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dobRaw)->format('Y-m-d');
+                } catch (\Exception $e) {}
+            } else {
+                $dob = date('Y-m-d', strtotime($dobRaw));
+            }
+        }
+
         return new User([
             'company_id' => $this->companyId,
             'name'       => trim($nama),
@@ -73,10 +86,17 @@ class EmployeeImport implements ToModel, WithHeadingRow
             'phone'      => (string)$this->getValue($row, 'nomor_telepon'),
             'address'    => $this->getValue($row, 'alamat'),
             'ktp_no'     => (string)$this->getValue($row, 'nomor_ktp'),
+            'place_of_birth' => $this->getValue($row, 'tempat_lahir'),
+            'date_of_birth'  => $dob,
             'gender'     => $this->getValue($row, 'jenis_kelamin'),
+            'religion'   => $this->getValue($row, 'agama'),
+            'marital_status' => $this->getValue($row, 'status_nikah'),
+            'blood_type'     => $this->getValue($row, 'gol_darah'),
             'employment_status' => $this->getValue($row, 'status_karyawan') ?: 'Permanent',
             'work_location'     => $this->getValue($row, 'lokasi_kerja') ?: 'Kantor Pusat',
             'supervisor_id'     => $this->getValue($row, 'id_atasan'),
+            'emergency_contact_name'  => $this->getValue($row, 'nama_kontak_darurat'),
+            'emergency_contact_phone' => $this->getValue($row, 'nomor_kontak_darurat'),
         ]);
     }
 
