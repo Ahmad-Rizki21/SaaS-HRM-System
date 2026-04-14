@@ -10,6 +10,7 @@ import Pagination from "@/components/Pagination";
 import { TableSkeleton } from "@/components/Skeleton";
 import { useSearchParams } from "next/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ErrorModal } from "@/components/ErrorModal";
 import { useRef } from "react";
 
 interface Role {
@@ -124,6 +125,10 @@ function EmployeesContent() {
   const [disciplineModalOpen, setDisciplineModalOpen] = useState(false);
   const [disciplinedEmployee, setDisciplinedEmployee] = useState<Employee | null>(null);
   const [disciplineNote, setDisciplineNote] = useState("");
+
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [modalType, setModalType] = useState<"error" | "success">("error");
 
   const handleDisciplineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,7 +280,9 @@ function EmployeesContent() {
     if (!file) return;
 
     if (!file.name.match(/\.(xlsx|xls|csv)$/)) {
-      alert("Hanya file Excel atau CSV yang diperbolehkan.");
+      setModalType("error");
+      setErrorMessage("Hanya file Excel atau CSV yang diperbolehkan.");
+      setErrorModalOpen(true);
       return;
     }
 
@@ -284,14 +291,20 @@ function EmployeesContent() {
 
     try {
       setLoading(true);
-      await axiosInstance.post("/employees/import", formDataUpload, {
+      const res = await axiosInstance.post("/employees/import", formDataUpload, {
         headers: { "Content-Type": "multipart/form-data" }
       });
-      alert("Import berhasil! Data karyawan sedang diproses.");
+      setModalType("success");
+      setErrorMessage(res.data.message || "Import berhasil! Data karyawan sedang diproses.");
+      setErrorModalOpen(true);
       fetchEmployees(1);
     } catch (err: any) {
-      console.error(err);
-      alert(err.response?.data?.message || "Gagal mengimpor file.");
+      // Menghapus console.error agar Next.js tidak memunculkan overlay hitam di mode Dev
+      let msg = err.response?.data?.message || err.response?.data?.error || "Gagal mengimpor file. Pastikan format sesuai template.";
+      if (typeof msg === 'object') msg = JSON.stringify(msg, null, 2);
+      setModalType("error");
+      setErrorMessage(msg);
+      setErrorModalOpen(true);
     } finally {
       setLoading(false);
       e.target.value = '';
@@ -1402,6 +1415,15 @@ function EmployeesContent() {
           </div>
         </div>
       )}
+
+      {/* Global Error Modal */}
+      <ErrorModal 
+        isOpen={errorModalOpen} 
+        message={errorMessage} 
+        onClose={() => setErrorModalOpen(false)} 
+        title={modalType === "success" ? "Berhasil!" : "Terjadi Kesalahan"}
+        type={modalType}
+      />
 
     </div>
   );

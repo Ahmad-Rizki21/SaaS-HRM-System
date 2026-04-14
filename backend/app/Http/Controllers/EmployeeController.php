@@ -276,10 +276,15 @@ class EmployeeController extends Controller
         ]);
 
         try {
-            Excel::import(new EmployeeImport($request->user()->company_id), $request->file('file'));
+            $import = new EmployeeImport($request->user()->company_id);
+            Excel::import($import, $request->file('file'));
             
-            $this->logActivity('IMPORT_EMPLOYEE', "Mengimpor karyawan secara massal via Excel");
-            return $this->successResponse(null, 'Data karyawan berhasil diimpor.');
+            if ($import->importedCount === 0) {
+                return $this->errorResponse('Gagal mengimpor: Tidak ada data valid yang ditemukan (Pastikan format file sesuai template asli).', 400);
+            }
+
+            $this->logActivity('IMPORT_EMPLOYEE', "Mengimpor {$import->importedCount} karyawan secara massal via Excel");
+            return $this->successResponse(null, "{$import->importedCount} data karyawan berhasil diimpor.");
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengimpor: ' . $e->getMessage(), 500);
         }

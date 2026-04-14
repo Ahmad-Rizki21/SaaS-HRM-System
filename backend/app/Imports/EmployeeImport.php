@@ -11,6 +11,7 @@ use App\Models\Role;
 class EmployeeImport implements ToModel, WithHeadingRow
 {
     protected $companyId;
+    public $importedCount = 0;
     
     public function __construct($companyId)
     {
@@ -74,6 +75,8 @@ class EmployeeImport implements ToModel, WithHeadingRow
                 $dob = date('Y-m-d', strtotime($dobRaw));
             }
         }
+
+        $this->importedCount++;
 
         return new User([
             'company_id' => $this->companyId,
