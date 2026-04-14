@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown, User as UserIcon, Camera, MoreVertical, ArrowRightLeft, UserX, ShieldAlert, CreditCard, Mail, MapPin, Phone, Building2, Calendar, BadgeCheck, Clock, Eye } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -90,8 +90,11 @@ function EmployeesContent() {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [searchQuery, setSearchQuery] = useState(urlSearch || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(urlSearch || "");
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [activeFilter, setActiveFilter] = useState<'all' | 'unverified' | 'team'>('all');
+  const [totalUnverified, setTotalUnverified] = useState(0);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -150,6 +153,31 @@ function EmployeesContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Handle Debouncing Search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      if (searchQuery !== debouncedSearch) setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Handle Dynamic Page Length based on Device
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setPerPage(5);
+      } else if (window.innerWidth < 1280) {
+        setPerPage(10);
+      } else {
+        setPerPage(15);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     if (hasPermission('view-employees')) {
       fetchEmployees(page);
@@ -157,7 +185,7 @@ function EmployeesContent() {
     if (hasPermission('manage-roles')) {
       fetchRoles();
     }
-  }, [searchQuery, page, urlSearch, urlId, permissions, activeFilter]);
+  }, [debouncedSearch, page, urlSearch, urlId, permissions, activeFilter, perPage]);
 
   const downloadTemplate = () => {
     // Definisi data contoh dengan label kolom yang ramah user
@@ -272,15 +300,39 @@ function EmployeesContent() {
     }
   };
 
-  const fetchEmployees = async (page = 1) => {
+  const fetchEmployees = async (p = 1) => {
     try {
       setLoading(true);
-      const s = urlSearch || searchQuery;
+      const s = debouncedSearch;
       const isTeam = activeFilter === 'team';
-      const response = await axiosInstance.get(`/employees?page=${page}&search=${s}${urlId ? `&id=${urlId}` : ""}${isTeam ? '&is_team=true' : ''}`);
-      const { data, ...paginator } = response.data.data;
+      const isUnverified = activeFilter === 'unverified';
+      
+      // Menggunakan endpoint DataTables untuk efisiensi maksimal
+      const start = (p - 1) * perPage;
+      const params = new URLSearchParams({
+        draw: '1',
+        start: start.toString(),
+        length: perPage.toString(),
+        "search[value]": s,
+        filter: isUnverified ? 'unverified' : 'all',
+        is_team: isTeam ? 'true' : 'false'
+      });
+
+      if (urlId) params.append('id', urlId);
+
+      const response = await axiosInstance.get(`/employees/datatables?${params.toString()}`);
+      
+      // Mapping DataTables response format ke format lokal
+      const { data, recordsFiltered, unverified_count } = response.data;
+      
       setEmployees(data || []);
-      setPagination(paginator);
+      setTotalUnverified(unverified_count || 0);
+      setPagination({
+        current_page: p,
+        last_page: Math.ceil(recordsFiltered / perPage),
+        total: recordsFiltered,
+        per_page: perPage
+      });
     } catch (e) {
       console.error("Gagal mendapatkan data karyawan", e);
     } finally {
@@ -461,17 +513,8 @@ function EmployeesContent() {
     });
   };
 
-  const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = emp.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         emp.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (activeFilter === 'unverified') {
-      return matchesSearch && !emp.email_verified_at;
-    }
-    return matchesSearch;
-  });
-
-  const unverifiedCount = employees.filter(emp => !emp.email_verified_at).length;
+  const filteredEmployees = employees;
+  const unverifiedCount = totalUnverified;
 
   return (
     <div className="animate-in fade-in duration-700">

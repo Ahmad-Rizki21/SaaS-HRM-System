@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Imports\EmployeeImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
+use Yajra\DataTables\Facades\DataTables;
 
 class EmployeeController extends Controller
 {
@@ -43,6 +44,46 @@ class EmployeeController extends Controller
             ->paginate($request->per_page ?? 10);
             
         return $this->successResponse($employees, 'Data karyawan berhasil diambil.');
+    }
+
+    /**
+     * DataTables endpoint for advanced server-side processing.
+     * Handles search, sort, and pagination efficiently.
+     */
+    public function datatables(Request $request)
+    {
+        abort_if(!$request->user()->hasPermission('view-employees'), 403, 'Akses ditolak.');
+
+        $user = $request->user();
+        $query = User::with(['role', 'supervisor']);
+
+        if ($user->company_id && !$user->canAccessAllCompanies()) {
+            $query->where('company_id', $user->company_id);
+        }
+
+        if ($request->is_team === 'true' || $request->is_team === true) {
+            $query->where('supervisor_id', $user->id);
+        }
+
+        if ($request->filter === 'unverified') {
+            $query->whereNull('email_verified_at');
+        }
+
+        return DataTables::of($query)
+            ->with([
+                'unverified_count' => User::where('company_id', $user->company_id)->whereNull('email_verified_at')->count(),
+            ])
+            ->filter(function ($query) use ($request) {
+                if ($request->has('search') && $request->search['value']) {
+                    $searchTerm = $request->search['value'];
+                    $query->where(function($q) use ($searchTerm) {
+                        $q->where('name', 'like', "%{$searchTerm}%")
+                          ->orWhere('email', 'like', "%{$searchTerm}%")
+                          ->orWhere('nik', 'like', "%{$searchTerm}%");
+                    });
+                }
+            })
+            ->make(true);
     }
 
     public function store(Request $request)
