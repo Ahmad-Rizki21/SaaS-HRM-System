@@ -34,8 +34,8 @@ class AnnouncementController extends Controller
         $announcement = Announcement::create([
             'company_id' => $request->user()->company_id,
             'user_id' => $request->user()->id,
-            'title' => $request->title,
-            'content' => $request->content,
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
         ]);
 
         // Broadcast to all company members
@@ -44,6 +44,7 @@ class AnnouncementController extends Controller
             ->get();
 
         foreach ($members as $member) {
+            /** @var \App\Models\User $member */
             // 1. In-App Notification (Kotak Pesan)
             $this->notify(
                 $member, 
@@ -66,8 +67,8 @@ class AnnouncementController extends Controller
             try {
                 Mail::send('emails.premium_announcement', [
                     'member' => $member,
-                    'title' => $request->title,
-                    'announcement_content' => $request->content
+                    'title' => $request->input('title'),
+                    'announcement_content' => $request->input('content')
                 ], function ($message) use ($member, $request) {
                     $message->to($member->email)
                         ->subject("PENGUMUMAN RESMI: {$request->title}");
