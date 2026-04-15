@@ -404,16 +404,14 @@ class EmployeeController extends Controller
 
         // Re-send Welcome & Verification Email
         try {
-            // Generate a new temporary password because we can't show the hashed one
-            $newTemporaryPassword = Str::random(8);
-            $employee->password = Hash::make($newTemporaryPassword);
-            $employee->save();
-
-            \Illuminate\Support\Facades\Mail::to($employee->email)->send(new \App\Mail\WelcomeEmployeeNotification($employee, $newTemporaryPassword));
+            // Use the default password set by HR (password123) as confirmed by the user
+            $defaultPassword = 'password123';
             
-            $this->logActivity('RESEND_VERIFICATION', "Mengirim ulang email verifikasi ke: {$employee->name} (Password di-reset)", $employee);
+            \Illuminate\Support\Facades\Mail::to($employee->email)->send(new \App\Mail\WelcomeEmployeeNotification($employee, $defaultPassword));
             
-            return $this->successResponse(null, 'Email verifikasi berhasil dikirim ulang dengan password sementara baru.');
+            $this->logActivity('RESEND_VERIFICATION', "Mengirim ulang email verifikasi ke: {$employee->name}", $employee);
+            
+            return $this->successResponse(null, 'Email verifikasi berhasil dikirim ulang.');
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Gagal mengirim ulang email: " . $e->getMessage());
             return $this->errorResponse('Gagal mengirim ulang email verifikasi.', 500);
@@ -447,12 +445,10 @@ class EmployeeController extends Controller
 
         foreach ($employees as $employee) {
             try {
-                // Generate a new temporary password for each user
-                $newTemporaryPassword = Str::random(8);
-                $employee->password = Hash::make($newTemporaryPassword);
-                $employee->save();
+                // Use the fixed default password confirmed by HR
+                $defaultPassword = 'password123';
 
-                \Illuminate\Support\Facades\Mail::to($employee->email)->send(new \App\Mail\WelcomeEmployeeNotification($employee, $newTemporaryPassword));
+                \Illuminate\Support\Facades\Mail::to($employee->email)->send(new \App\Mail\WelcomeEmployeeNotification($employee, $defaultPassword));
                 $count++;
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error("Gagal mengirim ulang email massal ke {$employee->email}: " . $e->getMessage());
