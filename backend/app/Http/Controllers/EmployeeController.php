@@ -429,4 +429,18 @@ class EmployeeController extends Controller
 
         return $this->successResponse(null, 'Device ID berhasil direset. Karyawan sekarang bisa login di perangkat baru.');
     }
+    public function potentialSupervisors(Request $request)
+    {
+        $user = $request->user();
+        $query = User::select('id', 'name')->where('company_id', $user->company_id);
+        
+        // Exclude current employee if editing
+        if ($request->exclude_id) {
+            $query->where('id', '!=', $request->exclude_id);
+        }
+
+        $supervisors = $query->orderBy('name', 'asc')->get();
+
+        return $this->successResponse($supervisors, 'Data calon atasan berhasil diambil.');
+    }
 }

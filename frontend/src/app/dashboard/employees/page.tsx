@@ -118,6 +118,7 @@ function EmployeesContent() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
+  const [potentialSupervisors, setPotentialSupervisors] = useState<{id: number, name: string}[]>([]);
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewedEmployee, setViewedEmployee] = useState<Employee | null>(null);
@@ -320,6 +321,15 @@ function EmployeesContent() {
       console.error("Gagal ambil data role", e);
     }
   };
+  
+  const fetchPotentialSupervisors = async (excludeId?: number) => {
+    try {
+      const response = await axiosInstance.get(`/employees/potential-supervisors${excludeId ? `?exclude_id=${excludeId}` : ''}`);
+      setPotentialSupervisors(response.data.data);
+    } catch (e) {
+      console.error("Gagal ambil data calon atasan", e);
+    }
+  };
 
   const fetchEmployees = async (p = 1) => {
     try {
@@ -384,6 +394,7 @@ function EmployeesContent() {
       work_location: 'Kantor Pusat',
       attendance_type: 'office_hour'
     });
+    fetchPotentialSupervisors();
     setIsModalOpen(true);
   };
 
@@ -413,6 +424,7 @@ function EmployeesContent() {
       emergency_contact_name: emp.emergency_contact_name || "",
       emergency_contact_phone: emp.emergency_contact_phone || "",
     });
+    fetchPotentialSupervisors(emp.id);
     setPhotoPreview(emp.profile_photo_url || null);
     setIsModalOpen(true);
   };
@@ -1171,7 +1183,7 @@ function EmployeesContent() {
                           onChange={(e) => setFormData({...formData, supervisor_id: e.target.value ? parseInt(e.target.value) : null})}
                         >
                           <option value="">Tanpa Atasan</option>
-                          {employees.filter(e => e.id !== formData.id).map(emp => (
+                          {potentialSupervisors.map(emp => (
                             <option key={emp.id} value={emp.id}>{emp.name}</option>
                           ))}
                         </select>

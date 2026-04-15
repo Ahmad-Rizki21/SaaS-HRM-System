@@ -207,6 +207,7 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     Route::middleware('permission:view-activity-logs')->get('/activity-logs', [ActivityLogController::class, 'index']);
 
     // Employees (Manage Employee)
+    Route::middleware('permission:view-employees')->get('/employees/potential-supervisors', [EmployeeController::class, 'potentialSupervisors']);
     Route::middleware('permission:view-employees')->get('/employees/datatables', [EmployeeController::class, 'datatables']);
     Route::middleware('permission:view-employees')->get('/employees', [EmployeeController::class, 'index']);
     Route::middleware('permission:create-employees')->post('/employees', [EmployeeController::class, 'store']);
