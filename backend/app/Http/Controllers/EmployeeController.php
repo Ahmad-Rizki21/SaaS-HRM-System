@@ -429,6 +429,29 @@ class EmployeeController extends Controller
 
         return $this->successResponse(null, 'Device ID berhasil direset. Karyawan sekarang bisa login di perangkat baru.');
     }
+
+    public function bulkResendVerification(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:users,id'
+        ]);
+
+        $employees = User::whereIn('id', $request->ids)->whereNull('email_verified_at')->get();
+        $count = 0;
+
+        foreach ($employees as $employee) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($employee->email)->send(new \App\Mail\WelcomeEmployeeNotification($employee, "********"));
+                $count++;
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Gagal mengirim ulang email massal ke {$employee->email}: " . $e->getMessage());
+            }
+        }
+
+        return $this->successResponse(null, "Berhasil mengirim ulang {$count} email verifikasi.");
+    }
+
     public function potentialSupervisors(Request $request)
     {
         $user = $request->user();

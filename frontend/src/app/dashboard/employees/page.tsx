@@ -478,17 +478,37 @@ function EmployeesContent() {
       setIsSubmitting(true);
       if (id) {
         await axiosInstance.post(`/employees/${id}/resend-verification`);
-        alert("Email verifikasi berhasil dikirim ulang.");
+        setErrorMessage("Email verifikasi berhasil dikirim ulang.");
+        setModalType("success");
+        setErrorModalOpen(true);
       } else {
-        // Bulk resend logic
-        const unverified = employees.filter(e => !e.email_verified_at);
-        for (const emp of unverified) {
-           await axiosInstance.post(`/employees/${emp.id}/resend-verification`);
+        // If there are selected IDs, we use those.
+        let idsToResend: number[] = [];
+        
+        if (selectedIds.length > 0) {
+          idsToResend = selectedIds;
+        } else {
+          // Banner logic: resend to all unverified on current page
+          idsToResend = employees.filter(e => !e.email_verified_at).map(e => e.id);
         }
-        alert(`Berhasil mengirim ulang ke ${unverified.length} karyawan.`);
+
+        if (idsToResend.length === 0) {
+          setErrorMessage("Tidak ada karyawan yang perlu diverifikasi.");
+          setModalType("error");
+          setErrorModalOpen(true);
+          return;
+        }
+
+        await axiosInstance.post(`/employees/bulk-resend-verification`, { ids: idsToResend });
+        setErrorMessage(`Berhasil mengirim ulang ${idsToResend.length} email verifikasi.`);
+        setModalType("success");
+        setErrorModalOpen(true);
+        setSelectedIds([]);
       }
     } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal mengirim ulang verifikasi.");
+      setErrorMessage(e.response?.data?.message || "Gagal mengirim ulang verifikasi.");
+      setModalType("error");
+      setErrorModalOpen(true);
     } finally {
       setIsSubmitting(false);
       setActionMenuId(null);
@@ -655,14 +675,25 @@ function EmployeesContent() {
               className="w-full h-11 pl-10 pr-4 text-xs font-bold bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-orange-200 focus:ring-4 focus:ring-orange-50/50 transition-all shadow-sm"
             />
           </div>
-          {selectedIds.length > 0 && hasPermission('delete-employees') && (
-            <button 
-              onClick={() => setBulkDeleteModalOpen(true)}
-              className="bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 h-11 px-5 text-xs font-black rounded-xl animate-in zoom-in-95"
-            >
-              <Trash2 size={14} className="mr-2 inline" />
-              Hapus Sele ({selectedIds.length})
-            </button>
+          {selectedIds.length > 0 && (
+            <div className="flex items-center gap-2 animate-in slide-in-from-right-4 duration-200">
+               <button 
+                 onClick={() => handleResendVerification()}
+                 disabled={isSubmitting}
+                 className="flex items-center gap-2 px-6 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black hover:bg-blue-100 transition-all border border-blue-100 shadow-sm"
+               >
+                 <Mail size={14} className={isSubmitting ? "animate-spin" : ""} />
+                 Kirim Verif ({selectedIds.length})
+               </button>
+
+               <button 
+                 onClick={() => setBulkDeleteModalOpen(true)}
+                 className="flex items-center gap-2 px-6 py-2 bg-red-50 text-red-600 rounded-full text-xs font-black hover:bg-red-100 transition-all border border-red-100 shadow-sm"
+               >
+                 <Trash2 size={14} />
+                 Hapus Sele ({selectedIds.length})
+               </button>
+            </div>
           )}
         </div>
       </div>
