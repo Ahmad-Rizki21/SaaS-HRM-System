@@ -15,8 +15,7 @@ until mysql -h"${DB_HOST:-mysql}" -P"${DB_PORT:-3306}" -u"${DB_USERNAME:-root}" 
     counter=$((counter + 1))
     if [ $counter -ge $max_retries ]; then
         echo "[!] MySQL connection failed after ${max_retries} attempts."
-        echo "[!] MySQL connection failed after ${max_retries} attempts. Terminating startup."
-        exit 1
+        break
     fi
     echo "[*] MySQL Master is unavailable - retrying in 2s... ($counter/$max_retries)"
     sleep 2

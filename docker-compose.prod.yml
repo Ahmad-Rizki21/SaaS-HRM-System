@@ -42,7 +42,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-OnTimeNarwastugo2026}
       MYSQL_DATABASE: ${DB_DATABASE:-hrm_saas}
       MYSQL_USER: ${DB_USERNAME:-hrms_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-HrmsSecure2026!}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-OnTimeNarwastugo2026}
     command: 
       - "--server-id=1"
       - "--log-bin=mysql-bin"
