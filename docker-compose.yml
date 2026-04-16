@@ -172,15 +172,24 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-HrmsRedis2026!}
       REVERB_HOST: ${REVERB_HOST:-0.0.0.0}
     depends_on:
-      - mysql-master
-      - mysql-slave
-      - redis
+      mysql-master:
+        condition: service_healthy
+      mysql-slave:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - hrms-network
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # ── Frontend (Next.js Dashboard) ───────────────────────────
   frontend:

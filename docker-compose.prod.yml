@@ -144,7 +144,7 @@ services:
     container_name: hrms-mysql-exporter
     restart: always
     environment:
-      MYSQLD_EXPORTER_PASSWORD: ${DB_PASSWORD:-OnTimeNarwastugo2026}
+      MYSQLD_EXPORTER_PASSWORD: ${MYSQL_ROOT_PASSWORD:-HrmsN@rwasthu2026!}
     command:
       - "--mysqld.address=mysql-master:3306"
       - "--mysqld.username=root"
