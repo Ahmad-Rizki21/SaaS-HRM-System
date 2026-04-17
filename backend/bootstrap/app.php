@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
         $middleware->alias([
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
         ]);
@@ -46,11 +47,21 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        $exceptions->render(function (\Exception $e, $request) {
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
             if ($request->is('api/*')) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Terjadi kesalahan sistem internal: ' . $e->getMessage(),
+                    'message' => 'Sesi tidak valid atau belum login.',
+                ], 401);
+            }
+        });
+
+        $exceptions->render(function (\Exception $e, $request) {
+            if ($request->is('api/*')) {
+                $debugMsg = config('app.debug') ? ': ' . $e->getMessage() : '';
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Terjadi kesalahan sistem internal' . $debugMsg,
                 ], 500);
             }
         });

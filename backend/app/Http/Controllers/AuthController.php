@@ -23,18 +23,22 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-            'company_name' => 'required|string',
-        ]);
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
+                'company_name' => 'required|string',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse('Invalid credentials', 401);
+        }
 
         $company = \App\Models\Company::where('name', $request->company_name)
             ->orWhere('name', 'like', '%' . $request->company_name . '%')
             ->first();
 
         if (!$company) {
-            return $this->errorResponse('Perusahaan tidak ditemukan.', 404);
+            return $this->errorResponse('Invalid credentials', 401);
         }
 
         $user = User::where('email', $request->email)
@@ -42,7 +46,7 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            return $this->errorResponse('Kredensial login Anda salah untuk perusahaan ini.', 401);
+            return $this->errorResponse('Invalid credentials', 401);
         }
 
         // --- Device Binding & FCM Token ---
