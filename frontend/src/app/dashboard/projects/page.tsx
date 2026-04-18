@@ -11,6 +11,7 @@ import Pagination from "@/components/Pagination";
 import { Skeleton, TableSkeleton } from "@/components/Skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   planning: { label: "Perencanaan", color: "text-blue-700", bg: "bg-blue-50 border-blue-200", icon: Clock },
@@ -35,6 +36,7 @@ export default function ProjectsPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
   const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, total: 0 });
 
   // Modal state
@@ -50,7 +52,12 @@ export default function ProjectsPage() {
   });
 
   useEffect(() => { fetchDashboard(); fetchEmployees(); }, []);
-  useEffect(() => { fetchProjects(page); }, [page, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => { fetchProjects(page); }, [page, statusFilter, debouncedSearch]);
 
   const fetchDashboard = async () => {
     try {
@@ -71,7 +78,7 @@ export default function ProjectsPage() {
       setLoading(true);
       let url = `/projects?page=${pageNumber}`;
       if (statusFilter !== "all") url += `&status=${statusFilter}`;
-      if (searchQuery) url += `&search=${searchQuery}`;
+      if (debouncedSearch) url += `&search=${debouncedSearch}`;
       const response = await axiosInstance.get(url);
       const data = response.data.data;
       setProjects(data?.data || []);

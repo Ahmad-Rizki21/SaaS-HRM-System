@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Image from "next/image";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Employee {
   id: number;
@@ -37,6 +38,7 @@ export default function DirectoryPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const [pagination, setPagination] = useState({
     current_page: 1,
     last_page: 1,
@@ -74,11 +76,8 @@ export default function DirectoryPage() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchDirectory(1, search);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [search]);
+    fetchDirectory(1, debouncedSearch);
+  }, [debouncedSearch]);
 
   return (
     <div className="space-y-6">

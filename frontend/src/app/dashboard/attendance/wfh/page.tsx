@@ -6,6 +6,7 @@ import { Search, Calendar, ShieldCheck, ShieldAlert, X, Info, Settings2 } from "
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
+import { useDebounce } from "@/hooks/useDebounce";
 import { TableSkeleton } from "@/components/Skeleton";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Pagination from "@/components/Pagination";
@@ -41,6 +42,7 @@ function WFHContent() {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
@@ -56,13 +58,17 @@ function WFHContent() {
   });
 
   useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
     fetchEmployees(page);
-  }, [searchQuery, page]);
+  }, [debouncedSearch, page]);
 
   const fetchEmployees = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get(`/employees?page=${page}&search=${searchQuery}`);
+      const response = await axiosInstance.get(`/employees?page=${page}&search=${debouncedSearch}`);
       const { data, ...paginator } = response.data.data;
       setEmployees(data || []);
       setPagination(paginator);

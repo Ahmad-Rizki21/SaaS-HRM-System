@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss: data: blob:;",
+            value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' http: https: ws: wss: data: blob:;",
           },
         ],
       },

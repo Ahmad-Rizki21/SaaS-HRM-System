@@ -6,6 +6,7 @@ import { Shield, Search, Lock, UserCheck, Key, FileText, Settings, BadgeCheck } 
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { RolesSkeleton } from "@/components/Skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Permission {
   id: number;
@@ -18,6 +19,7 @@ export default function PermissionsPage() {
   const [permissionsGrouped, setPermissionsGrouped] = useState<Record<string, Permission[]>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
   const { hasPermission } = useAuth();
 
   useEffect(() => {
@@ -47,8 +49,8 @@ export default function PermissionsPage() {
 
   const filteredGroups = Object.entries(permissionsGrouped).map(([group, perms]) => {
     const filtered = perms.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      p.slug.toLowerCase().includes(searchQuery.toLowerCase())
+      p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+      p.slug.toLowerCase().includes(debouncedSearch.toLowerCase())
     );
     return { group, perms: filtered };
   }).filter(g => g.perms.length > 0);
