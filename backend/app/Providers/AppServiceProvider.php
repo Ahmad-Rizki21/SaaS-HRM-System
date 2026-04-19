@@ -27,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Database\Eloquent\Model::preventLazyLoading(! app()->isProduction());
 
+        if ($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // Define Rate Limiters
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
