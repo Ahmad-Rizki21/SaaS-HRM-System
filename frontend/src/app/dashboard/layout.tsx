@@ -113,12 +113,11 @@ const sidebarLinks: SidebarLink[] = [
     ]
   },
   {
-    name: "applications",
-    icon: FileText,
+    name: "reimbursement_management",
+    icon: CreditCard,
     permission: 'view-reimbursements',
     submenus: [
       { name: "reimbursements", href: "/dashboard/reimbursements", permission: 'view-reimbursements' },
-      { name: "approvals", href: "/dashboard/approvals", permission: 'manage-approvals' },
     ]
   },
   {
@@ -135,6 +134,7 @@ const sidebarLinks: SidebarLink[] = [
     icon: ClipboardList,
     permission: 'view-directory',
     submenus: [
+      { name: "approvals", href: "/dashboard/approvals", permission: 'manage-approvals' },
       { name: "tasks", href: "/dashboard/tasks", permission: 'view-tasks' },
       { name: "announcements", href: "/dashboard/announcements", permission: 'view-announcements' },
       { name: "employee_directory", href: "/dashboard/directory", permission: 'view-directory' },
