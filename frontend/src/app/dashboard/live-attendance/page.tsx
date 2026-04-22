@@ -17,34 +17,20 @@ export default function LiveAttendancePage() {
   const [distance, setDistance] = useState<number | null>(null);
   const [statusMsg, setStatusMsg] = useState("Menyiapkan Sistem...");
   const [loading, setLoading] = useState(false);
-  const [officeConfig, setOfficeConfig] = useState<{lat: number, lng: number, radius: number, name: string} | null>(null);
+  const [officeConfig, setOfficeConfig] = useState<any>(null);
 
   useEffect(() => {
-    // 1. Ambil Pengaturan Lokasi Absen (HQ + Branches)
-    axiosInstance.get('/company').then(res => {
-      const company = res.data?.data;
-      
-      // Jika user sudah punya kantor assigned, pakai itu dulu
-      if (user?.office) {
-        setOfficeConfig({
-          lat: parseFloat(user.office.latitude),
-          lng: parseFloat(user.office.longitude),
-          radius: Number(user.office.radius_meters) || 50,
-          name: user.office.name
-        });
-      } else if (company) {
-        // Jika tidak, kita simpan list kantor untuk pencarian "terdekat" nanti saat lokasi didapat
-        // Tapi untuk default, pakai HQ
-        setOfficeConfig({
-          lat: parseFloat(company.latitude),
-          lng: parseFloat(company.longitude),
-          radius: Number(company.radius_meters) || 50,
-          name: "Kantor Pusat (HQ)"
-        });
-      }
-    }).catch(err => {
-      console.error("Failed to load company config", err);
-    });
+    if (!user) return;
+
+    // 1. Initialize office config from user's assigned office
+    if (user.office) {
+      setOfficeConfig({
+        lat: parseFloat(user.office.latitude),
+        lng: parseFloat(user.office.longitude),
+        radius: Number((user.office as any).radius) || 100, // DB column is 'radius'
+        name: user.office.name
+      });
+    }
 
     // 2. Initialize Webcam
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -70,10 +56,19 @@ export default function LiveAttendancePage() {
           const lng = position.coords.longitude;
           setLocation({ lat, lng });
           
-          let targetOffice = officeConfig;
+          let targetOffice = null;
 
-          // Jika user TIDAK punya assigned office, kita cari yang terdekat dari list company.offices
-          if (!user?.office) {
+          // Check assigned office first (already set in useEffect but let's re-verify inside callback)
+          if (user?.office) {
+            targetOffice = {
+              lat: parseFloat(user.office.latitude),
+              lng: parseFloat(user.office.longitude),
+              radius: Number((user.office as any).radius) || 100,
+              name: user.office.name
+            };
+          } 
+          // Otherwise find nearest from company offices
+          else {
             try {
               const res = await axiosInstance.get('/company');
               const company = res.data?.data;
@@ -87,7 +82,7 @@ export default function LiveAttendancePage() {
                 nearest = { 
                   lat: parseFloat(company.latitude), 
                   lng: parseFloat(company.longitude), 
-                  radius: Number(company.radius_meters) || 50, 
+                  radius: Number(company.default_radius) || 100, 
                   name: "Kantor Pusat (HQ)" 
                 };
 
@@ -100,7 +95,7 @@ export default function LiveAttendancePage() {
                       nearest = { 
                         lat: parseFloat(office.latitude), 
                         lng: parseFloat(office.longitude), 
-                        radius: Number(office.radius_meters) || 50, 
+                        radius: Number(office.radius) || 100, 
                         name: office.name 
                       };
                     }
@@ -108,7 +103,6 @@ export default function LiveAttendancePage() {
                 });
 
                 if (nearest) {
-                  setOfficeConfig(nearest);
                   targetOffice = nearest;
                 }
               }
@@ -118,6 +112,7 @@ export default function LiveAttendancePage() {
           }
 
           if (targetOffice) {
+            setOfficeConfig(targetOffice);
             const dist = getDistanceFromLatLonInM(lat, lng, targetOffice.lat, targetOffice.lng);
             setDistance(Math.round(dist));
           }
@@ -131,7 +126,7 @@ export default function LiveAttendancePage() {
     } else {
       setStatusMsg("Browser tidak support Geolocation.");
     }
-  }, [user?.office]);
+  }, [user]);
 
   const getDistanceFromLatLonInM = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371; // Radius earth in km
