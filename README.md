@@ -14,7 +14,7 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 
 - **Authentication & Security**: Multi-tenant login, Role-based Access Control (RBAC), hash password, dan session management.
 - **Manajemen SDM**: Data karyawan lengkap, request perubahan profil, upload foto, dan manajemen jabatan (Role).
-- **Sistem Kehadiran Geofencing & Liveness**: Validasi ketat menggunakan GPS anti-mock dan deteksi wajah.
+- **Sistem Kehadiran Geofencing (Multi-Office) & Liveness**: Validasi ketat menggunakan GPS anti-mock dan deteksi wajah. Sekarang mendukung penentuan lokasi absensi di berbagai kantor cabang dengan radius yang dapat disesuaikan.
 - **Koreksi Absen Mandiri**: Fitur pengajuan koreksi dengan workflow persetujuan (Approval) jika karyawan lupa absen pulang.
 - **Delegasi & Manajemen WFH**: Memberikan izin kepada karyawan tertentu untuk absensi jarak jauh tanpa terpaku radius kantor, lengkap dengan pengumuman otomatis.
 - **Manajemen Cuti & Reimbursement**: Approval berjenjang (Supervisor -> HR) otomatis.

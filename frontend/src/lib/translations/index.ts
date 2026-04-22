@@ -22,6 +22,7 @@ export const translations = {
     activity_logs: "Log Aktivitas",
     settings: "Pengaturan",
     logout: "Keluar Akun",
+    offices: "Kantor & Cabang",
     
     // Header & Quick Actions
     search: "Cari...",
@@ -126,6 +127,7 @@ export const translations = {
     activity_logs: "Activity Logs",
     settings: "Settings",
     logout: "Logout",
+    offices: "Offices & Branches",
     
     // Header & Quick Actions
     search: "Search...",

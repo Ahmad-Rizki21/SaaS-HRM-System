@@ -15,6 +15,13 @@ interface User {
   leave_balance?: number;
   profile_photo_url?: string;
   is_manager?: boolean;
+  office?: {
+    id: number;
+    name: string;
+    latitude: string;
+    longitude: string;
+    radius_meters: string | number;
+  };
   role?: {
     id: number;
     name: string;

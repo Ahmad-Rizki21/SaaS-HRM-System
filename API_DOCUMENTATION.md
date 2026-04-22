@@ -143,6 +143,15 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/notifications/update-fcm-token` | Update token FCM untuk push notification |
 | `POST` | `/api/broadcasting/auth` | Autentikasi koneksi WebSocket (Laravel Reverb) |
 
+## 🏢 Manajemen Kantor & Cabang
+| Method | Endpoint | Deskripsi |
+| :--- | :--- | :--- |
+| `GET` | `/api/offices` | List semua kantor cabang |
+| `POST` | `/api/offices` | Tambah kantor cabang baru |
+| `GET` | `/api/offices/{id}` | Detail kantor cabang |
+| `PUT` | `/api/offices/{id}` | Update data kantor cabang |
+| `DELETE` | `/api/offices/{id}` | Hapus kantor cabang |
+
 ---
 ## 📡 Real-time WebSockets (Laravel Reverb)
 Aplikasi menggunakan **Laravel Reverb** untuk notifikasi instan. Developer harus melakukan subscribe ke channel berikut setelah login sukses:

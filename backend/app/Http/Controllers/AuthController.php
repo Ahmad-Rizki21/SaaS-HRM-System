@@ -79,7 +79,7 @@ class AuthController extends Controller
         return $this->successResponse([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user->load('role.permissions')
+            'user' => $user->load(['role.permissions', 'office'])
         ], 'Login berhasil');
     }
 

@@ -15,7 +15,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'company_id', 'role_id', 'supervisor_id', 'device_id',
+        'name', 'email', 'password', 'company_id', 'office_id', 'role_id', 'supervisor_id', 'device_id',
         'profile_photo_path', 'face_embedding',
         'nik', 'ktp_no', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'address', 
         'place_of_birth', 'date_of_birth', 'gender', 'marital_status', 'religion', 'blood_type',
@@ -69,6 +69,11 @@ class User extends Authenticatable
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function office()
+    {
+        return $this->belongsTo(\App\Models\Office::class);
     }
 
     public function role()

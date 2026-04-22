@@ -9,7 +9,7 @@ class CompanyController extends Controller
 {
     public function show(Request $request)
     {
-        $company = Company::findOrFail($request->user()->company_id);
+        $company = Company::with('offices')->findOrFail($request->user()->company_id);
         return $this->successResponse($company, 'Data perusahaan berhasil diambil.');
     }
 

@@ -17,29 +17,33 @@ export default function LiveAttendancePage() {
   const [distance, setDistance] = useState<number | null>(null);
   const [statusMsg, setStatusMsg] = useState("Menyiapkan Sistem...");
   const [loading, setLoading] = useState(false);
-  const [officeConfig, setOfficeConfig] = useState<{lat: number, lng: number, radius: number} | null>(null);
+  const [officeConfig, setOfficeConfig] = useState<{lat: number, lng: number, radius: number, name: string} | null>(null);
 
   useEffect(() => {
-    // 1. Ambil Pengaturan Lokasi Absen dari Backend
+    // 1. Ambil Pengaturan Lokasi Absen (HQ + Branches)
     axiosInstance.get('/company').then(res => {
-      const data = res.data?.data;
-      if (data && data.latitude && data.longitude) {
+      const company = res.data?.data;
+      
+      // Jika user sudah punya kantor assigned, pakai itu dulu
+      if (user?.office) {
         setOfficeConfig({
-          lat: parseFloat(data.latitude),
-          lng: parseFloat(data.longitude),
-          radius: parseInt(data.radius_meters) || 50
+          lat: parseFloat(user.office.latitude),
+          lng: parseFloat(user.office.longitude),
+          radius: Number(user.office.radius_meters) || 50,
+          name: user.office.name
         });
-      } else {
-        // Fallback if HR hasn't set it (Monas, Jakarta)
+      } else if (company) {
+        // Jika tidak, kita simpan list kantor untuk pencarian "terdekat" nanti saat lokasi didapat
+        // Tapi untuk default, pakai HQ
         setOfficeConfig({
-          lat: -6.175392,
-          lng: 106.827153,
-          radius: 50
+          lat: parseFloat(company.latitude),
+          lng: parseFloat(company.longitude),
+          radius: Number(company.radius_meters) || 50,
+          name: "Kantor Pusat (HQ)"
         });
       }
     }).catch(err => {
       console.error("Failed to load company config", err);
-      setOfficeConfig({ lat: -6.175392, lng: 106.827153, radius: 50 });
     });
 
     // 2. Initialize Webcam
@@ -58,16 +62,63 @@ export default function LiveAttendancePage() {
         });
     }
 
-    // 3. Get Geolocation
+    // 3. Get Geolocation & Match Nearest Office
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           setLocation({ lat, lng });
           
-          if (officeConfig) {
-            const dist = getDistanceFromLatLonInM(lat, lng, officeConfig.lat, officeConfig.lng);
+          let targetOffice = officeConfig;
+
+          // Jika user TIDAK punya assigned office, kita cari yang terdekat dari list company.offices
+          if (!user?.office) {
+            try {
+              const res = await axiosInstance.get('/company');
+              const company = res.data?.data;
+              if (company?.offices?.length > 0) {
+                let minDistance = Infinity;
+                let nearest = null;
+
+                // Cek HQ dulu
+                const hqDist = getDistanceFromLatLonInM(lat, lng, parseFloat(company.latitude), parseFloat(company.longitude));
+                minDistance = hqDist;
+                nearest = { 
+                  lat: parseFloat(company.latitude), 
+                  lng: parseFloat(company.longitude), 
+                  radius: Number(company.radius_meters) || 50, 
+                  name: "Kantor Pusat (HQ)" 
+                };
+
+                // Cek semua cabang
+                company.offices.forEach((office: any) => {
+                  if (office.is_active) {
+                    const d = getDistanceFromLatLonInM(lat, lng, parseFloat(office.latitude), parseFloat(office.longitude));
+                    if (d < minDistance) {
+                      minDistance = d;
+                      nearest = { 
+                        lat: parseFloat(office.latitude), 
+                        lng: parseFloat(office.longitude), 
+                        radius: Number(office.radius_meters) || 50, 
+                        name: office.name 
+                      };
+                    }
+                  }
+                });
+
+                if (nearest) {
+                  setOfficeConfig(nearest);
+                  targetOffice = nearest;
+                }
+              }
+            } catch (e) {
+              console.error("Error finding nearest office", e);
+            }
+          }
+
+          if (targetOffice) {
+            const dist = getDistanceFromLatLonInM(lat, lng, targetOffice.lat, targetOffice.lng);
             setDistance(Math.round(dist));
           }
         },
@@ -80,7 +131,7 @@ export default function LiveAttendancePage() {
     } else {
       setStatusMsg("Browser tidak support Geolocation.");
     }
-  }, [officeConfig?.lat]); // Dependency added to recalculate if config loads later
+  }, [user?.office]);
 
   const getDistanceFromLatLonInM = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371; // Radius earth in km
@@ -246,9 +297,14 @@ export default function LiveAttendancePage() {
                   </div>
                   
                   {distance !== null && officeConfig ? (
-                    <p className={`text-sm font-bold ${distance <= officeConfig.radius ? 'text-[#107c41]' : 'text-[#8B0000]'}`}>
-                      Jarak Anda: {distance} meter
-                    </p>
+                    <>
+                      <p className={`text-sm font-bold ${distance <= officeConfig.radius ? 'text-[#107c41]' : 'text-[#8B0000]'}`}>
+                        Jarak Anda: {distance} meter
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-1 font-bold flex items-center gap-1 uppercase tracking-tighter">
+                        Terdeteksi Area: <span className="text-gray-600">{officeConfig.name}</span>
+                      </p>
+                    </>
                   ) : (
                     <p className="text-xs text-gray-500">Menghitung jarak koordinat...</p>
                   )}

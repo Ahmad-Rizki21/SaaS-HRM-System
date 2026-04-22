@@ -40,7 +40,7 @@ class EmployeeController extends Controller
             ->when($request->id, function($q) use ($request) {
                 $q->where('id', $request->id);
             })
-            ->with(['role', 'supervisor'])
+            ->with(['role', 'supervisor', 'office'])
             ->orderBy('name', 'asc')
             ->paginate($request->per_page ?? 10);
             
@@ -56,7 +56,7 @@ class EmployeeController extends Controller
         abort_if(!$request->user()->hasPermission('view-employees'), 403, 'Akses ditolak.');
 
         $user = $request->user();
-        $query = User::with(['role', 'supervisor']);
+        $query = User::with(['role', 'supervisor', 'office']);
 
         if ($user->company_id && !$user->canAccessAllCompanies()) {
             $query->where('company_id', $user->company_id);
@@ -123,6 +123,7 @@ class EmployeeController extends Controller
             'blood_type' => 'nullable|string|max:5',
             'emergency_contact_name' => 'nullable|string',
             'emergency_contact_phone' => 'nullable|string',
+            'office_id' => 'nullable|exists:offices,id',
         ]);
 
         $path = null;
@@ -154,6 +155,7 @@ class EmployeeController extends Controller
         $employee->blood_type = $request->blood_type;
         $employee->emergency_contact_name = $request->emergency_contact_name;
         $employee->emergency_contact_phone = $request->emergency_contact_phone;
+        $employee->office_id = $request->office_id;
         $employee->save();
 
         // Send Welcome & Verification Email
@@ -175,7 +177,7 @@ class EmployeeController extends Controller
             if ($user->role_id !== 1) {
                 $query->where('company_id', $user->company_id);
             }
-        })->with(['role', 'company', 'supervisor'])->findOrFail($id);
+        })->with(['role', 'company', 'supervisor', 'office'])->findOrFail($id);
 
         return $this->successResponse($employee, 'Detail karyawan berhasil diambil.');
     }
@@ -201,6 +203,7 @@ class EmployeeController extends Controller
             'blood_type' => 'nullable|string|max:5',
             'emergency_contact_name' => 'nullable|string',
             'emergency_contact_phone' => 'nullable|string',
+            'office_id' => 'nullable|exists:offices,id',
         ]);
 
         if ($request->hasFile('photo')) {

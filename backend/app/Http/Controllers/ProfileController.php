@@ -117,7 +117,7 @@ class ProfileController extends Controller
 
     public function me(Request $request)
     {
-        $user = $request->user()->load('role.permissions');
+        $user = $request->user()->load(['role.permissions', 'office']);
         return $this->successResponse([
             'user' => $user
         ]);

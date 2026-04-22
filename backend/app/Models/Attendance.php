@@ -35,6 +35,11 @@ class Attendance extends Model
         return $this->belongsTo(Company::class);
     }
 
+    public function office()
+    {
+        return $this->belongsTo(\App\Models\Office::class);
+    }
+
     public function getDateAttribute()
     {
         return $this->check_in ? \Carbon\Carbon::parse($this->check_in)->format('Y-m-d') : null;

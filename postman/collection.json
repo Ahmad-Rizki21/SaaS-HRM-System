@@ -165,6 +165,95 @@
             ]
         },
         {
+            "name": "Office Management",
+            "description": "Manage branch offices, GPS coordinates, and geofencing radius.",
+            "item": [
+                {
+                    "name": "Get All Offices",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/offices?search=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "offices"
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": ""
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Office",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"BSI Tower\",\n    \"address\": \"Jl. MH Thamrin No. 51\",\n    \"latitude\": -6.1946,\n    \"longitude\": 106.8231,\n    \"radius\": 100,\n    \"is_active\": true\n}"
+                        },
+                        "url": "{{base_url}}/api/offices"
+                    }
+                },
+                {
+                    "name": "Update Office",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"BSI Tower Updated\",\n    \"radius\": 150\n}"
+                        },
+                        "url": "{{base_url}}/api/offices/1"
+                    }
+                },
+                {
+                    "name": "Delete Office",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            }
+                        ],
+                        "url": "{{base_url}}/api/offices/1"
+                    }
+                }
+            ]
+        },
+        {
             "name": "Employee Management",
             "description": "CRUD operations for company employees.",
             "item": [

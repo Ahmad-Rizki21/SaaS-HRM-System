@@ -91,6 +91,7 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Manajemen Role', 'slug' => 'manage-roles', 'group' => 'Pengaturan'],
             ['name' => 'Lihat Log Aktivitas', 'slug' => 'view-activity-logs', 'group' => 'Pengaturan'],
             ['name' => 'Kelola WFH', 'slug' => 'manage-wfh', 'group' => 'Pengaturan'],
+            ['name' => 'Kelola Kantor Cabang', 'slug' => 'manage-offices', 'group' => 'Pengaturan'],
             
             // Tugas (Tasks)
             ['name' => 'Lihat Tugas', 'slug' => 'view-tasks', 'group' => 'Tugas'],

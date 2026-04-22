@@ -84,9 +84,9 @@ class AttendanceController extends Controller
             $status = $user->attendance_type === 'shift' ? 'no_schedule' : 'office_hour';
         }
 
-        // --- Geofencing Check ---
-        $office = Office::find($request->office_id) ?? Office::where('company_id', $user->company_id)->first();
+        // --- Geofencing Check (Multi-Office) ---
         $company = $user->company;
+        $matchedOffice = null;
 
         $userRoleName = $user->role ? strtolower($user->role->name) : '';
         $isTechnician = str_contains($userRoleName, 'teknisi');
@@ -97,21 +97,46 @@ class AttendanceController extends Controller
                        ($user->wfh_start_date <= $today && $user->wfh_end_date >= $today);
 
         if (!$isTechnician && !$isWfhActive) {
-            // Priority: Office Coords -> Company Coords
-            $targetLat = $office?->latitude ?? $company?->latitude ?? null;
-            $targetLng = $office?->longitude ?? $company?->longitude ?? null;
-            $radius = $office?->radius ?? $company?->radius_meters ?? $company?->default_radius ?? 100;
+            $userLat = $request->latitude;
+            $userLng = $request->longitude;
 
-            if ($targetLat && $targetLng) {
-                $distance = $this->calculateDistance(
-                    $request->latitude, 
-                    $request->longitude, 
-                    $targetLat, 
-                    $targetLng
-                );
+            // Strategy 1: Check user's assigned office first
+            if ($user->office_id) {
+                $assignedOffice = Office::find($user->office_id);
+                if ($assignedOffice && $assignedOffice->is_active) {
+                    $distance = $this->calculateDistance($userLat, $userLng, $assignedOffice->latitude, $assignedOffice->longitude);
+                    if ($distance <= ($assignedOffice->radius ?? 100)) {
+                        $matchedOffice = $assignedOffice;
+                    }
+                }
+            }
 
-                if ($distance > $radius) {
-                    return $this->errorResponse("Maaf, Anda berada di luar area kantor ({$distance} meter dari titik kantor). Silakan mendekat!", 400);
+            // Strategy 2: Check ALL active offices for the company (find nearest in-range)
+            if (!$matchedOffice) {
+                $allOffices = Office::where('company_id', $user->company_id)->active()->get();
+                $nearestDistance = PHP_INT_MAX;
+
+                foreach ($allOffices as $office) {
+                    $distance = $this->calculateDistance($userLat, $userLng, $office->latitude, $office->longitude);
+                    if ($distance <= ($office->radius ?? 100) && $distance < $nearestDistance) {
+                        $nearestDistance = $distance;
+                        $matchedOffice = $office;
+                    }
+                }
+            }
+
+            // Strategy 3: Fallback to company coordinates (HQ)
+            if (!$matchedOffice) {
+                $targetLat = $company?->latitude ?? null;
+                $targetLng = $company?->longitude ?? null;
+                $radius = $company?->radius_meters ?? $company?->default_radius ?? 100;
+
+                if ($targetLat && $targetLng) {
+                    $distance = $this->calculateDistance($userLat, $userLng, $targetLat, $targetLng);
+                    if ($distance > $radius) {
+                        return $this->errorResponse("Maaf, Anda berada di luar area kantor manapun ({$distance} meter dari titik terdekat). Silakan mendekat ke kantor Anda!", 400);
+                    }
+                    // Matched HQ, no office record (matchedOffice stays null)
                 }
             }
         }
@@ -134,7 +159,7 @@ class AttendanceController extends Controller
             'longitude_in' => $request->longitude,
             'image_in' => $imageName,
             'status' => $status,
-            'office_id' => $office ? $office->id : null,
+            'office_id' => $matchedOffice ? $matchedOffice->id : null,
         ]);
         
         // --- Notifications ---

@@ -46,6 +46,8 @@ interface Employee {
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   device_id?: string;
+  office_id?: number;
+  office?: { id: number; name: string };
 }
 
 interface EmployeeFormData {
@@ -73,6 +75,7 @@ interface EmployeeFormData {
   blood_type?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
+  office_id?: number | null;
 }
 
 interface PaginationData {
@@ -118,7 +121,9 @@ function EmployeesContent() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
   const [potentialSupervisors, setPotentialSupervisors] = useState<{id: number, name: string}[]>([]);
+  const [availableOffices, setAvailableOffices] = useState<{id: number, name: string}[]>([]);
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewedEmployee, setViewedEmployee] = useState<Employee | null>(null);
@@ -147,7 +152,6 @@ function EmployeesContent() {
       setIsSubmitting(false);
     }
   };
-  const actionMenuRef = useRef<HTMLDivElement>(null);
 
   // Close action menu when clicking outside
   useEffect(() => {
@@ -192,6 +196,7 @@ function EmployeesContent() {
     if (hasPermission('manage-roles')) {
       fetchRoles();
     }
+    fetchOffices();
   }, [debouncedSearch, page, urlSearch, urlId, permissions, activeFilter, perPage]);
 
   const downloadTemplate = () => {
@@ -321,6 +326,15 @@ function EmployeesContent() {
       console.error("Gagal ambil data role", e);
     }
   };
+
+  const fetchOffices = async () => {
+    try {
+      const response = await axiosInstance.get("/offices");
+      setAvailableOffices(response.data.data);
+    } catch (e) {
+      console.error("Gagal ambil data kantor", e);
+    }
+  };
   
   const fetchPotentialSupervisors = async (excludeId?: number) => {
     try {
@@ -392,7 +406,8 @@ function EmployeesContent() {
       leave_balance: 12,
       employment_status: 'Permanent',
       work_location: 'Kantor Pusat',
-      attendance_type: 'office_hour'
+      attendance_type: 'office_hour',
+      office_id: null
     });
     fetchPotentialSupervisors();
     setIsModalOpen(true);
@@ -423,6 +438,7 @@ function EmployeesContent() {
       blood_type: emp.blood_type || "",
       emergency_contact_name: emp.emergency_contact_name || "",
       emergency_contact_phone: emp.emergency_contact_phone || "",
+      office_id: emp.office_id || null,
     });
     fetchPotentialSupervisors(emp.id);
     setPhotoPreview(emp.profile_photo_url || null);
@@ -798,7 +814,7 @@ function EmployeesContent() {
                     <td className="px-6 py-4 text-center text-xs font-bold text-gray-500">
                        <div className="flex items-center justify-center gap-1">
                           <MapPin size={12} className="text-red-400" />
-                          {emp.work_location || 'Kantor Pusat'}
+                          {emp.office?.name || emp.work_location || 'Kantor Pusat'}
                        </div>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -1171,10 +1187,22 @@ function EmployeesContent() {
                         </select>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-gray-700">Lokasi Kerja*</label>
+                        <label className="text-sm font-medium text-gray-700">Penempatan Cabang</label>
+                        <select 
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
+                          value={formData.office_id || ""}
+                          onChange={(e) => setFormData({...formData, office_id: e.target.value ? parseInt(e.target.value) : null})}
+                        >
+                          <option value="">Default (Kantor Pusat)</option>
+                          {availableOffices.map(office => (
+                            <option key={office.id} value={office.id}>{office.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-gray-700">Ket. Lokasi</label>
                         <input 
                           type="text" 
-                          required
                           placeholder="Kantor Pusat"
                           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]"
                           value={formData.work_location || ""}
@@ -1379,7 +1407,7 @@ function EmployeesContent() {
                  <h4 className="font-bold border-b pb-2 mb-4 text-blue-500 text-sm uppercase tracking-wider">Pekerjaan & Darurat</h4>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div><p className="text-xs text-gray-400">Status Karyawan</p><p className="text-sm font-semibold">{viewedEmployee.employment_status || 'Permanent'}</p></div>
-                    <div><p className="text-xs text-gray-400">Lokasi Kerja</p><p className="text-sm font-semibold">{viewedEmployee.work_location || 'Kantor Pusat'}</p></div>
+                    <div><p className="text-xs text-gray-400">Penempatan Cabang</p><p className="text-sm font-semibold text-blue-600">{viewedEmployee.office?.name || viewedEmployee.work_location || 'Kantor Pusat'}</p></div>
                     <div><p className="text-xs text-gray-400">Tanggal Gabung</p><p className="text-sm font-semibold">{formatDate(viewedEmployee.join_date)}</p></div>
                     <div><p className="text-xs text-gray-400">Sisa Cuti</p><p className="text-sm font-semibold">{viewedEmployee.leave_balance ?? 0} Hari</p></div>
                     <div><p className="text-xs text-gray-400">Atasan Lgsg.</p><p className="text-sm font-semibold">{viewedEmployee.supervisor?.name || '-'}</p></div>

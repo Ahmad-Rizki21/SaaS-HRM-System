@@ -33,6 +33,7 @@ use App\Http\Controllers\PerformanceReviewController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\VehicleLogController;
 use App\Http\Controllers\MassLeaveController;
+use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\Api\Mobile\MobileDashboardController;
 use App\Http\Controllers\Api\Mobile\MobileAttendanceController;
 use App\Http\Controllers\Api\Mobile\MobileTaskController;
@@ -97,6 +98,16 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     // Company Settings
     Route::get('/company', [CompanyController::class, 'show']);
     Route::post('/company/update', [CompanyController::class, 'update']);
+
+    // Offices / Branch Locations
+    Route::get('/offices', [OfficeController::class, 'index']);
+    Route::middleware('permission:manage-offices')->group(function () {
+        Route::post('/offices', [OfficeController::class, 'store']);
+        Route::get('/offices/{id}', [OfficeController::class, 'show']);
+        Route::put('/offices/{id}', [OfficeController::class, 'update']);
+        Route::delete('/offices/{id}', [OfficeController::class, 'destroy']);
+        Route::post('/offices/{id}/assign-employees', [OfficeController::class, 'assignEmployees']);
+    });
 
     // Shifts (Operational)
     Route::middleware('permission:manage-shifts')->group(function () {
