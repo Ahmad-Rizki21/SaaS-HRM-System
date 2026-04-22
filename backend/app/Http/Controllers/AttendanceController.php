@@ -100,19 +100,20 @@ class AttendanceController extends Controller
             $userLat = $request->latitude;
             $userLng = $request->longitude;
 
-            // Strategy 1: Check user's assigned office first
+            // Strategy 1: If user HAS an assigned office, STICK TO IT (Strict mode)
             if ($user->office_id) {
                 $assignedOffice = Office::find($user->office_id);
                 if ($assignedOffice && $assignedOffice->is_active) {
                     $distance = $this->calculateDistance($userLat, $userLng, $assignedOffice->latitude, $assignedOffice->longitude);
-                    if ($distance <= ($assignedOffice->radius ?? 100)) {
-                        $matchedOffice = $assignedOffice;
+                    if ($distance > ($assignedOffice->radius ?? 100)) {
+                        return $this->errorResponse("Maaf, Anda berada di luar area kantor assigned Anda: {$assignedOffice->name} ({$distance} meter). Silakan mendekat ke lokasi kerja Anda!", 400);
                     }
+                    $matchedOffice = $assignedOffice;
                 }
-            }
-
-            // Strategy 2: Check ALL active offices for the company (find nearest in-range)
-            if (!$matchedOffice) {
+            } 
+            // Strategy 2: If user has NO assigned office, allow check-in at ANY branch or HQ (Flexible mode)
+            else {
+                // A. Check ALL active offices for the company (find nearest in-range)
                 $allOffices = Office::where('company_id', $user->company_id)->active()->get();
                 $nearestDistance = PHP_INT_MAX;
 
@@ -123,20 +124,23 @@ class AttendanceController extends Controller
                         $matchedOffice = $office;
                     }
                 }
-            }
 
-            // Strategy 3: Fallback to company coordinates (HQ)
-            if (!$matchedOffice) {
-                $targetLat = $company?->latitude ?? null;
-                $targetLng = $company?->longitude ?? null;
-                $radius = $company?->radius_meters ?? $company?->default_radius ?? 100;
+                // B. If still not matched, Fallback to company coordinates (HQ)
+                if (!$matchedOffice) {
+                    $targetLat = $company?->latitude ?? null;
+                    $targetLng = $company?->longitude ?? null;
+                    $radius = $company?->radius_meters ?? $company?->default_radius ?? 100;
 
-                if ($targetLat && $targetLng) {
-                    $distance = $this->calculateDistance($userLat, $userLng, $targetLat, $targetLng);
-                    if ($distance > $radius) {
-                        return $this->errorResponse("Maaf, Anda berada di luar area kantor manapun ({$distance} meter dari titik terdekat). Silakan mendekat ke kantor Anda!", 400);
+                    if ($targetLat && $targetLng) {
+                        $distance = $this->calculateDistance($userLat, $userLng, $targetLat, $targetLng);
+                        if ($distance > $radius) {
+                            return $this->errorResponse("Maaf, Anda berada di luar area kantor manapun ({$distance} meter dari titik terdekat). Silakan mendekat ke kantor Anda!", 400);
+                        }
+                        // Matched HQ
+                    } else {
+                        // No coordinates at all defined
+                        return $this->errorResponse("Koordinat lokasi kantor belum diatur oleh Admin.", 400);
                     }
-                    // Matched HQ, no office record (matchedOffice stays null)
                 }
             }
         }
