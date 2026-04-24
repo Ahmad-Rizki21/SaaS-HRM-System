@@ -215,6 +215,86 @@ class DashboardController extends Controller
 
         $calendarEvents = $calendarHolidays->concat($calendarLeaves);
 
+        // --- 10. Monthly Attendance Breakdown (Daily present/late for bar chart) ---
+        $monthlyBreakdown = [];
+        if (!$isStaff) {
+            $startOfMonth = Carbon::now()->startOfMonth();
+            $endOfRange = Carbon::now()->endOfMonth();
+            // Only show up to today if mid-month
+            if ($endOfRange->isFuture()) {
+                $endOfRange = Carbon::today();
+            }
+
+            $dailyData = DB::table('attendances')
+                ->where('company_id', $companyId)
+                ->whereBetween('check_in', [$startOfMonth->toDateString(), $endOfRange->toDateString() . ' 23:59:59'])
+                ->select(
+                    DB::raw('DATE(check_in) as date'),
+                    DB::raw("SUM(CASE WHEN status IN ('present', 'office_hour') THEN 1 ELSE 0 END) as present"),
+                    DB::raw("SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late"),
+                    DB::raw('COUNT(*) as total')
+                )
+                ->groupBy(DB::raw('DATE(check_in)'))
+                ->orderBy('date')
+                ->get();
+
+            foreach ($dailyData as $day) {
+                $monthlyBreakdown[] = [
+                    'date' => $day->date,
+                    'label' => Carbon::parse($day->date)->format('d M'),
+                    'present' => (int) $day->present,
+                    'late' => (int) $day->late,
+                    'total' => (int) $day->total,
+                ];
+            }
+        }
+
+        // --- 11. Overtime Monthly Summary (weekly aggregated) ---
+        $overtimeSummary = [];
+        if (!$isStaff) {
+            $overtimeData = DB::table('overtimes')
+                ->where('company_id', $companyId)
+                ->where('status', 'approved')
+                ->whereBetween('date', [$monthStart->toDateString(), Carbon::now()->endOfMonth()->toDateString()])
+                ->select(
+                    DB::raw('WEEK(date, 1) as week_num'),
+                    DB::raw('MIN(date) as week_start'),
+                    DB::raw('COUNT(*) as total_requests'),
+                    DB::raw('SUM(TIMESTAMPDIFF(HOUR, start_time, end_time)) as total_hours')
+                )
+                ->groupBy(DB::raw('WEEK(date, 1)'))
+                ->orderBy('week_num')
+                ->get();
+
+            $weekIndex = 1;
+            foreach ($overtimeData as $week) {
+                $overtimeSummary[] = [
+                    'week' => 'Minggu ' . $weekIndex,
+                    'total_requests' => (int) $week->total_requests,
+                    'total_hours' => (int) ($week->total_hours ?? 0),
+                ];
+                $weekIndex++;
+            }
+        }
+
+        // --- 12. Leave Type Distribution ---
+        $leaveDistribution = [];
+        if (!$isStaff) {
+            $leaveDistribution = DB::table('leaves')
+                ->where('company_id', $companyId)
+                ->where('status', 'approved')
+                ->whereBetween('start_date', [$monthStart->toDateString(), Carbon::now()->endOfMonth()->toDateString()])
+                ->select('type', DB::raw('COUNT(*) as count'))
+                ->groupBy('type')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'type' => ucfirst($item->type ?? 'Lainnya'),
+                        'count' => (int) $item->count,
+                    ];
+                });
+        }
+
         return $this->successResponse([
             'summary' => $summary,
             'pending_approvals' => [
@@ -229,7 +309,10 @@ class DashboardController extends Controller
             'recent_announcements' => $recentAnnouncements,
             'recent_activities' => $recentActivities,
             'role_distribution' => $roleDistribution,
-            'today_attendance' => $todayAttendance
+            'today_attendance' => $todayAttendance,
+            'monthly_breakdown' => $monthlyBreakdown,
+            'overtime_summary' => $overtimeSummary,
+            'leave_distribution' => $leaveDistribution,
         ], 'Data ringkasan dashboard berhasil diambil.');
     }
 

@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { 
   Users, UserCheck, UserX, Calendar as CalendarIcon, 
-  MoreVertical, Eye, Plus, Search, Filter, X, Clock, AlertCircle, CheckCircle
+  MoreVertical, Eye, Plus, Search, Filter, X, Clock, AlertCircle, CheckCircle,
+  TrendingUp, TrendingDown, Briefcase, Activity, Coffee, FileText
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, CartesianGrid } from 'recharts';
 import Image from "next/image";
@@ -75,6 +76,22 @@ interface DashboardData {
     title: string;
     date: string;
   }>;
+  monthly_breakdown: Array<{
+    date: string;
+    label: string;
+    present: number;
+    late: number;
+    total: number;
+  }>;
+  overtime_summary: Array<{
+    week: string;
+    total_requests: number;
+    total_hours: number;
+  }>;
+  leave_distribution: Array<{
+    type: string;
+    count: number;
+  }>;
 }
 
 export default function DashboardPage() {
@@ -128,9 +145,13 @@ export default function DashboardPage() {
   const todayAttendance = data?.today_attendance || [];
   const attendanceStats = data?.attendance_stats || { percentage: 0, late_count: 0, total_hours: 0, work_days: 0 };
   const calendarEvents = data?.calendar_events || [];
+  const monthlyBreakdown = data?.monthly_breakdown || [];
+  const overtimeSummary = data?.overtime_summary || [];
+  const leaveDistribution = data?.leave_distribution || [];
 
   // Colors for charts
   const COLORS = ['#8B0000', '#991b1b', '#b91c1c', '#dc2626', '#fca5a5', '#ef4444', '#f87171'];
+  const LEAVE_COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4'];
 
   const pendingApprovalsChartData = [
     { name: 'Cuti', count: pendingApprovals.leaves, color: '#3b82f6' },
@@ -270,6 +291,28 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="mb-6">
         <h1 className="text-[22px] font-bold text-gray-900">Dashboard Admin</h1>
+      </div>
+
+      {/* SUMMARY STAT CARDS */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+        {[
+          { label: 'Total Karyawan', value: summary.total_employees, icon: <Users size={18} />, color: 'bg-blue-50 text-blue-600', border: 'border-blue-100' },
+          { label: 'Hadir Hari Ini', value: summary.present_today, icon: <UserCheck size={18} />, color: 'bg-emerald-50 text-emerald-600', border: 'border-emerald-100' },
+          { label: 'Terlambat', value: summary.late_today, icon: <Clock size={18} />, color: 'bg-amber-50 text-amber-600', border: 'border-amber-100' },
+          { label: 'Cuti/Izin', value: summary.on_leave_today, icon: <Coffee size={18} />, color: 'bg-purple-50 text-purple-600', border: 'border-purple-100' },
+          { label: 'Tidak Hadir', value: summary.absent_today, icon: <UserX size={18} />, color: 'bg-red-50 text-red-600', border: 'border-red-100' },
+        ].map((stat, idx) => (
+          <div key={idx} className={`bg-white rounded-2xl p-5 border ${stat.border} shadow-sm hover:shadow-md transition-shadow group`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${stat.color}`}>
+                {stat.icon}
+              </div>
+              <TrendingUp size={14} className="text-gray-300 group-hover:text-emerald-400 transition-colors" />
+            </div>
+            <p className="text-2xl font-black text-gray-900">{stat.value}</p>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">{stat.label}</p>
+          </div>
+        ))}
       </div>
 
       {/* TOP ROW GRID */}
@@ -430,6 +473,165 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ANALYTICS CHARTS ROW */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+        
+        {/* Weekly Attendance Trend (Line Chart) */}
+        <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+              Tren Kehadiran 7 Hari Terakhir
+            </h3>
+            <div className="bg-gray-50 px-3 py-1.5 rounded-xl text-[10px] font-bold text-gray-500 uppercase tracking-widest">Weekly</div>
+          </div>
+          <div className="h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={attendanceTrends} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 600 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                  labelStyle={{ fontWeight: 700, color: '#111827' }}
+                />
+                <Line type="monotone" dataKey="count" name="Kehadiran" stroke="#8B0000" strokeWidth={3} dot={{ r: 5, fill: '#8B0000', stroke: '#fff', strokeWidth: 2 }} activeDot={{ r: 8, fill: '#8B0000', stroke: '#fff', strokeWidth: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Leave Distribution (Pie Chart) */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col">
+          <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
+            <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+            Distribusi Cuti Bulan Ini
+          </h3>
+          {leaveDistribution.length > 0 ? (
+            <>
+              <div className="h-[180px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={leaveDistribution} innerRadius={55} outerRadius={80} paddingAngle={4} dataKey="count" nameKey="type">
+                      {leaveDistribution.map((_, index) => (
+                        <Cell key={`leave-${index}`} fill={LEAVE_COLORS[index % LEAVE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: '0.75rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-col gap-2 mt-auto">
+                {leaveDistribution.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: LEAVE_COLORS[idx % LEAVE_COLORS.length] }}></span>
+                      <span className="font-medium text-gray-600">{item.type}</span>
+                    </div>
+                    <span className="font-bold text-gray-800">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 mb-3"><FileText size={24} /></div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Belum ada data cuti</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* MONTHLY BREAKDOWN & OVERTIME ROW */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+        
+        {/* Monthly Attendance Breakdown (Stacked Bar Chart) */}
+        <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+              Rekap Kehadiran Bulanan
+            </h3>
+            <div className="bg-gray-50 px-3 py-1.5 rounded-xl text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+              {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+            </div>
+          </div>
+          {monthlyBreakdown.length > 0 ? (
+            <div className="h-[280px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyBreakdown} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 600 }} interval={1} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} allowDecimals={false} />
+                  <Tooltip contentStyle={{ borderRadius: '0.75rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
+                  <Bar dataKey="present" name="Hadir" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} maxBarSize={20} />
+                  <Bar dataKey="late" name="Terlambat" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[280px] flex items-center justify-center">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Belum ada data bulan ini</p>
+            </div>
+          )}
+          <div className="flex items-center gap-6 mt-4 pt-4 border-t border-gray-50">
+            <div className="flex items-center gap-2 text-xs"><span className="w-3 h-3 rounded-sm bg-emerald-500"></span><span className="font-medium text-gray-500">Hadir Tepat Waktu</span></div>
+            <div className="flex items-center gap-2 text-xs"><span className="w-3 h-3 rounded-sm bg-amber-400"></span><span className="font-medium text-gray-500">Terlambat</span></div>
+          </div>
+        </div>
+
+        {/* Overtime Summary + Upcoming Holidays */}
+        <div className="flex flex-col gap-6">
+          {/* Overtime Summary */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex-1">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-4">
+              <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+              Lembur Bulan Ini
+            </h3>
+            {overtimeSummary.length > 0 ? (
+              <div className="h-[140px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={overtimeSummary} margin={{ top: 5, right: 0, left: -25, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 600 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} allowDecimals={false} />
+                    <Tooltip contentStyle={{ borderRadius: '0.75rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
+                    <Bar dataKey="total_requests" name="Pengajuan" fill="#8b5cf6" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-[140px] flex items-center justify-center">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tidak ada lembur</p>
+              </div>
+            )}
+          </div>
+
+          {/* Upcoming Holidays */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex-1">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-4">
+              <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+              Hari Libur Mendatang
+            </h3>
+            <div className="space-y-3">
+              {upcomingHolidays.length > 0 ? (
+                upcomingHolidays.slice(0, 4).map((holiday) => (
+                  <div key={holiday.id} className="flex items-center gap-3 p-2.5 bg-red-50/50 rounded-xl border border-red-100/50">
+                    <div className="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex flex-col items-center justify-center shrink-0">
+                      <span className="text-[10px] font-bold leading-none">{new Date(holiday.date).toLocaleDateString('id-ID', { month: 'short' })}</span>
+                      <span className="text-sm font-black leading-none">{new Date(holiday.date).getDate()}</span>
+                    </div>
+                    <p className="text-xs font-bold text-gray-700 truncate">{holiday.name}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-gray-400 font-bold text-center py-4 uppercase tracking-widest">Tidak ada libur terdekat</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* BOTTOM ROW GRID */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         
@@ -570,6 +772,42 @@ export default function DashboardPage() {
           </div>
         </div>
 
+      </div>
+
+      {/* RECENT ACTIVITY TIMELINE */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm mt-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+            <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
+            Aktivitas Terbaru
+          </h3>
+          <div className="bg-gray-50 px-3 py-1.5 rounded-xl text-[10px] font-bold text-gray-500 uppercase tracking-widest">Real-time</div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {recentActivities.length > 0 ? (
+            recentActivities.map((activity) => (
+              <div key={activity.id} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition border border-transparent hover:border-gray-100 group">
+                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0 mt-0.5">
+                  {activity.photo_url ? (
+                    <Image src={activity.photo_url} alt="" width={36} height={36} className="object-cover" unoptimized />
+                  ) : (
+                    <span className="text-[10px] font-bold text-gray-400">{activity.user_name.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-700"><span className="font-bold text-gray-900">{activity.user_name}</span>{' '}<span className="text-gray-500">{activity.description}</span></p>
+                  <p className="text-[10px] text-gray-400 font-medium mt-1">{activity.time}</p>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 mt-2 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-2 text-center py-8">
+              <Activity size={24} className="mx-auto text-gray-300 mb-2" />
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Belum ada aktivitas</p>
+            </div>
+          )}
+        </div>
       </div>
 
     </div>
