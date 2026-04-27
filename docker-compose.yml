@@ -131,8 +131,8 @@ services:
       LOG_CHANNEL: stack
       LOG_LEVEL: ${LOG_LEVEL:-warning}
     volumes:
-      - backend_storage:/var/www/html/storage/app/public
-      - backend_logs:/var/www/html/storage/logs
+      - ./backend/storage/app/public:/var/www/html/storage/app/public
+      - ./backend/storage/logs:/var/www/html/storage/logs
     depends_on:
       mysql-master:
         condition: service_healthy
@@ -248,10 +248,6 @@ volumes:
   mysql_slave_data:
     driver: local
   redis_data:
-    driver: local
-  backend_storage:
-    driver: local
-  backend_logs:
     driver: local
 
 # ── Networks ───────────────────────────────────────────────

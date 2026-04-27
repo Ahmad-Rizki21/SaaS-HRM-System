@@ -15,6 +15,9 @@ services:
       - mysql-master
       - mysql-slave
       - redis
+    volumes:
+      - ./backend/storage/app/public:/var/www/html/storage/app/public
+      - ./backend/storage/logs:/var/www/html/storage/logs
     networks:
       - hrms-prod-network
 
