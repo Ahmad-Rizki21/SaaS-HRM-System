@@ -3,12 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\RefreshToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /**
+     * Access token lifetime in minutes.
+     */
+    private const ACCESS_TOKEN_MINUTES = 60;
+
+    /**
+     * Refresh token lifetime in days.
+     */
+    private const REFRESH_TOKEN_DAYS = 30;
+
     public function searchCompanies(Request $request)
     {
         $query = $request->get('q');
@@ -67,7 +78,22 @@ class AuthController extends Controller
             $user->update($updateData);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // --- Generate Access Token (short-lived) ---
+        $accessToken = $user->createToken('auth_token', ['*'], now()->addMinutes(self::ACCESS_TOKEN_MINUTES))->plainTextToken;
+
+        // --- Generate Refresh Token (long-lived) ---
+        // Revoke old refresh tokens for this device (token rotation)
+        if ($request->device_id) {
+            RefreshToken::revokeForDevice($user->id, $request->device_id);
+        }
+
+        $refreshTokenData = RefreshToken::generateFor(
+            $user,
+            $request->device_id,
+            $request->ip(),
+            $request->userAgent(),
+            self::REFRESH_TOKEN_DAYS
+        );
 
         \App\Models\ActivityLog::create([
             'company_id' => $user->company_id,
@@ -77,10 +103,73 @@ class AuthController extends Controller
         ]);
 
         return $this->successResponse([
-            'access_token' => $token,
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshTokenData['plain_token'],
             'token_type' => 'Bearer',
+            'expires_in' => self::ACCESS_TOKEN_MINUTES * 60, // in seconds
+            'refresh_expires_in' => self::REFRESH_TOKEN_DAYS * 86400, // in seconds
             'user' => $user->load(['role.permissions', 'office'])
         ], 'Login berhasil');
+    }
+
+    /**
+     * Refresh the access token using a valid refresh token.
+     * Implements token rotation: old refresh token is revoked and new one issued.
+     */
+    public function refreshToken(Request $request)
+    {
+        try {
+            $request->validate([
+                'refresh_token' => 'required|string',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse('Refresh token diperlukan.', 422);
+        }
+
+        // Find the valid refresh token
+        $refreshToken = RefreshToken::findValidToken($request->refresh_token);
+
+        if (!$refreshToken) {
+            return $this->errorResponse('Refresh token tidak valid atau sudah kadaluarsa. Silakan login ulang.', 401);
+        }
+
+        $user = $refreshToken->user;
+
+        if (!$user) {
+            $refreshToken->revoke();
+            return $this->errorResponse('User tidak ditemukan.', 401);
+        }
+
+        // --- Token Rotation ---
+        // 1. Revoke the old refresh token
+        $refreshToken->revoke();
+
+        // 2. Revoke all current access tokens for this user (optional: only current device)
+        // We delete old tokens to prevent token accumulation
+        $user->tokens()->where('created_at', '<', now()->subMinutes(self::ACCESS_TOKEN_MINUTES))->delete();
+
+        // 3. Create new access token
+        $newAccessToken = $user->createToken('auth_token', ['*'], now()->addMinutes(self::ACCESS_TOKEN_MINUTES))->plainTextToken;
+
+        // 4. Create new refresh token (rotation)
+        $newRefreshTokenData = RefreshToken::generateFor(
+            $user,
+            $refreshToken->device_id,
+            $request->ip(),
+            $request->userAgent(),
+            self::REFRESH_TOKEN_DAYS
+        );
+
+        // Update last used timestamp
+        $refreshToken->markAsUsed();
+
+        return $this->successResponse([
+            'access_token' => $newAccessToken,
+            'refresh_token' => $newRefreshTokenData['plain_token'],
+            'token_type' => 'Bearer',
+            'expires_in' => self::ACCESS_TOKEN_MINUTES * 60,
+            'refresh_expires_in' => self::REFRESH_TOKEN_DAYS * 86400,
+        ], 'Token berhasil diperbarui.');
     }
 
     public function logout(Request $request)
@@ -90,6 +179,9 @@ class AuthController extends Controller
         
         // Clear FCM token on logout for security
         $user->update(['fcm_token' => null]);
+
+        // Revoke all refresh tokens for this user
+        RefreshToken::revokeAllForUser($user->id);
         
         $user->currentAccessToken()->delete();
 
@@ -112,6 +204,12 @@ class AuthController extends Controller
         $user->update([
             'password' => Hash::make($request->new_password)
         ]);
+
+        // Revoke all refresh tokens on password change (security best practice)
+        RefreshToken::revokeAllForUser($user->id);
+
+        // Revoke all access tokens except current one
+        $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
 
         $this->logActivity('CHANGE_PASSWORD', "User {$user->name} telah mengubah kata sandi akunnya.");
 
@@ -203,9 +301,17 @@ class AuthController extends Controller
             return $this->errorResponse('Token sudah kadaluarsa.', 400);
         }
 
-        User::where('email', $request->email)->update([
+        $user = User::where('email', $request->email)->first();
+
+        $user->update([
             'password' => \Illuminate\Support\Facades\Hash::make($request->password)
         ]);
+
+        // Revoke all refresh tokens on password reset
+        if ($user) {
+            RefreshToken::revokeAllForUser($user->id);
+            $user->tokens()->delete(); // Revoke all access tokens too
+        }
 
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')
             ->where('email', $request->email)

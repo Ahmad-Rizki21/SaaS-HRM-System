@@ -479,6 +479,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       console.error("Logout error", e);
     } finally {
       Cookies.remove("token");
+      Cookies.remove("refresh_token");
       router.push("/login");
     }
   };

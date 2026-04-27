@@ -64,8 +64,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Call backend to revoke server-side tokens
+    try {
+      await axiosInstance.post("/logout");
+    } catch (e) {
+      // Ignore errors — still clear local tokens
+    }
     Cookies.remove("token");
+    Cookies.remove("refresh_token");
     router.push("/login");
   };
 

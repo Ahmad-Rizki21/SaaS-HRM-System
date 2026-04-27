@@ -6,6 +6,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import '../services/secure_storage_service.dart';
 
 class ApiService {
   // Toggle between Home (192.168.1.9) and Office (2.2.2.76)
@@ -31,9 +32,18 @@ class ApiService {
 
   // ============ HEADERS ============
 
+  /// Flag to prevent concurrent refresh attempts.
+  static bool _isRefreshing = false;
+
   static Future<Map<String, String>> getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
+    final secureStorage = await SecureStorageService.getInstance();
+    
+    // Auto-refresh if token is expired
+    if (await secureStorage.isAccessTokenExpired()) {
+      await _tryRefreshToken();
+    }
+    
+    String? token = await secureStorage.getAccessToken();
     return {'Accept': 'application/json', 'Authorization': 'Bearer $token'};
   }
 
@@ -47,6 +57,106 @@ class ApiService {
       return iosInfo.identifierForVendor ?? 'unknown_ios';
     }
     return 'unknown_device';
+  }
+
+  /// Attempt to refresh the access token using the stored refresh token.
+  /// Returns true if refresh was successful, false otherwise.
+  static Future<bool> _tryRefreshToken() async {
+    if (_isRefreshing) return false;
+    _isRefreshing = true;
+
+    try {
+      final secureStorage = await SecureStorageService.getInstance();
+      final refreshToken = await secureStorage.getRefreshToken();
+
+      if (refreshToken == null || refreshToken.isEmpty) {
+        _isRefreshing = false;
+        return false;
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/refresh-token'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'refresh_token': refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final tokenData = data['data'];
+
+        await secureStorage.saveTokens(
+          accessToken: tokenData['access_token'],
+          refreshToken: tokenData['refresh_token'],
+          expiresIn: tokenData['expires_in'] ?? 3600,
+        );
+
+        _isRefreshing = false;
+        return true;
+      } else {
+        // Refresh token is invalid/expired — user must re-login
+        await secureStorage.clearTokens();
+        _isRefreshing = false;
+        return false;
+      }
+    } catch (e) {
+      _isRefreshing = false;
+      return false;
+    }
+  }
+
+  /// Make an authenticated HTTP request with auto-retry on 401.
+  static Future<http.Response> authenticatedRequest(
+    String method,
+    String endpoint, {
+    Map<String, String>? extraHeaders,
+    Object? body,
+  }) async {
+    var headers = await getHeaders();
+    if (extraHeaders != null) headers.addAll(extraHeaders);
+
+    var uri = Uri.parse('$baseUrl$endpoint');
+    http.Response response;
+
+    switch (method.toUpperCase()) {
+      case 'POST':
+        response = await http.post(uri, headers: headers, body: body);
+        break;
+      case 'PUT':
+        response = await http.put(uri, headers: headers, body: body);
+        break;
+      case 'DELETE':
+        response = await http.delete(uri, headers: headers);
+        break;
+      default:
+        response = await http.get(uri, headers: headers);
+    }
+
+    // Auto-retry once on 401 (token might have expired during request)
+    if (response.statusCode == 401) {
+      final refreshed = await _tryRefreshToken();
+      if (refreshed) {
+        headers = await getHeaders();
+        if (extraHeaders != null) headers.addAll(extraHeaders);
+        switch (method.toUpperCase()) {
+          case 'POST':
+            response = await http.post(uri, headers: headers, body: body);
+            break;
+          case 'PUT':
+            response = await http.put(uri, headers: headers, body: body);
+            break;
+          case 'DELETE':
+            response = await http.delete(uri, headers: headers);
+            break;
+          default:
+            response = await http.get(uri, headers: headers);
+        }
+      }
+    }
+
+    return response;
   }
 
   // ============ AUTH ============
@@ -75,8 +185,16 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', data['data']['access_token']);
+        final tokenData = data['data'];
+        final secureStorage = await SecureStorageService.getInstance();
+
+        // Save tokens encrypted with device key
+        await secureStorage.saveTokens(
+          accessToken: tokenData['access_token'],
+          refreshToken: tokenData['refresh_token'],
+          expiresIn: tokenData['expires_in'] ?? 3600,
+        );
+
         return {'success': true, 'message': 'Login Berhasil!'};
       } else {
         return {
@@ -110,6 +228,28 @@ class ApiService {
   }
 
   static Future<void> logout() async {
+    // Call backend logout to revoke tokens server-side
+    try {
+      final secureStorage = await SecureStorageService.getInstance();
+      final token = await secureStorage.getAccessToken();
+      if (token != null) {
+        await http.post(
+          Uri.parse('$baseUrl/logout'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+      }
+    } catch (e) {
+      // Ignore errors during server logout — still clear local tokens
+    }
+
+    // Clear all encrypted tokens locally
+    final secureStorage = await SecureStorageService.getInstance();
+    await secureStorage.clearTokens();
+    
+    // Also remove old legacy plaintext token if exists
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
   }
@@ -582,8 +722,8 @@ class ApiService {
   }
 
   static Future<void> downloadSalarySlip(int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
+    final secureStorage = await SecureStorageService.getInstance();
+    String? token = await secureStorage.getAccessToken();
 
     // Encode token to handle special characters like '|'
     final encodedToken = Uri.encodeComponent(token ?? '');
@@ -946,9 +1086,10 @@ class ApiService {
   }
 
   static Future<void> launchPdf(String type, int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
-    final url = Uri.parse('$baseUrl/export/$type/$id?token=$token');
+    final secureStorage = await SecureStorageService.getInstance();
+    String? token = await secureStorage.getAccessToken();
+    final encodedToken = Uri.encodeComponent(token ?? '');
+    final url = Uri.parse('$baseUrl/export/$type/$id?token=$encodedToken');
 
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');

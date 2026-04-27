@@ -66,6 +66,7 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->midd
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/companies/search', [AuthController::class, 'searchCompanies']);
 Route::get('/verify-email/{token}', [AuthController::class, 'verifyEmail']);
+Route::post('/refresh-token', [AuthController::class, 'refreshToken'])->middleware('throttle:10,1');
 Route::get('/payroll/download-slip/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'downloadSlip']);
 
 // Broadcast Route

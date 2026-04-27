@@ -91,9 +91,27 @@ export default function LoginPage() {
         company_name: companyName,
       });
       if (response.data.data && response.data.data.access_token) {
-        Cookies.set("token", response.data.data.access_token, {
-          expires: keepLoggedIn ? 30 : 1,
+        const { access_token, refresh_token, expires_in } = response.data.data;
+        const isSecure = window.location.protocol === "https:";
+        
+        // Calculate access token expiry in days
+        const accessExpiryDays = expires_in ? expires_in / 86400 : 1;
+        
+        // Save access token with secure flags
+        Cookies.set("token", access_token, {
+          expires: keepLoggedIn ? accessExpiryDays : undefined, // session cookie if not "keep logged in"
+          secure: isSecure,
+          sameSite: "strict",
         });
+        
+        // Save refresh token (long-lived, 30 days)
+        if (refresh_token) {
+          Cookies.set("refresh_token", refresh_token, {
+            expires: 30,
+            secure: isSecure,
+            sameSite: "strict",
+          });
+        }
         router.push("/dashboard");
       } else {
         setError("Gagal mendapatkan token auth.");

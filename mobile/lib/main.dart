@@ -5,6 +5,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/notification_screen.dart';
 import 'screens/task_screen.dart';
 import 'services/notification_service.dart';
+import 'services/secure_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -32,13 +33,19 @@ void main() async {
   
   await NotificationService().init();
   
-  String? token = prefs.getString('token');
-  runApp(MyApp(initialToken: token));
+  // Initialize secure storage and migrate old plaintext tokens
+  final secureStorage = await SecureStorageService.getInstance();
+  await secureStorage.migrateFromPlainPrefs();
+  
+  // Check for valid token (encrypted)
+  bool hasToken = await secureStorage.hasValidToken();
+  
+  runApp(MyApp(isLoggedIn: hasToken));
 }
 
 class MyApp extends StatelessWidget {
-  final String? initialToken;
-  const MyApp({super.key, this.initialToken});
+  final bool isLoggedIn;
+  const MyApp({super.key, this.isLoggedIn = false});
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +61,7 @@ class MyApp extends StatelessWidget {
               themeMode: currentMode,
               theme: _buildLightTheme(context),
               darkTheme: _buildDarkTheme(context),
-              home: initialToken != null ? DashboardScreen() : LoginScreen(),
+              home: isLoggedIn ? DashboardScreen() : LoginScreen(),
               routes: {
                 '/login': (context) => LoginScreen(),
                 '/dashboard': (context) => DashboardScreen(),
