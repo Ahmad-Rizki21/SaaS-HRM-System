@@ -1,8 +1,8 @@
-# HRM SaaS System (Development Phase)
+# OnTime HRMS - Enterprise SaaS Solution
 
-Sistem Informasi Manajemen Sumber Daya Manusia (HRM) berbasis SaaS dengan arsitektur multi-tenant. Aplikasi ini dirancang untuk mengelola kehadiran, jadwal kerja, pengajuan cuti, dan klaim biaya (reimbursement) secara efisien untuk berbagai perusahaan dalam satu platform.
+Sistem Informasi Manajemen Sumber Daya Manusia (HRMS) berbasis SaaS dengan arsitektur multi-tenant. Aplikasi ini dirancang untuk mengelola kehadiran, jadwal kerja, pengajuan cuti, dan klaim biaya (reimbursement) secara efisien untuk berbagai perusahaan dalam satu platform.
 
-STATUS: MASIH DALAM TAHAP PENGEMBANGAN (DEVELOPMENT)
+STATUS: PRODUCTION ON AIR (STABLE) 🚀
 
 ---
 
@@ -12,7 +12,13 @@ STATUS: MASIH DALAM TAHAP PENGEMBANGAN (DEVELOPMENT)
 
 Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
 
-- **Authentication & Security**: Multi-tenant login, Role-based Access Control (RBAC), hash password, dan session management.
+- **Authentication & Security**: 
+  - **Multi-tenant isolation**: Pemisahan data antar tenant yang sangat ketat.
+  - **Refresh Token System**: Mekanisme rotasi token otomatis (Refresh Token) untuk keamanan sesi backend yang lebih tangguh.
+  - **Device-Bound Security**: Token di aplikasi mobile dikunci (binding) ke hardware ID perangkat unik untuk mencegah pencurian sesi.
+  - **Encrypted Storage**: Penyimpanan data sensitif di mobile menggunakan **hardware-based encryption (AES/XOR)** keyed ke fingerprint perangkat.
+  - **Secure Cookies**: Implementasi HttpOnly, SameSite=Strict, dan Secure flags pada dashboard web.
+  - **RBAC**: Role-based Access Control yang mendalam.
 - **Manajemen SDM**: Data karyawan lengkap, request perubahan profil, upload foto, dan manajemen jabatan (Role).
 - **Sistem Kehadiran Geofencing (Multi-Office) & Liveness**: Validasi ketat menggunakan GPS anti-mock dan deteksi wajah. Sekarang mendukung penentuan lokasi absensi di berbagai kantor cabang dengan radius yang dapat disesuaikan.
 - **Koreksi Absen Mandiri**: Fitur pengajuan koreksi dengan workflow persetujuan (Approval) jika karyawan lupa absen pulang.
