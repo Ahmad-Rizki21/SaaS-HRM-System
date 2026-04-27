@@ -10,6 +10,11 @@ jobs:
     runs-on: self-hosted # Ini akan memanggil runner yang baru Anda install
     
     steps:
+      - name: 🧹 Pre-cleanup permissions
+        run: |
+          # Perbaiki permission agar runner bisa menghapus file yang dibuat Docker sebelumnya
+          sudo chown -R $USER:$USER . || true
+
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
