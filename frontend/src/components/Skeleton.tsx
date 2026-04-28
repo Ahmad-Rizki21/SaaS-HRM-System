@@ -321,3 +321,61 @@ export function ReportSkeleton() {
     </div>
   );
 }
+
+// Payroll History Skeleton
+export function PayrollSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="dash-page-header flex justify-between items-center">
+        <div>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="flex gap-3">
+          <Skeleton className="h-12 w-36 rounded-2xl" />
+          <Skeleton className="h-12 w-36 rounded-2xl" />
+        </div>
+      </div>
+      <div className="bg-white rounded-[2rem] border border-gray-100 p-4 flex gap-4 items-center shadow-sm">
+        <Skeleton className="h-5 w-16" />
+        <Skeleton className="h-10 w-40 rounded-xl" />
+        <Skeleton className="h-10 w-28 rounded-xl" />
+      </div>
+      <div className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm p-6">
+        <TableSkeleton rows={6} cols={4} />
+      </div>
+    </div>
+  );
+}
+
+// My Payroll Card Skeleton (employee view)
+export function PayrollCardSkeleton() {
+  return (
+    <div className="w-full max-w-4xl mx-auto space-y-6 p-4">
+      <div className="space-y-1">
+        <Skeleton className="h-9 w-56 mb-2" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+      <div className="grid gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm border-l-8 border-l-gray-200">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <Skeleton className="w-14 h-14 rounded-2xl" />
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-36" />
+                  <Skeleton className="h-7 w-44" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="w-12 h-12 rounded-2xl" />
+                <Skeleton className="w-12 h-12 rounded-2xl" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+

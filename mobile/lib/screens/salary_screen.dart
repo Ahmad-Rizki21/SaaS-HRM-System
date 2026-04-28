@@ -119,27 +119,46 @@ class _SalaryScreenState extends State<SalaryScreen> {
                                   ],
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () => ApiService.downloadSalarySlip(salary['id']),
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(vertical: 15),
-                                  decoration: BoxDecoration(
-                                    color: primaryColor.withOpacity(0.9), 
-                                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-                                    boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))],
-                                  ),
-                                  child: const Center(
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.picture_as_pdf, color: Colors.white, size: 16),
-                                        SizedBox(width: 8),
-                                        Text("UNDUH SLIP PDF", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
-                                      ],
+                              Column(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => ApiService.previewSalarySlip(salary['id']),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        border: Border.all(color: primaryColor, width: 1.5),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                                      child: Center(
+                                        child: Text("LIHAT DETAIL SLIP", style: GoogleFonts.outfit(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
+                                      ),
                                     ),
                                   ),
-                                ),
+                                  GestureDetector(
+                                    onTap: () => ApiService.downloadSalarySlip(salary['id']),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(vertical: 15),
+                                      decoration: BoxDecoration(
+                                        color: primaryColor.withOpacity(0.9), 
+                                        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                                      ),
+                                      child: const Center(
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.picture_as_pdf, color: Colors.white, size: 16),
+                                            SizedBox(width: 8),
+                                            Text("UNDUH SLIP PDF", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -217,14 +236,23 @@ class _SalaryScreenState extends State<SalaryScreen> {
           }
         }
 
-        // Attendance/Other Deductions if any in net deduction but not BPJS/Tax?
-        // Let's just show the net deduction if it's large and we can't break it down fully
+        // Late Deduction (Potongan Terlambat)
+        if (salary['deduction_late'] != null) {
+          final lateDed = double.parse(salary['deduction_late'].toString());
+          if (lateDed > 0) {
+            widgets.add(_buildDetailRow("Potongan Terlambat", -lateDed, isNegative: true));
+          }
+        }
+
+        // Attendance/Other Deductions if any in net deduction but not BPJS/Tax/Late?
         final totalDeduction = double.parse(salary['deduction'].toString());
+        final lateDeduction = double.tryParse(salary['deduction_late']?.toString() ?? '0') ?? 0;
         final parsedDeductions = (double.tryParse(details['tax']?.toString() ?? '0') ?? 0) + 
-                                 (double.tryParse(details['bpjs']?['total_deduction_emp']?.toString() ?? '0') ?? 0);
+                                 (double.tryParse(details['bpjs']?['total_deduction_emp']?.toString() ?? '0') ?? 0) +
+                                 lateDeduction;
         
         final diff = totalDeduction - parsedDeductions;
-        if (diff > 100) { // arbitrary threshold
+        if (diff > 1000) { // arbitrary threshold (e.g., > Rp 1.000)
              widgets.add(_buildDetailRow("Potongan Lainnya", -diff, isNegative: true));
         }
       } else {

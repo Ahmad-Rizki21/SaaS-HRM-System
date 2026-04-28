@@ -20,7 +20,7 @@ class RealCompanySeeder extends Seeder
         $company = Company::firstOrCreate(
             ['id' => 1],
             [
-                'name' => 'PT. Narwastu Group Indonesia',
+                'name' => 'Narwasthu Artha Tama',
                 'email' => 'corporate@narwastu-group.com',
                 'address' => 'Gedung Narwastu Lt. 12, Jakarta Selatan'
             ]

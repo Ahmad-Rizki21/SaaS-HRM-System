@@ -44,8 +44,13 @@ const AttendanceMap = () => {
     try {
       const response = await axiosInstance.get('/attendance/heatmap');
       if (response.data.status === 'success') {
+        // Filter out records without coordinates to prevent "toString of null" error
+        const validData = (response.data.data || []).filter((item: any) => 
+          item.latitude_in !== null && item.longitude_in !== null
+        );
+
         // Add tiny random jitter to handle overlapping markers
-        const jittered = response.data.data.map((item: any, idx: number) => ({
+        const jittered = validData.map((item: any, idx: number) => ({
           ...item,
           lat: parseFloat(item.latitude_in.toString()) + (Math.random() - 0.5) * 0.0001,
           lng: parseFloat(item.longitude_in.toString()) + (Math.random() - 0.5) * 0.0001

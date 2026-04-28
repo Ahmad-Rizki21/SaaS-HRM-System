@@ -11,8 +11,8 @@ import '../services/secure_storage_service.dart';
 class ApiService {
   // Toggle between Home (192.168.1.9) and Office (2.2.2.76)
   static const String serverIp = 'ontime.jelantik.com';
-  static const String baseUrl = 'https://$serverIp/api';
-  static const String storageUrl = 'https://$serverIp/storage';
+  static const String baseUrl = 'https://$serverIp:8000/api';
+  static const String storageUrl = 'https://$serverIp:8000/storage';
 
   /// Fixes URLs that might contain localhost or older IPs to use the current serverIp
   static String fixUrl(String? url) {
@@ -37,12 +37,12 @@ class ApiService {
 
   static Future<Map<String, String>> getHeaders() async {
     final secureStorage = await SecureStorageService.getInstance();
-    
+
     // Auto-refresh if token is expired
     if (await secureStorage.isAccessTokenExpired()) {
       await _tryRefreshToken();
     }
-    
+
     String? token = await secureStorage.getAccessToken();
     return {'Accept': 'application/json', 'Authorization': 'Bearer $token'};
   }
@@ -248,7 +248,7 @@ class ApiService {
     // Clear all encrypted tokens locally
     final secureStorage = await SecureStorageService.getInstance();
     await secureStorage.clearTokens();
-    
+
     // Also remove old legacy plaintext token if exists
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
@@ -724,20 +724,25 @@ class ApiService {
   static Future<void> downloadSalarySlip(int id) async {
     final secureStorage = await SecureStorageService.getInstance();
     String? token = await secureStorage.getAccessToken();
-
-    // Encode token to handle special characters like '|'
     final encodedToken = Uri.encodeComponent(token ?? '');
     final url = Uri.parse(
       '$baseUrl/payroll/download-slip/$id?token=$encodedToken',
     );
-
-    print("Launching PDF URL: $url");
-
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      print("Could not launch $url: $e");
-    }
+    } catch (e) {}
+  }
+
+  static Future<void> previewSalarySlip(int id) async {
+    final secureStorage = await SecureStorageService.getInstance();
+    String? token = await secureStorage.getAccessToken();
+    final encodedToken = Uri.encodeComponent(token ?? '');
+    final url = Uri.parse(
+      '$baseUrl/payroll/preview-slip/$id?token=$encodedToken',
+    );
+    try {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } catch (e) {}
   }
 
   // ============ TASKS (TUGAS) ============

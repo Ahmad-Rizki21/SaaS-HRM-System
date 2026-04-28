@@ -17,7 +17,9 @@ class PayrollSetting extends Model
         'bpjs_jp_emp_pct',
         'bpjs_jkm_pct',
         'bpjs_jkk_pct',
-        'tax_method'
+        'tax_method',
+        'overtime_rate_per_hour',
+        'overtime_rate_holiday_per_hour'
     ];
 
     public function company()

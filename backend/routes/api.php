@@ -67,7 +67,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/companies/search', [AuthController::class, 'searchCompanies']);
 Route::get('/verify-email/{token}', [AuthController::class, 'verifyEmail']);
 Route::post('/refresh-token', [AuthController::class, 'refreshToken'])->middleware('throttle:10,1');
-Route::get('/payroll/download-slip/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'downloadSlip']);
+
 
 // Broadcast Route
 \Illuminate\Support\Facades\Broadcast::routes(['middleware' => ['auth:sanctum']]);
@@ -279,13 +279,36 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     
     // Payroll System (Comprehensive)
     Route::group(['prefix' => 'payroll'], function () {
+        // Settings
         Route::get('/settings', [\App\Http\Controllers\Api\PayrollController::class, 'getSettings']);
         Route::post('/settings', [\App\Http\Controllers\Api\PayrollController::class, 'updateSettings']);
+        Route::post('/import-data', [\App\Http\Controllers\Api\PayrollController::class, 'importPayrollData']);
+
+        // Generate & History
         Route::post('/generate', [\App\Http\Controllers\Api\PayrollController::class, 'generate']);
         Route::get('/history', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
-        Route::get('/export', [\App\Http\Controllers\Api\PayrollController::class, 'export']);
         Route::get('/my-history', [\App\Http\Controllers\Api\PayrollController::class, 'myPayroll']);
+
+        // Batch Operations (Approval Workflow)
+        Route::get('/batches', [\App\Http\Controllers\Api\PayrollController::class, 'getBatches']);
+        Route::get('/batches/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'getBatchDetail']);
+        Route::delete('/batches/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'destroyBatch']);
+        Route::post('/batches/{id}/submit', [\App\Http\Controllers\Api\PayrollController::class, 'submitForApproval']);
+        Route::post('/batches/{id}/approve', [\App\Http\Controllers\Api\PayrollController::class, 'approveBatch']);
+        Route::post('/batches/{id}/reject', [\App\Http\Controllers\Api\PayrollController::class, 'rejectBatch']);
+        Route::post('/batches/{id}/paid', [\App\Http\Controllers\Api\PayrollController::class, 'markAsPaid']);
+
+        // Individual Salary Edit (HR adjustments)
+        Route::put('/salaries/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'updateSalary']);
+
+        // Exports
+        Route::get('/export', [\App\Http\Controllers\Api\PayrollController::class, 'export']);
+        Route::get('/batches/{id}/export-rekap', [\App\Http\Controllers\Api\PayrollController::class, 'exportRekap']);
     });
+
+    // Public/Token-based Payroll Routes (for Mobile Browser access)
+    Route::get('/payroll/download-slip/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'downloadSlip']);
+    Route::get('/payroll/preview-slip/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'previewSlip']);
 
     // Tasks (Tugas)
     Route::get('/tasks', [TaskController::class, 'index']);

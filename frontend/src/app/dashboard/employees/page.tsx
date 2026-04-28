@@ -272,6 +272,33 @@ function EmployeesContent() {
     XLSX.writeFile(workbook, "Template_Import_Karyawan_Narwastu.xlsx");
   };
 
+  const downloadPayrollTemplate = () => {
+    const templateData = [
+      {
+        "Email (WAJIB)": "karyawan@example.com",
+        "NIK (OPSIONAL)": "12345678",
+        "Bank": "BCA",
+        "Nomor Rekening": "1234567890",
+        "Nama Rekening": "Ahmad Rizki",
+        "Cost Center": "PT. Artacomindo Jejaring Nusa",
+        "Gaji Pokok (OPSIONAL)": 0,
+      },
+      {},
+      { "Email (WAJIB)": ">>> PANDUAN PENGISIAN DATA REKENING <<<" },
+      { "Email (WAJIB)": "1. Email atau NIK digunakan sebagai kunci untuk mencari data karyawan." },
+      { "Email (WAJIB)": "2. Data Bank & Rekening yang diisi di sini akan otomatis muncul setiap kali Generate Payroll." },
+      { "Email (WAJIB)": "3. Cost Center bisa diisi 'PT. Artacomindo Jejaring Nusa', 'Artacomindotama', 'Narwasthu' atau sesuai unit kerja." },
+      { "Email (WAJIB)": "4. Jika data sudah ada di sistem, maka akan diperbarui (Update) dengan data baru dari Excel ini." }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    worksheet['!cols'] = [{wch: 30}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 25}, {wch: 30}, {wch: 20}];
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Rekening Payroll");
+    XLSX.writeFile(workbook, "Template_Data_Rekening_Karyawan.xlsx");
+  };
+
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -310,6 +337,32 @@ function EmployeesContent() {
       if (typeof msg === 'object') msg = JSON.stringify(msg, null, 2);
       setModalType("error");
       setErrorMessage(msg);
+      setErrorModalOpen(true);
+    } finally {
+      setLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handlePayrollImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formDataUpload = new FormData();
+    formDataUpload.append("file", file);
+
+    try {
+      setLoading(true);
+      const res = await axiosInstance.post("/payroll/import-data", formDataUpload, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      setModalType("success");
+      setErrorMessage(res.data.message);
+      setErrorModalOpen(true);
+      fetchEmployees(1);
+    } catch (err: any) {
+      setModalType("error");
+      setErrorMessage(err.response?.data?.message || "Gagal mengimpor data payroll.");
       setErrorModalOpen(true);
     } finally {
       setLoading(false);
@@ -621,10 +674,22 @@ function EmployeesContent() {
               <FileDown size={14} className="mr-1" />
               Template
             </button>
-            <label className="dash-btn dash-btn-outline border-gray-200 hover:border-gray-300 text-gray-600 font-bold cursor-pointer">
+            <button 
+              onClick={downloadPayrollTemplate}
+              className="dash-btn dash-btn-outline border-blue-200 hover:border-blue-300 text-blue-600 font-bold"
+            >
+              <FileDown size={14} className="mr-1" />
+              Template Payroll
+            </button>
+            <label className="dash-btn dash-btn-outline border-blue-200 hover:border-blue-300 text-blue-600 font-bold cursor-pointer">
               <FileUp size={14} className="mr-1" />
               Import Data
               <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} />
+            </label>
+            <label className="dash-btn dash-btn-outline border-blue-200 hover:border-blue-300 text-blue-600 font-bold cursor-pointer">
+              <CreditCard size={14} className="mr-1" />
+              Bulk Rekening/Gaji
+              <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handlePayrollImport} />
             </label>
             <button 
               onClick={handleOpenAddModal}

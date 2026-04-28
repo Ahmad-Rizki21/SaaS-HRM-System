@@ -23,7 +23,7 @@ class User extends Authenticatable
         'wfh_start_date', 'wfh_end_date', 'employment_status', 'work_location', 'email_verified_at',
         'attendance_type',
         'ptkp_status', 'bpjs_kesehatan_no', 'bpjs_ketenagakerjaan_no',
-        'bank_name', 'bank_account_no', 'basic_salary',
+        'bank_name', 'bank_account_no', 'bank_account_name', 'cost_center', 'basic_salary',
         'fixed_allowance', 'working_days_per_week', 'payroll_type'
     ];
 
@@ -145,5 +145,10 @@ class User extends Authenticatable
     public function leaves()
     {
         return $this->hasMany(Leave::class);
+    }
+
+    public function permits()
+    {
+        return $this->hasMany(Permit::class);
     }
 }

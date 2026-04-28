@@ -6,9 +6,11 @@ import {
   Play, CheckCircle2, AlertCircle, Calendar, 
   Users, CreditCard, ChevronRight, Loader2,
   DollarSign, Calculator, Settings as SettingsIcon,
-  RefreshCw
+  RefreshCw, Edit2, X, Save
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import * as XLSX from "xlsx";
+import { FileDown, FileUp } from "lucide-react";
 
 export default function PayrollProcessPage() {
   const { t } = useLanguage();
@@ -18,6 +20,56 @@ export default function PayrollProcessPage() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [step, setStep] = useState(1);
   const [stats, setStats] = useState({ total_employees: 0, unsaved_profiles: 0 });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [editingSettings, setEditingSettings] = useState<any>({});
+  const [importing, setImporting] = useState(false);
+
+  const downloadPayrollTemplate = () => {
+    const templateData = [
+      {
+        "Email (WAJIB)": "karyawan@example.com",
+        "NIK (OPSIONAL)": "12345678",
+        "Bank": "BCA",
+        "Nomor Rekening": "1234567890",
+        "Nama Rekening": "Ahmad Rizki",
+        "Cost Center": "PT. Artacomindo Jejaring Nusa",
+        "Gaji Pokok (OPSIONAL)": 5000000,
+      },
+      {},
+      { "Email (WAJIB)": ">>> PANDUAN PENGISIAN DATA REKENING <<<" },
+      { "Email (WAJIB)": "1. Email atau NIK digunakan sebagai kunci untuk mencari data karyawan." },
+      { "Email (WAJIB)": "2. Data Bank & Rekening yang diisi di sini akan otomatis muncul setiap kali Generate Payroll." },
+      { "Email (WAJIB)": "3. Cost Center bisa diisi 'PT. Artacomindo Jejaring Nusa' atau sesuai unit kerja." }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    worksheet['!cols'] = [{wch: 30}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 25}, {wch: 30}, {wch: 20}];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Rekening Payroll");
+    XLSX.writeFile(workbook, "Template_Data_Rekening_Karyawan.xlsx");
+  };
+
+  const handlePayrollImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formDataUpload = new FormData();
+    formDataUpload.append("file", file);
+
+    try {
+      setImporting(true);
+      const res = await axiosInstance.post("/payroll/import-data", formDataUpload, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      alert(res.data.message);
+      fetchStats(); // refresh counts
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Gagal mengimpor data payroll.");
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
 
   const currentYear = new Date().getFullYear();
   const availableYears = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
@@ -31,8 +83,20 @@ export default function PayrollProcessPage() {
     try {
       const res = await axiosInstance.get('/payroll/settings');
       setSettings(res.data.data);
+      setEditingSettings(res.data.data);
     } catch (e) {
       console.error("Failed to fetch settings", e);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      const res = await axiosInstance.post('/payroll/settings', editingSettings);
+      setSettings(res.data.data);
+      setIsSettingsOpen(false);
+      alert("Pengaturan berhasil disimpan");
+    } catch (e) {
+      alert("Gagal menyimpan pengaturan");
     }
   };
 
@@ -117,13 +181,29 @@ export default function PayrollProcessPage() {
                   </div>
                 </div>
 
-                <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 flex gap-4">
-                  <AlertCircle className="text-amber-600 shrink-0" size={24} />
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-amber-900 text-sm">Validasi Data</h4>
-                    <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                      Terdapat {stats.unsaved_profiles} karyawan yang belum memiliki profil payroll lengkap (Gaji Pokok = 0). Disarankan untuk melengkapi data sebelum dilanjutkan.
-                    </p>
+                <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 space-y-4">
+                  <div className="flex gap-4">
+                    <AlertCircle className="text-amber-600 shrink-0" size={24} />
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-amber-900 text-sm">Validasi Data</h4>
+                      <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                        Terdapat {stats.unsaved_profiles} karyawan yang belum memiliki profil payroll lengkap (Gaji Pokok = 0). Disarankan untuk melengkapi data sebelum dilanjutkan.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <button 
+                      onClick={downloadPayrollTemplate}
+                      className="h-10 px-4 bg-white border border-amber-200 text-amber-700 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-amber-100 transition-all"
+                    >
+                      <FileDown size={14} /> Download Template
+                    </button>
+                    <label className="h-10 px-4 bg-amber-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-amber-700 transition-all cursor-pointer">
+                      <FileUp size={14} /> 
+                      {importing ? "Mengimpor..." : "Upload Data Rekening"}
+                      <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handlePayrollImport} disabled={importing} />
+                    </label>
                   </div>
                 </div>
 
@@ -188,17 +268,17 @@ export default function PayrollProcessPage() {
                     <CheckCircle2 size={48} />
                  </div>
                  <div className="space-y-2">
-                    <h3 className="text-2xl font-black text-gray-900">Payroll Sukses!</h3>
+                    <h3 className="text-2xl font-black text-gray-900">Draft Dibuat!</h3>
                     <p className="text-sm text-gray-500 font-medium max-w-sm mx-auto">
-                      Gaji untuk periode {month} {year} telah berhasil diproses. Karyawan dapat melihat slip gaji mereka masing-masing.
+                      Gaji untuk periode {month} {year} telah berhasil dikalkulasi sebagai Draft. Lanjutkan ke proses Approval untuk pengecekan detail.
                     </p>
                  </div>
                  <div className="pt-6">
                     <button 
-                      onClick={() => window.location.href = '/dashboard/payroll'}
+                      onClick={() => window.location.href = '/dashboard/payroll/approval'}
                       className="dash-btn dash-btn-primary w-full max-w-xs h-14 text-lg"
                     >
-                      Lihat Riwayat Payroll
+                      Lihat Daftar Approval
                     </button>
                  </div>
               </div>
@@ -227,14 +307,24 @@ export default function PayrollProcessPage() {
                        <span className="font-bold">Tanggal {settings?.cutoff_day || 25}</span>
                     </div>
                     <div className="flex justify-between text-xs">
+                       <span className="opacity-60">Tarif Lembur</span>
+                       <span className="font-bold">Rp {new Intl.NumberFormat('id-ID').format(settings?.overtime_rate_per_hour || 30000)}/jam</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                       <span className="opacity-60">Lembur Libur</span>
+                       <span className="font-bold">Rp {new Intl.NumberFormat('id-ID').format(settings?.overtime_rate_holiday_per_hour || 50000)}/jam</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
                        <span className="opacity-60">PPh 21 Method</span>
                        <span className="font-bold">Latest TER</span>
                     </div>
-                    <div className="flex justify-between text-xs">
-                       <span className="opacity-60">Currency</span>
-                       <span className="font-bold">IDR (Rupiah)</span>
-                    </div>
                  </div>
+                 <button 
+                   onClick={() => setIsSettingsOpen(true)}
+                   className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 mt-2"
+                 >
+                   <Edit2 size={12} /> Edit Pengaturan
+                 </button>
               </div>
            </div>
 
@@ -293,6 +383,80 @@ export default function PayrollProcessPage() {
            </div>
         </div>
       </div>
+
+      {/* ═══ SETTINGS MODAL ═══ */}
+      {isSettingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                  <SettingsIcon size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-gray-900 text-lg">Pengaturan Payroll</h3>
+                  <p className="text-xs text-gray-500 font-medium">Ubah konfigurasi dasar kalkulasi</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsSettingsOpen(false)}
+                className="w-8 h-8 flex items-center justify-center bg-gray-100 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Cut-off Day (Tanggal)</label>
+                <input 
+                  type="number" 
+                  min="1" max="31"
+                  value={editingSettings.cutoff_day || ''}
+                  onChange={(e) => setEditingSettings({...editingSettings, cutoff_day: e.target.value})}
+                  className="w-full h-12 bg-gray-50 border-none rounded-xl px-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Tarif Lembur per Jam (Rp)</label>
+                <input 
+                  type="number" 
+                  value={editingSettings.overtime_rate_per_hour || ''}
+                  onChange={(e) => setEditingSettings({...editingSettings, overtime_rate_per_hour: e.target.value})}
+                  className="w-full h-12 bg-gray-50 border-none rounded-xl px-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Tarif Lembur Libur per Jam (Rp)</label>
+                <input 
+                  type="number" 
+                  value={editingSettings.overtime_rate_holiday_per_hour || ''}
+                  onChange={(e) => setEditingSettings({...editingSettings, overtime_rate_holiday_per_hour: e.target.value})}
+                  className="w-full h-12 bg-gray-50 border-none rounded-xl px-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button 
+                onClick={() => setIsSettingsOpen(false)}
+                className="px-6 h-12 rounded-xl font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handleSaveSettings}
+                className="px-6 h-12 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 flex items-center gap-2"
+              >
+                <Save size={18} />
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

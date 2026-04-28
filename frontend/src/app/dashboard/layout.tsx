@@ -162,6 +162,7 @@ const sidebarLinks: SidebarLink[] = [
     permission: 'view-salaries',
     submenus: [
       { name: "payroll_process", href: "/dashboard/payroll/process", permission: 'manage-payroll' },
+      { name: "payroll_approval", href: "/dashboard/payroll/approval", permission: 'manage-payroll' },
       { name: "payroll_history", href: "/dashboard/payroll", permission: 'view-salaries' },
       { name: "my_payroll_slip", href: "/dashboard/payroll/my-payroll", permission: 'view-salaries' },
       { name: "payroll_settings", href: "/dashboard/payroll/settings", permission: 'manage-payroll' },
