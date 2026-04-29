@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:signature/signature.dart';
 import 'dart:convert';
 import '../../api/api_service.dart';
+import '../../widgets/skeleton_loading.dart';
 
 class PermitScreen extends StatefulWidget {
   @override
@@ -213,7 +214,7 @@ class _PermitScreenState extends State<PermitScreen> {
         elevation: 0,
       ),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator()) 
+          ? const CardAndListSkeleton() 
           : RefreshIndicator(
               onRefresh: _fetchPermits,
               child: Column(

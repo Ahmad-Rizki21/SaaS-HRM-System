@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:signature/signature.dart';
 import 'dart:convert';
 import '../../api/api_service.dart';
+import '../../widgets/skeleton_loading.dart';
 
 class LeaveScreen extends StatefulWidget {
   @override
@@ -216,7 +217,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
         elevation: 0,
       ),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator()) 
+          ? const CardAndListSkeleton() 
           : RefreshIndicator(
               onRefresh: _fetchLeaves,
               child: Column(

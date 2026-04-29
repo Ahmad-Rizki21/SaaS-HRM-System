@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../api/api_service.dart';
+import '../widgets/skeleton_loading.dart';
 
 class KpiScreen extends StatefulWidget {
   @override
@@ -48,7 +49,7 @@ class _KpiScreenState extends State<KpiScreen> {
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: Color(0xFF8B0000)))
+          ? const KpiSkeleton()
           : _kpis.isEmpty
               ? _buildEmptyState()
               : ListView.builder(

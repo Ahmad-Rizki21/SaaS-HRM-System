@@ -23,7 +23,9 @@ import 'shift_swap_screen.dart';
 import 'attendance_correction_screen.dart';
 import 'leaderboard_screen.dart';
 import 'fleet_log_screen.dart';
+import 'document_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/skeleton_loading.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -372,20 +374,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: SafeArea(
               child: Stack(
                 children: [
-                  _getBody(),
-                  if (_isLoadingContent)
-                    const Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: LinearProgressIndicator(
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF800000),
-                        ),
-                        minHeight: 2,
-                      ),
-                    ),
+                  _isLoadingContent
+                      ? const DashboardSkeleton()
+                      : _getBody(),
                 ],
               ),
             ),
@@ -590,6 +581,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'onTap': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => FleetLogScreen()),
+        ),
+      },
+      'dokumen': {
+        'icon': Icons.description_outlined,
+        'label': 'Dokumen',
+        'color': Colors.blue[900],
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => DocumentScreen()),
         ),
       },
     };

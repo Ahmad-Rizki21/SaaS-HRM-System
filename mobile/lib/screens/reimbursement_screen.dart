@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../api/api_service.dart';
+import '../../widgets/skeleton_loading.dart';
 
 class ReimbursementScreen extends StatefulWidget {
   @override
@@ -341,7 +342,7 @@ class _ReimbursementScreenState extends State<ReimbursementScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SimpleListSkeleton()
           : RefreshIndicator(
               onRefresh: _fetchClaims,
               child: _claims.isEmpty

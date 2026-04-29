@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../api/api_service.dart';
+import '../widgets/skeleton_loading.dart';
 
 class ManagerScreen extends StatefulWidget {
   @override
@@ -54,7 +55,7 @@ class _ManagerScreenState extends State<ManagerScreen> with SingleTickerProvider
         ],
       ),
       body: _isLoading 
-        ? Center(child: CircularProgressIndicator(color: primaryColor))
+        ? const CardAndListSkeleton()
         : Column(
             children: [
               _buildSummaryHeader(),

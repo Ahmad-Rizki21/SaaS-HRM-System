@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../api/api_service.dart';
+import '../../widgets/skeleton_loading.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -273,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator(color: maroon));
+      return const ProfileSkeleton();
     }
 
     final name = _userData?['name'] ?? 'Karyawan';

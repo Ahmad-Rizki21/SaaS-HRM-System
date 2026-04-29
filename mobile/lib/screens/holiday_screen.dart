@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../api/api_service.dart';
+import '../widgets/skeleton_loading.dart';
 
 class HolidayScreen extends StatefulWidget {
   @override
@@ -44,7 +45,7 @@ class _HolidayScreenState extends State<HolidayScreen> {
         ],
       ),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator()) 
+          ? const SimpleListSkeleton() 
           : RefreshIndicator(
               onRefresh: _fetchHolidays,
               child: _holidays.isEmpty 

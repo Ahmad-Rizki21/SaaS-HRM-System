@@ -98,6 +98,7 @@ export const translations = {
     payroll_history: "Riwayat Payroll",
     payroll_settings: "Pengaturan Payroll",
     my_payroll_slip: "Slip Gaji Saya",
+    company_documents: "SK & Regulasi",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -203,6 +204,7 @@ export const translations = {
     payroll_history: "Payroll History",
     payroll_settings: "Payroll Settings",
     my_payroll_slip: "My Payroll Slip",
+    company_documents: "Documents & SK",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

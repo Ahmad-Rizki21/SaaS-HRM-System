@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../api/api_service.dart';
 import '../services/fcm_service.dart';
+import '../widgets/skeleton_loading.dart';
 
 class TaskScreen extends StatefulWidget {
   const TaskScreen({super.key});
@@ -290,7 +291,7 @@ class _TaskScreenState extends State<TaskScreen> with SingleTickerProviderStateM
         child: const Icon(Icons.add, color: Colors.white),
       ) : null,
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
+        ? const SimpleListSkeleton()
         : TabBarView(
             controller: _tabController,
             children: [

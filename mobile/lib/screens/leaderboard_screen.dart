@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../api/api_service.dart';
+import '../widgets/skeleton_loading.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   @override
@@ -67,7 +68,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> with SingleTicker
         ),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: primaryColor))
+          ? const KpiSkeleton()
           : TabBarView(
               controller: _tabController,
               children: [

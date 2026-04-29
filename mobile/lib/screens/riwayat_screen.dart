@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../api/api_service.dart';
+import '../widgets/skeleton_loading.dart';
 
 class RiwayatScreen extends StatefulWidget {
   @override
@@ -43,7 +44,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
         // Content
         Expanded(
           child: _isLoading
-              ? Center(child: CircularProgressIndicator(color: maroon))
+              ? const SimpleListSkeleton()
               : _attendances.isEmpty
                   ? Center(
                       child: Column(

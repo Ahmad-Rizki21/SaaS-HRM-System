@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../api/api_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../../widgets/skeleton_loading.dart';
 
 class FleetLogScreen extends StatefulWidget {
   @override
@@ -57,7 +58,7 @@ class _FleetLogScreenState extends State<FleetLogScreen> {
         iconTheme: IconThemeData(color: Colors.white),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: primaryColor))
+          ? const CardAndListSkeleton()
           : RefreshIndicator(
               onRefresh: _fetchData,
               color: primaryColor,

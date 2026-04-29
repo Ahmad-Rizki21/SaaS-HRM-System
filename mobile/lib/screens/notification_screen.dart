@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../api/api_service.dart';
+import '../widgets/skeleton_loading.dart';
 
 class NotificationScreen extends StatefulWidget {
   @override
@@ -147,7 +148,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: Color(0xFF800000)))
+          ? const SimpleListSkeleton()
           : _notifications.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(

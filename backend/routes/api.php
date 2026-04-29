@@ -215,6 +215,16 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
         Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
     });
 
+    // Company Documents (SK & Regulations)
+    Route::middleware('permission:view-documents')->get('/documents', [\App\Http\Controllers\CompanyDocumentController::class, 'index']);
+    Route::middleware('permission:view-documents')->get('/documents/{id}/preview', [\App\Http\Controllers\CompanyDocumentController::class, 'preview']);
+    Route::middleware('permission:manage-documents')->group(function () {
+        Route::post('/documents', [\App\Http\Controllers\CompanyDocumentController::class, 'store']);
+        Route::get('/documents/{id}', [\App\Http\Controllers\CompanyDocumentController::class, 'show']);
+        Route::put('/documents/{id}', [\App\Http\Controllers\CompanyDocumentController::class, 'update']);
+        Route::delete('/documents/{id}', [\App\Http\Controllers\CompanyDocumentController::class, 'destroy']);
+    });
+
     // Activity Logs
     Route::middleware('permission:view-activity-logs')->get('/activity-logs', [ActivityLogController::class, 'index']);
 

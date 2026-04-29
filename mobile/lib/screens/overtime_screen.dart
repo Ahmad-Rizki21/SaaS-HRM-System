@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../api/api_service.dart';
+import '../../widgets/skeleton_loading.dart';
 
 class OvertimeScreen extends StatefulWidget {
   @override
@@ -180,7 +181,7 @@ class _OvertimeScreenState extends State<OvertimeScreen> {
         elevation: 0,
       ),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator()) 
+          ? const SimpleListSkeleton() 
           : RefreshIndicator(
               onRefresh: _fetchOvertimes,
               child: _overtimes.isEmpty 

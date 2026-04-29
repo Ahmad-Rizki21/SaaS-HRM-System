@@ -101,6 +101,10 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Lihat Payroll', 'slug' => 'view-salaries', 'group' => 'Payroll'],
             ['name' => 'Kelola Payroll', 'slug' => 'manage-payroll', 'group' => 'Payroll'],
             ['name' => 'Lihat Laporan Payroll', 'slug' => 'view-payroll-reports', 'group' => 'Payroll'],
+
+            // Dokumen (SK & Regulasi)
+            ['name' => 'Lihat Dokumen', 'slug' => 'view-documents', 'group' => 'Dokumen'],
+            ['name' => 'Kelola Dokumen', 'slug' => 'manage-documents', 'group' => 'Dokumen'],
         ];
 
         foreach ($permissions as $p) {
@@ -119,7 +123,7 @@ class RolePermissionSeeder extends Seeder
         $direktur->permissions()->sync($allPermissions);
         
         $managerPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Perizinan', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas', 'Payroll'
+            'Pegawai', 'Cuti', 'Perizinan', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas', 'Payroll', 'Dokumen'
         ])->whereNotIn('slug', ['delete-employees', 'manage-roles', 'manage-company'])->pluck('id');
         $manager->permissions()->sync($managerPermissions);
 
@@ -134,12 +138,12 @@ class RolePermissionSeeder extends Seeder
             'view-shift-swaps', 'approve-shift-swaps', 'view-shift-swap-reports', 'export-shift-swaps',
             'view-projects', 'approve-project-costs',
             'view-vehicle-logs', 'approve-vehicle-logs', 'view-vehicle-reports',
-            'view-tasks', 'manage-tasks'
+            'view-tasks', 'manage-tasks', 'view-documents'
         ])->pluck('id');
         $supervisor->permissions()->sync($supervisorPermissions);
 
         $hrdPermissions = Permission::whereIn('group', [
-            'Pegawai', 'Cuti', 'Perizinan', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas', 'Payroll'
+            'Pegawai', 'Cuti', 'Perizinan', 'Reimbursement', 'Lembur', 'Operasional', 'Performa', 'Kehadiran', 'Tukar Shift', 'Proyek', 'Kendaraan', 'Tugas', 'Payroll', 'Dokumen'
         ])->pluck('id');
         $hrd->permissions()->sync($hrdPermissions);
 
@@ -154,7 +158,7 @@ class RolePermissionSeeder extends Seeder
             'view-shift-swaps', 'apply-shift-swaps',
             'view-projects',
             'view-vehicle-logs', 'apply-vehicle-logs',
-            'view-tasks', 'view-salaries'
+            'view-tasks', 'view-salaries', 'view-documents'
         ])->pluck('id');
         $staff->permissions()->sync($staffPermissions);
     }

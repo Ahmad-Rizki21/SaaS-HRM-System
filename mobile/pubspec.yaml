@@ -54,6 +54,8 @@ dependencies:
   google_mlkit_face_detection: ^0.13.2
   firebase_core: ^3.10.1
   firebase_messaging: ^15.2.2
+  syncfusion_flutter_pdfviewer: ^33.2.4
+  webview_flutter: ^4.4.2
 
 dev_dependencies:
   flutter_test:
