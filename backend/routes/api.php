@@ -289,31 +289,38 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
     
     // Payroll System (Comprehensive)
     Route::group(['prefix' => 'payroll'], function () {
-        // Settings
-        Route::get('/settings', [\App\Http\Controllers\Api\PayrollController::class, 'getSettings']);
-        Route::post('/settings', [\App\Http\Controllers\Api\PayrollController::class, 'updateSettings']);
-        Route::post('/import-data', [\App\Http\Controllers\Api\PayrollController::class, 'importPayrollData']);
+        // Restricted to Payroll Managers (HRD, CEO, Super Admin)
+        Route::middleware('permission:manage-payroll')->group(function () {
+            // Settings
+            Route::get('/settings', [\App\Http\Controllers\Api\PayrollController::class, 'getSettings']);
+            Route::post('/settings', [\App\Http\Controllers\Api\PayrollController::class, 'updateSettings']);
+            Route::post('/import-data', [\App\Http\Controllers\Api\PayrollController::class, 'importPayrollData']);
 
-        // Generate & History
-        Route::post('/generate', [\App\Http\Controllers\Api\PayrollController::class, 'generate']);
-        Route::get('/history', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
-        Route::get('/my-history', [\App\Http\Controllers\Api\PayrollController::class, 'myPayroll']);
+            // Generate & History
+            Route::post('/generate', [\App\Http\Controllers\Api\PayrollController::class, 'generate']);
+            Route::get('/history', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
 
-        // Batch Operations (Approval Workflow)
-        Route::get('/batches', [\App\Http\Controllers\Api\PayrollController::class, 'getBatches']);
-        Route::get('/batches/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'getBatchDetail']);
-        Route::delete('/batches/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'destroyBatch']);
-        Route::post('/batches/{id}/submit', [\App\Http\Controllers\Api\PayrollController::class, 'submitForApproval']);
-        Route::post('/batches/{id}/approve', [\App\Http\Controllers\Api\PayrollController::class, 'approveBatch']);
-        Route::post('/batches/{id}/reject', [\App\Http\Controllers\Api\PayrollController::class, 'rejectBatch']);
-        Route::post('/batches/{id}/paid', [\App\Http\Controllers\Api\PayrollController::class, 'markAsPaid']);
+            // Batch Operations (Approval Workflow)
+            Route::get('/batches', [\App\Http\Controllers\Api\PayrollController::class, 'getBatches']);
+            Route::get('/batches/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'getBatchDetail']);
+            Route::delete('/batches/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'destroyBatch']);
+            Route::post('/batches/{id}/submit', [\App\Http\Controllers\Api\PayrollController::class, 'submitForApproval']);
+            Route::post('/batches/{id}/approve', [\App\Http\Controllers\Api\PayrollController::class, 'approveBatch']);
+            Route::post('/batches/{id}/reject', [\App\Http\Controllers\Api\PayrollController::class, 'rejectBatch']);
+            Route::post('/batches/{id}/paid', [\App\Http\Controllers\Api\PayrollController::class, 'markAsPaid']);
 
-        // Individual Salary Edit (HR adjustments)
-        Route::put('/salaries/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'updateSalary']);
+            // Individual Salary Edit (HR adjustments)
+            Route::put('/salaries/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'updateSalary']);
 
-        // Exports
-        Route::get('/export', [\App\Http\Controllers\Api\PayrollController::class, 'export']);
-        Route::get('/batches/{id}/export-rekap', [\App\Http\Controllers\Api\PayrollController::class, 'exportRekap']);
+            // Exports
+            Route::get('/export', [\App\Http\Controllers\Api\PayrollController::class, 'export']);
+            Route::get('/batches/{id}/export-rekap', [\App\Http\Controllers\Api\PayrollController::class, 'exportRekap']);
+        });
+
+        // Personal History (Staff access)
+        Route::middleware('permission:view-salaries')->group(function () {
+            Route::get('/my-history', [\App\Http\Controllers\Api\PayrollController::class, 'myPayroll']);
+        });
     });
 
     // Public/Token-based Payroll Routes (for Mobile Browser access)

@@ -154,7 +154,7 @@ const sidebarLinks: SidebarLink[] = [
       { name: "reimbursement_report", href: "/dashboard/reports/reimbursements", permission: 'view-reports' },
       { name: "overtime_report", href: "/dashboard/reports/overtimes", permission: 'view-reports' },
       { name: "task_report", href: "/dashboard/reports/tasks", permission: 'view-reports' },
-      { name: "payroll_report", href: "/dashboard/reports/payroll", permission: 'view-reports' },
+      { name: "payroll_report", href: "/dashboard/reports/payroll", permission: 'view-payroll-reports' },
     ]
   },
   {
@@ -164,7 +164,7 @@ const sidebarLinks: SidebarLink[] = [
     submenus: [
       { name: "payroll_process", href: "/dashboard/payroll/process", permission: 'manage-payroll' },
       { name: "payroll_approval", href: "/dashboard/payroll/approval", permission: 'manage-payroll' },
-      { name: "payroll_history", href: "/dashboard/payroll", permission: 'view-salaries' },
+      { name: "payroll_history", href: "/dashboard/payroll", permission: 'manage-payroll' },
       { name: "my_payroll_slip", href: "/dashboard/payroll/my-payroll", permission: 'view-salaries' },
       { name: "payroll_settings", href: "/dashboard/payroll/settings", permission: 'manage-payroll' },
     ]
