@@ -577,6 +577,12 @@ class PayrollController extends Controller
             abort(403);
         }
 
-        return view('pdf.payslip', compact('salary'));
+        $html = view('pdf.payslip', compact('salary'))->render();
+
+        if ($request->wantsJson()) {
+            return response()->json(['html' => $html]);
+        }
+
+        return $html;
     }
 }
