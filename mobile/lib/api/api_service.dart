@@ -18,11 +18,11 @@ class ApiService {
 
   static String get baseUrl => kDebugMode 
     ? 'http://$serverIp:8000/api' 
-    : 'https://$serverIp/api';
+    : 'https://$serverIp:8000/api';
 
   static String get storageUrl => kDebugMode 
     ? 'http://$serverIp:8000/storage' 
-    : 'https://$serverIp/storage';
+    : 'https://$serverIp:8000/storage';
 
   /// Fixes URLs that might contain localhost or older IPs to use the current serverIp
   static String fixUrl(String? url) {
@@ -48,7 +48,6 @@ class ApiService {
       if (fixedUrl.startsWith('http://')) {
         fixedUrl = fixedUrl.replaceFirst('http://', 'https://');
       }
-      fixedUrl = fixedUrl.replaceAll(':8000', '');
     }
 
     return fixedUrl;
