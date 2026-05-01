@@ -18,7 +18,7 @@ class ApiService {
 
   static String get baseUrl => kDebugMode 
     ? 'http://$serverIp:8000/api' 
-    : 'https://$serverIp:8000/api';
+    : 'https://$serverIp/api';
 
   static String get storageUrl => kDebugMode 
     ? 'http://$serverIp:8000/storage' 
