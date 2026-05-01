@@ -6,13 +6,23 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import '../services/secure_storage_service.dart';
 
 class ApiService {
-  // Toggle between Home (192.168.1.9) and Office (2.2.2.76)
-  static const String serverIp = 'ontime.jelantik.com';
-  static const String baseUrl = 'https://$serverIp/api';
-  static const String storageUrl = 'https://$serverIp/storage';
+  // Toggle between Development and Production
+  static const String _prodIp = 'ontime.jelantik.com';
+  static const String _devIp = '10.0.2.2'; // Standard Android Emulator local address
+
+  static String get serverIp => kDebugMode ? _devIp : _prodIp;
+
+  static String get baseUrl => kDebugMode 
+    ? 'http://$serverIp:8000/api' 
+    : 'https://$serverIp/api';
+
+  static String get storageUrl => kDebugMode 
+    ? 'http://$serverIp:8000/storage' 
+    : 'https://$serverIp/storage';
 
   /// Fixes URLs that might contain localhost or older IPs to use the current serverIp
   static String fixUrl(String? url) {
