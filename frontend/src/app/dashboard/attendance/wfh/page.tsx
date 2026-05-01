@@ -131,20 +131,20 @@ function WFHContent() {
     try {
       if (modalMode === "single" && selectedEmployee) {
         await axiosInstance.post(`/employees/${selectedEmployee.id}/toggle-wfh`, wfhData);
-        alert(`Berhasil memperbarui status WFH untuk ${selectedEmployee.name}`);
+        alert(`Berhasil memperbarui status WFA untuk ${selectedEmployee.name}`);
       } else if (modalMode === "bulk") {
         await axiosInstance.post(`/employees/bulk-wfh`, {
           ...wfhData,
           ids: selectedIds
         });
-        alert(`Berhasil memperbarui status WFH untuk ${selectedIds.length} karyawan`);
+        alert(`Berhasil memperbarui status WFA untuk ${selectedIds.length} karyawan`);
         setSelectedIds([]);
       }
       handleCloseModal();
       fetchEmployees(page);
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.message || "Gagal memperbarui status WFH.");
+      alert(error.response?.data?.message || "Gagal memperbarui status WFA.");
     } finally {
       setIsSubmitting(false);
     }
@@ -163,8 +163,8 @@ function WFHContent() {
     <div className="animate-in fade-in duration-500">
       <div className="dash-page-header">
         <div>
-          <h1 className="dash-page-title">Delegasi & Manajemen WFH</h1>
-          <p className="dash-page-desc">Berikan izin Work From Home (WFH) agar karyawan dapat absen dari mana saja.</p>
+          <h1 className="dash-page-title">Manajemen WFA (Dinas Luar)</h1>
+          <p className="dash-page-desc">Berikan izin Work From Anywhere (WFA) atau Dinas Luar agar karyawan dapat absen dari mana saja.</p>
         </div>
         <div className="dash-page-actions">
            {selectedIds.length > 0 && (
@@ -183,10 +183,10 @@ function WFHContent() {
       <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl flex gap-3 text-blue-700">
         <Info className="shrink-0" size={20} />
         <div className="text-sm">
-          <p className="font-bold mb-1">Cara Kerja Fitur WFH:</p>
+          <p className="font-bold mb-1">Cara Kerja Fitur WFA (Dinas Luar):</p>
           <ul className="list-disc ml-4 space-y-1">
-            <li>Karyawan dengan status WFH <b>Aktif</b> dan dalam <b>Rentang Tanggal</b> dapat absen dari mana saja.</li>
-            <li>Sistem akan otomatis membuat <b>Pengumuman Kebijakan WFH</b> saat status diaktifkan.</li>
+            <li>Karyawan dengan status WFA <b>Aktif</b> dan dalam <b>Rentang Tanggal</b> dapat absen dari mana saja.</li>
+            <li>Sistem akan otomatis membuat <b>Pengumuman Kebijakan WFA</b> saat status diaktifkan.</li>
             <li>Satu pengumuman akan dibuat untuk setiap pengaturan (baik perorangan maupun massal).</li>
           </ul>
         </div>
@@ -225,8 +225,8 @@ function WFHContent() {
                   </th>
                   <th>Info Karyawan</th>
                   <th>Posisi</th>
-                  <th className="text-center">Status WFH</th>
-                  <th>Periode WFH</th>
+                  <th className="text-center">Status WFA</th>
+                  <th>Periode WFA</th>
                   <th className="text-right">Aksi</th>
                 </tr>
               </thead>
@@ -299,7 +299,7 @@ function WFHContent() {
                             onClick={() => handleOpenSingleModal(emp)}
                             className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${emp.is_wfh ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
                           >
-                            {emp.is_wfh ? "Nonaktifkan" : "Atur WFH"}
+                            {emp.is_wfh ? "Nonaktifkan" : "Atur WFA"}
                           </button>
                         </PermissionGuard>
                       </td>
@@ -330,7 +330,7 @@ function WFHContent() {
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <div>
                 <h3 className="font-black text-xl text-gray-900 tracking-tight">
-                  {modalMode === "bulk" ? "Pengaturan WFH Massal" : "Konfigurasi WFH"}
+                  {modalMode === "bulk" ? "Pengaturan WFA Massal" : "Konfigurasi WFA"}
                 </h3>
                 <p className="text-xs text-gray-400 font-medium mt-0.5">
                   {modalMode === "bulk" ? `Mengatur ${selectedIds.length} karyawan sekaligus` : selectedEmployee?.name}
@@ -350,9 +350,9 @@ function WFHContent() {
                        <ShieldCheck size={20} />
                      </div>
                      <div>
-                       <span className="text-sm font-bold block">Status Izin WFH</span>
+                       <span className="text-sm font-bold block">Status Izin WFA</span>
                        <span className={`text-[10px] font-black uppercase ${wfhData.is_wfh ? 'text-emerald-600' : 'text-gray-400'}`}>
-                          {wfhData.is_wfh ? 'AKTIF (WFH)' : 'NONAKTIF (KANTOR)'}
+                          {wfhData.is_wfh ? 'AKTIF (WFA)' : 'NONAKTIF (KANTOR)'}
                        </span>
                      </div>
                    </div>
@@ -394,7 +394,7 @@ function WFHContent() {
                     <div className="p-3 bg-amber-50 rounded-lg border border-amber-100 flex gap-2">
                        <Calendar className="text-amber-500 shrink-0" size={16} />
                        <p className="text-[10px] text-amber-700 leading-normal">
-                          Penyetelan ini akan memicu pembuatan <b>Pengumuman WFH</b> secara otomatis.
+                          Penyetelan ini akan memicu pembuatan <b>Pengumuman WFA (Dinas Luar)</b> secara otomatis.
                        </p>
                     </div>
                   </>
@@ -428,7 +428,7 @@ function WFHContent() {
 export default function WFHPage() {
   return (
     <PermissionGuard slug="manage-wfh">
-      <Suspense fallback={<div className="p-10 text-center text-gray-400">Memuat modul WFH...</div>}>
+      <Suspense fallback={<div className="p-10 text-center text-gray-400">Memuat modul WFA...</div>}>
         <WFHContent />
       </Suspense>
     </PermissionGuard>

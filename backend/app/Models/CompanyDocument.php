@@ -13,6 +13,7 @@ class CompanyDocument extends Model
     protected $fillable = [
         'company_id',
         'user_id',
+        'target_user_id',
         'title',
         'description',
         'file_path',
@@ -36,6 +37,11 @@ class CompanyDocument extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function targetUser()
+    {
+        return $this->belongsTo(User::class, 'target_user_id');
     }
 
     public function company()

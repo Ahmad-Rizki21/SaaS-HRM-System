@@ -117,6 +117,16 @@ interface Document {
   is_published: boolean;
   published_at: string;
   created_at: string;
+  target_user_id: number | null;
+  target_user?: {
+    id: number;
+    name: string;
+  };
+}
+
+interface Employee {
+  id: number;
+  name: string;
 }
 
 export default function DocumentsPage() {
@@ -140,12 +150,27 @@ export default function DocumentsPage() {
     description: '',
     type: 'sk' as 'sk' | 'regulation',
     is_published: true,
+    target_user_id: null as number | null,
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   useEffect(() => {
     fetchDocuments();
+    if (canManage) {
+      fetchEmployeesList();
+    }
   }, []);
+
+  const fetchEmployeesList = async () => {
+    try {
+      // Fetch only essential data for the selector
+      const response = await axiosInstance.get('/employees/potential-supervisors');
+      setEmployees(response.data.data);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -179,6 +204,9 @@ export default function DocumentsPage() {
       data.append('type', formData.type);
       data.append('file', selectedFile);
       data.append('is_published', formData.is_published ? '1' : '0');
+      if (formData.target_user_id) {
+        data.append('target_user_id', formData.target_user_id.toString());
+      }
 
       await axiosInstance.post('/documents', data, {
         headers: {
@@ -223,6 +251,7 @@ export default function DocumentsPage() {
       description: '',
       type: 'sk' as 'sk' | 'regulation',
       is_published: true,
+      target_user_id: null,
     });
     setSelectedFile(null);
   };
@@ -314,6 +343,7 @@ export default function DocumentsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nama Dokumen</TableHead>
+                    <TableHead>Ditujukan Ke</TableHead>
                     <TableHead>Tanggal Publish</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
@@ -322,13 +352,13 @@ export default function DocumentsPage() {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">
+                      <TableCell colSpan={5} className="h-24 text-center">
                         Memuat data...
                       </TableCell>
                     </TableRow>
                   ) : filteredDocuments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                         Tidak ada dokumen ditemukan.
                       </TableCell>
                     </TableRow>
@@ -345,6 +375,15 @@ export default function DocumentsPage() {
                               <p className="text-xs text-muted-foreground line-clamp-1">{doc.description || 'Tidak ada deskripsi'}</p>
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {doc.target_user ? (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                              {doc.target_user.name}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">Semua Karyawan</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center text-sm text-muted-foreground">
@@ -460,6 +499,20 @@ export default function DocumentsPage() {
                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                   />
                   <p className="text-[10px] text-muted-foreground">Format: PDF, Maksimal: 10MB</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Ditujukan Untuk (Pilih Karyawan)</label>
+                  <select 
+                    className="w-full p-2 border rounded-md text-sm"
+                    value={formData.target_user_id || ''}
+                    onChange={(e) => setFormData({...formData, target_user_id: e.target.value ? parseInt(e.target.value) : null})}
+                  >
+                    <option value="">Semua Karyawan (Umum)</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-muted-foreground">Jika dikosongkan, dokumen dapat dilihat oleh seluruh karyawan.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <input 

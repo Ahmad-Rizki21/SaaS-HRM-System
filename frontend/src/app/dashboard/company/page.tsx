@@ -74,9 +74,10 @@ export default function CompanySettingsPage() {
       
       alert(t('success_save'));
       fetchCompany();
-    } catch (e) {
-      console.error(e);
-      alert(t('failed_to_fetch'));
+    } catch (e: any) {
+      console.error("Error updating company:", e.response?.data || e);
+      const errorMessage = e.response?.data?.message || t('failed_to_fetch');
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

@@ -11,7 +11,7 @@ class CompanyDocumentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = CompanyDocument::query();
+        $query = CompanyDocument::with('targetUser');
 
         if ($request->has('type')) {
             $query->where('type', $request->type);
@@ -22,7 +22,11 @@ class CompanyDocumentController extends Controller
         $user->load('role.permissions');
 
         if (!$user->hasPermission('manage-documents')) {
-            $query->where('is_published', true);
+            $query->where('is_published', true)
+                  ->where(function($q) use ($user) {
+                      $q->whereNull('target_user_id')
+                        ->orWhere('target_user_id', $user->id);
+                  });
         }
 
         $documents = $query->orderBy('published_at', 'desc')->get();
@@ -42,6 +46,7 @@ class CompanyDocumentController extends Controller
             'type' => 'required|in:sk,regulation',
             'is_published' => 'boolean',
             'published_at' => 'nullable|date',
+            'target_user_id' => 'nullable|exists:users,id',
         ]);
 
         $filePath = null;
@@ -60,7 +65,10 @@ class CompanyDocumentController extends Controller
             'type' => $request->type,
             'is_published' => $request->is_published ?? true,
             'published_at' => $request->published_at ?? now(),
+            'target_user_id' => $request->target_user_id,
         ]);
+
+        $document->load('targetUser');
 
         return response()->json([
             'status' => 'success',
@@ -108,6 +116,7 @@ class CompanyDocumentController extends Controller
             'type' => 'sometimes|in:sk,regulation',
             'is_published' => 'boolean',
             'published_at' => 'nullable|date',
+            'target_user_id' => 'nullable|exists:users,id',
         ]);
 
         if ($request->hasFile('file')) {
@@ -121,7 +130,9 @@ class CompanyDocumentController extends Controller
             $document->file_path = $file->storeAs('company_documents', $fileName, 'public');
         }
 
-        $document->update($request->only(['title', 'description', 'type', 'is_published', 'published_at']));
+        $document->update($request->only(['title', 'description', 'type', 'is_published', 'published_at', 'target_user_id']));
+
+        $document->load('targetUser');
 
         return response()->json([
             'status' => 'success',

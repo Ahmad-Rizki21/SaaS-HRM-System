@@ -18,14 +18,14 @@ class CompanyController extends Controller
         $company = Company::findOrFail($request->user()->company_id);
 
         $request->validate([
-            'name' => 'sometimes|string',
-            'email' => 'sometimes|email',
-            'phone' => 'sometimes|string',
-            'address' => 'sometimes|string',
-            'logo' => 'sometimes|image|max:2048',
-            'latitude' => 'sometimes|numeric',
-            'longitude' => 'sometimes|numeric',
-            'radius_meters' => 'sometimes|numeric',
+            'name' => 'sometimes|nullable|string',
+            'email' => 'sometimes|nullable|email',
+            'phone' => 'sometimes|nullable|string',
+            'address' => 'sometimes|nullable|string',
+            'logo' => 'sometimes|nullable|image|max:2048',
+            'latitude' => 'sometimes|nullable|numeric',
+            'longitude' => 'sometimes|nullable|numeric',
+            'radius_meters' => 'sometimes|nullable|numeric',
         ]);
 
         $data = $request->only(['name', 'email', 'phone', 'address', 'latitude', 'longitude', 'radius_meters']);

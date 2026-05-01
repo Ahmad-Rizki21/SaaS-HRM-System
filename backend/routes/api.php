@@ -37,6 +37,7 @@ use App\Http\Controllers\OfficeController;
 use App\Http\Controllers\Api\Mobile\MobileDashboardController;
 use App\Http\Controllers\Api\Mobile\MobileAttendanceController;
 use App\Http\Controllers\Api\Mobile\MobileTaskController;
+use App\Http\Controllers\FundRequestController;
 
 
 // Health Check (Docker)
@@ -206,6 +207,14 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
         Route::post('/reimbursements/{id}/approve', [ReimbursementController::class, 'approve']);
         Route::post('/reimbursements/{id}/reject', [ReimbursementController::class, 'reject']);
     });
+
+    // Fund Requests (Pengajuan Dana)
+    Route::get('/fund-requests', [FundRequestController::class, 'index']);
+    Route::post('/fund-requests', [FundRequestController::class, 'store']);
+    Route::get('/fund-requests/{id}', [FundRequestController::class, 'show']);
+    Route::post('/fund-requests/{id}/approve', [FundRequestController::class, 'approve']);
+    Route::post('/fund-requests/{id}/reject', [FundRequestController::class, 'reject']);
+    Route::delete('/fund-requests/{id}', [FundRequestController::class, 'destroy']);
 
     // Announcements
     Route::middleware('permission:view-announcements')->get('/announcements', [AnnouncementController::class, 'index']);

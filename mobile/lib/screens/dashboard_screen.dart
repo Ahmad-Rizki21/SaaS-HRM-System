@@ -24,6 +24,7 @@ import 'attendance_correction_screen.dart';
 import 'leaderboard_screen.dart';
 import 'fleet_log_screen.dart';
 import 'document_screen.dart';
+import 'fund_request_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/skeleton_loading.dart';
 
@@ -590,6 +591,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'onTap': () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => DocumentScreen()),
+        ),
+      },
+      'dana': {
+        'icon': Icons.account_balance_wallet_outlined,
+        'label': 'Pengajuan Dana',
+        'color': Colors.brown[800],
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => FundRequestScreen()),
         ),
       },
     };
@@ -1184,6 +1194,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(height: 8),
                           Text(
                             "Lainnya",
+                            textAlign: TextAlign.center,
                             style: GoogleFonts.outfit(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -1449,14 +1460,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
+          SizedBox(
+            width: double.infinity,
             child: Text(
               label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
               style: GoogleFonts.outfit(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
+                height: 1.1,
               ),
             ),
           ),

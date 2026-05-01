@@ -108,7 +108,7 @@ class UserSeeder extends Seeder
 
         // 5. Staff (Bawahan Supervisor)
         User::updateOrCreate(
-            ['email' => 'staff@example.com'],
+            ['email' => 'ahmad@ajnusa.com'],
             [
                 'name' => 'Ahmad Karyawan',
                 'password' => Hash::make('password'),

@@ -337,8 +337,8 @@ class EmployeeController extends Controller
             \App\Models\Announcement::create([
                 'company_id' => $employee->company_id,
                 'user_id' => $request->user()->id,
-                'title' => "PENGUMUMAN WFH (WORK FROM HOME)",
-                'content' => "Diberitahukan kepada seluruh tim, bahwa perusahaan memberlakukan kebijakan WFH (Work From Home) terhitung mulai tanggal " . 
+                'title' => "PENGUMUMAN WFA (DINAS LUAR)",
+                'content' => "Diberitahukan kepada seluruh tim, bahwa perusahaan memberlakukan kebijakan WFA (Work From Anywhere) atau Dinas Luar terhitung mulai tanggal " . 
                              Carbon::parse($employee->wfh_start_date)->format('d M Y') . " sampai " . 
                              Carbon::parse($employee->wfh_end_date)->format('d M Y') . ". Selama periode ini, karyawan yang telah diberikan izin dapat melakukan absensi di luar radius kantor."
             ]);
@@ -350,9 +350,9 @@ class EmployeeController extends Controller
         $employee->save();
 
         $status = $employee->is_wfh ? 'AKTIF' : 'NONAKTIF';
-        $this->logActivity('TOGGLE_WFH', "Mengubah status WFH karyawan {$employee->name} menjadi {$status}", $employee);
+        $this->logActivity('TOGGLE_WFH', "Mengubah status WFA karyawan {$employee->name} menjadi {$status}", $employee);
 
-        return $this->successResponse($employee, "Status WFH berhasil diubah menjadi {$status}.");
+        return $this->successResponse($employee, "Status WFA (Dinas Luar) berhasil diubah menjadi {$status}.");
     }
 
     public function bulkWfh(Request $request)
@@ -388,14 +388,14 @@ class EmployeeController extends Controller
             \App\Models\Announcement::create([
                 'company_id' => $users->first()->company_id,
                 'user_id' => $request->user()->id,
-                'title' => "PENGUMUMAN WFH (WORK FROM HOME)",
-                'content' => "Diberitahukan kepada seluruh karyawan, bahwa perusahaan memberlakukan kebijakan WFH (Work From Home) terhitung mulai tanggal " . 
+                'title' => "PENGUMUMAN WFA (DINAS LUAR)",
+                'content' => "Diberitahukan kepada seluruh karyawan, bahwa perusahaan memberlakukan kebijakan WFA (Work From Anywhere) atau Dinas Luar terhitung mulai tanggal " . 
                              Carbon::parse($request->start_date)->format('d M Y') . " sampai " . 
                              Carbon::parse($request->end_date)->format('d M Y') . ". Selama periode ini, karyawan yang mendapatkan izin dapat melakukan absensi melalui perangkat mobile tanpa batasan radius kantor."
             ]);
         }
 
-        return $this->successResponse(null, "Berhasil memperbarui status WFH untuk " . count($users) . " karyawan.");
+        return $this->successResponse(null, "Berhasil memperbarui status WFA untuk " . count($users) . " karyawan.");
     }
     public function resendVerification($id)
     {

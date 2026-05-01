@@ -38,6 +38,7 @@ import {
   ClipboardList,
   CheckSquare,
   ShieldCheck,
+  Wallet,
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useState, useEffect, useRef } from "react";
@@ -120,6 +121,14 @@ const sidebarLinks: SidebarLink[] = [
     permission: 'view-reimbursements',
     submenus: [
       { name: "reimbursements", href: "/dashboard/reimbursements", permission: 'view-reimbursements' },
+    ]
+  },
+  {
+    name: "fund_request_management",
+    icon: Wallet,
+    permission: 'view-fund-requests',
+    submenus: [
+      { name: "fund_requests", href: "/dashboard/fund-requests", permission: 'view-fund-requests' },
     ]
   },
   {

@@ -90,7 +90,7 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'Pengaturan Perusahaan', 'slug' => 'manage-company', 'group' => 'Pengaturan'],
             ['name' => 'Manajemen Role', 'slug' => 'manage-roles', 'group' => 'Pengaturan'],
             ['name' => 'Lihat Log Aktivitas', 'slug' => 'view-activity-logs', 'group' => 'Pengaturan'],
-            ['name' => 'Kelola WFH', 'slug' => 'manage-wfh', 'group' => 'Pengaturan'],
+            ['name' => 'Kelola WFA (Dinas Luar)', 'slug' => 'manage-wfh', 'group' => 'Pengaturan'],
             ['name' => 'Kelola Kantor Cabang', 'slug' => 'manage-offices', 'group' => 'Pengaturan'],
             
             // Tugas (Tasks)
@@ -105,6 +105,11 @@ class RolePermissionSeeder extends Seeder
             // Dokumen (SK & Regulasi)
             ['name' => 'Lihat Dokumen', 'slug' => 'view-documents', 'group' => 'Dokumen'],
             ['name' => 'Kelola Dokumen', 'slug' => 'manage-documents', 'group' => 'Dokumen'],
+
+            // Pengajuan Dana (Cash Advance)
+            ['name' => 'Lihat Pengajuan Dana', 'slug' => 'view-fund-requests', 'group' => 'Keuangan'],
+            ['name' => 'Ajukan Pengajuan Dana', 'slug' => 'apply-fund-requests', 'group' => 'Keuangan'],
+            ['name' => 'Setujui Pengajuan Dana', 'slug' => 'approve-fund-requests', 'group' => 'Keuangan'],
         ];
 
         foreach ($permissions as $p) {
@@ -138,7 +143,8 @@ class RolePermissionSeeder extends Seeder
             'view-shift-swaps', 'approve-shift-swaps', 'view-shift-swap-reports', 'export-shift-swaps',
             'view-projects', 'approve-project-costs',
             'view-vehicle-logs', 'approve-vehicle-logs', 'view-vehicle-reports',
-            'view-tasks', 'manage-tasks', 'view-documents'
+            'view-tasks', 'manage-tasks', 'view-documents',
+            'view-fund-requests', 'apply-fund-requests', 'approve-fund-requests'
         ])->pluck('id');
         $supervisor->permissions()->sync($supervisorPermissions);
 
@@ -158,7 +164,8 @@ class RolePermissionSeeder extends Seeder
             'view-shift-swaps', 'apply-shift-swaps',
             'view-projects',
             'view-vehicle-logs', 'apply-vehicle-logs',
-            'view-tasks', 'view-salaries', 'view-documents'
+            'view-tasks', 'view-salaries', 'view-documents',
+            'view-fund-requests', 'apply-fund-requests'
         ])->pluck('id');
         $staff->permissions()->sync($staffPermissions);
     }

@@ -319,7 +319,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-6">
         
         {/* 1. Welcome Card (Col 1) */}
-        <div className="bg-[#fef2f2] rounded-2xl p-6 flex flex-col items-center justify-between border border-[#fee2e2] text-center h-full min-h-[350px]">
+        <div className="bg-[#fef2f2] rounded-2xl p-6 flex flex-col items-center justify-between border border-[#fee2e2] text-center h-[420px]">
           <div className="w-full flex justify-end">
             <MoreVertical size={20} className="text-gray-400 cursor-pointer" />
           </div>
@@ -338,7 +338,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 2. Monthly Performance (UX) */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col gap-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col gap-6 h-[420px]">
            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
              <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
              Monthly Performance
@@ -382,7 +382,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 3. Work Calendar & Events (UX) */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col overflow-hidden h-[420px]">
            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2 mb-6">
              <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
              Work Calendar
@@ -412,7 +412,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 4. Donut Chart (Distribution) */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col shadow-sm h-[420px]">
            <h3 className="font-bold text-gray-900 mb-6 text-sm flex items-center gap-2">
              <div className="w-1.5 h-4 bg-[#8B0000] rounded-full"></div>
              Employee Distribution

@@ -76,7 +76,7 @@ class _PermitScreenState extends State<PermitScreen> {
                 DropdownButtonFormField<String>(
                   value: _type,
                   decoration: InputDecoration(labelText: "Jenis Izin", border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
-                  items: ['Sakit', 'Izin Terlambat', 'Izin Pulang Cepat', 'Keperluan Pribadi', 'Lainnya']
+                  items: ['Sakit', 'Dinas Luar (WFA)', 'Izin Terlambat', 'Izin Pulang Cepat', 'Keperluan Pribadi', 'Lainnya']
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                       .toList(),
                   onChanged: (val) => setModalState(() => _type = val!),

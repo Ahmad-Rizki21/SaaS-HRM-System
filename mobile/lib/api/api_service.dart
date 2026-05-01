@@ -1468,4 +1468,56 @@ class ApiService {
       return null;
     }
   }
+
+  // ============ FUND REQUESTS (PENGAJUAN DANA) ============
+
+  static Future<List<dynamic>?> getFundRequests() async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/fund-requests'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['data'] is Map && body['data']['data'] is List) {
+          return body['data']['data'];
+        }
+        return body['data'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitFundRequest(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final headers = await getHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('$baseUrl/fund-requests'),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteFundRequest(int id) async {
+    try {
+      final headers = await getHeaders();
+      final response = await http.delete(
+        Uri.parse('$baseUrl/fund-requests/$id'),
+        headers: headers,
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'status': 'error', 'message': 'Koneksi gagal.'};
+    }
+  }
 }
