@@ -31,13 +31,27 @@ class ApiService {
     // Jika URL adalah path file lokal, jangan gunakan sebagai NetworkImage
     if (url.startsWith('file') || url.startsWith('/data/user')) return '';
 
-    if (!url.startsWith('http')) return '$storageUrl/$url';
+    String fixedUrl = url;
+    if (!fixedUrl.startsWith('http')) {
+      fixedUrl = '$storageUrl/$url';
+    }
 
-    // Replace any local/old IPs with the current serverIp
-    return url
+    // Replace any local/old IPs with the current dynamic serverIp
+    fixedUrl = fixedUrl
         .replaceAll('localhost', serverIp)
         .replaceAll('127.0.0.1', serverIp)
-        .replaceAll('192.168.1.9', serverIp);
+        .replaceAll('192.168.1.9', serverIp)
+        .replaceAll('10.0.2.2', serverIp);
+
+    // Production specific cleanup (Force HTTPS and remove dev port)
+    if (!kDebugMode) {
+      if (fixedUrl.startsWith('http://')) {
+        fixedUrl = fixedUrl.replaceFirst('http://', 'https://');
+      }
+      fixedUrl = fixedUrl.replaceAll(':8000', '');
+    }
+
+    return fixedUrl;
   }
 
   // ============ HEADERS ============
