@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -602,7 +603,122 @@ class _DashboardScreenState extends State<DashboardScreen> {
           MaterialPageRoute(builder: (_) => FundRequestScreen()),
         ),
       },
+      'proyek': {
+        'icon': Icons.engineering_outlined,
+        'label': 'Management Project',
+        'color': Colors.orange[900],
+        'onTap': () => _showUnderDevelopmentAlert(context),
+      },
     };
+  }
+
+  void _showUnderDevelopmentAlert(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.symmetric(horizontal: 20),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Blurry background effect
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(color: Colors.transparent),
+                  ),
+                ),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(30),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.amber[50],
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: Icon(
+                          Icons.engineering,
+                          color: Colors.amber[900],
+                          size: 50,
+                        ),
+                      ),
+                      SizedBox(height: 25),
+                      Text(
+                        "Under Development",
+                        style: GoogleFonts.outfit(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(height: 15),
+                      Text(
+                        "Project Management Under Devlop and Optimize by Ahmad Rizki",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.outfit(
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                          height: 1.5,
+                        ),
+                      ),
+                      SizedBox(height: 30),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black87,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            "Paham, Terimakasih",
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        "© 2026 On Time HRMS",
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showAturModal() {

@@ -533,6 +533,41 @@ export default function ProjectsPage() {
           </div>
         </div>
       )}
+      {/* Maintenance/Under Development Overlay */}
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-md" />
+        <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 p-8 text-center animate-in fade-in zoom-in duration-500">
+          <div className="w-24 h-24 bg-amber-50 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
+            <HardHat size={48} className="text-amber-600 animate-pulse" />
+          </div>
+          
+          <h2 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">
+            Under Development
+          </h2>
+          
+          <div className="space-y-4">
+            <p className="text-gray-500 font-medium leading-relaxed">
+              Project Management Under <span className="text-amber-600 font-bold">Devlop and Optimize</span> by <span className="text-gray-900 font-bold">Ahmad Rizki</span>
+            </p>
+            
+            <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4">
+              <p className="text-[11px] text-amber-700 font-bold uppercase tracking-wider">Status Update</p>
+              <p className="text-xs text-amber-600 mt-1">Sistem sedang dioptimalkan untuk performa terbaik dan fitur kontrol eksekusi konstruksi sedang disiapkan.</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => window.history.length > 1 ? window.history.back() : window.location.href = '/dashboard'}
+            className="mt-8 w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-[0_10px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)] active:scale-[0.98]"
+          >
+            Kembali ke Dashboard
+          </button>
+          
+          <p className="mt-6 text-[10px] text-gray-400 font-medium">
+            © 2026 Ahmad Rizki · On Time HRMS
+          </p>
+        </div>
+      </div>
     </>
   );
 }
