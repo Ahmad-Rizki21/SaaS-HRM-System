@@ -52,9 +52,7 @@ class AttendanceController extends Controller
 
         // --- 3. Liveness Verification check ---
         // (From Frontend Liveness Detection)
-        if (!$request->image) {
-             return $this->errorResponse('Foto Selfie wajib disertakan untuk absensi.', 400);
-        }
+        // Image is now optional for button-based attendance
         
         // --- 4. Face Match Logic (Placeholder/Basic Check) ---
         // Mencocokkan wajah saat selfie dengan foto profil
@@ -64,7 +62,7 @@ class AttendanceController extends Controller
         // $manager = new FaceRecognitionManager();
         // $faceMatch = $manager->match($user->profile_photo_path, $request->image);
         
-        if ($user->profile_photo_path && !$faceMatch) {
+        if ($request->image && $user->profile_photo_path && !$faceMatch) {
              return $this->errorResponse('Wajah tidak cocok dengan profil Anda. Pastikan wajah terlihat jelas!', 403);
         }
 
@@ -220,12 +218,10 @@ class AttendanceController extends Controller
         }
 
         // --- 3. Foto Selfie Check & Face Match Placeholder ---
-        if (!$request->image) {
-             return $this->errorResponse('Foto Selfie wajib disertakan untuk absensi.', 400);
-        }
+        // Image is now optional
         
         $faceMatch = true; 
-        if ($user->profile_photo_path && !$faceMatch) {
+        if ($request->image && $user->profile_photo_path && !$faceMatch) {
              return $this->errorResponse('Wajah tidak cocok dengan profil Anda.', 403);
         }
 

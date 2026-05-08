@@ -158,6 +158,63 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     super.dispose();
   }
 
+  Future<void> _takeAttendanceByButton() async {
+    if (_isProcessing) return;
+
+    setState(() => _isProcessing = true);
+
+    try {
+      // Stop camera stream to save resources and prevent crashes
+      if (_controller != null && _controller!.value.isStreamingImages) {
+        await _controller!.stopImageStream();
+      }
+
+      // 1. Dapatkan Lokasi GPS (Tetap Wajib)
+      Position position = await _determinePosition();
+
+      // Anti Fake GPS
+      if (position.isMocked) {
+        _showErrorDialog("Lokasi Palsu Terdeteksi! Mohon gunakan GPS asli.");
+        return;
+      }
+
+      // 2. Ambil Device ID
+      String deviceId = await ApiService.getDeviceId();
+
+      // 3. Kirim ke API (Tanpa Image)
+      Map<String, dynamic>? result;
+      if (widget.isCheckIn) {
+        result = await ApiService.checkIn(
+          position.latitude, 
+          position.longitude, 
+          image: null, // Kosongkan image
+          deviceId: deviceId,
+          isMocked: position.isMocked,
+        );
+      } else {
+        result = await ApiService.checkOut(
+          position.latitude, 
+          position.longitude, 
+          image: null, // Kosongkan image
+          deviceId: deviceId,
+          isMocked: position.isMocked,
+        );
+      }
+
+      if (result != null && (result['status'] == 'success' || result['status'] == true)) {
+        if (mounted) {
+          Navigator.of(context).pop(result['data']);
+        }
+      } else {
+        _showErrorDialog(result?['message'] ?? "Gagal memproses absensi");
+      }
+    } catch (e) {
+      _showErrorDialog("Error: ${e.toString()}");
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
   Future<void> _takeAttendance() async {
     if (!_isCameraReady || _isProcessing) return;
 
@@ -165,6 +222,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     try {
       // 1. Ambil Foto
+      if (_controller != null && _controller!.value.isStreamingImages) {
+        await _controller!.stopImageStream();
+      }
+      
       final XFile image = await _controller!.takePicture();
       final bytes = await File(image.path).readAsBytes();
       final base64Image = "data:image/png;base64,${base64Encode(bytes)}";
@@ -325,32 +386,74 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ),
           ),
 
-                // Action Button (Selalu Aktif)
+                // Action Buttons
                 Positioned(
-                  bottom: 60,
+                  bottom: 40,
                   left: 0,
                   right: 0,
                   child: Column(
                     children: [
-                      GestureDetector(
-                        onTap: _takeAttendance,
-                        child: Container(
-                          height: 80,
-                          width: 80,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Color(0xFF800000), width: 5),
-                            boxShadow: [
-                              BoxShadow(color: Colors.redAccent.withOpacity(0.3), blurRadius: 20, spreadRadius: 2)
-                            ]
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Tombol Foto (Original)
+                          Column(
+                            children: [
+                              GestureDetector(
+                                onTap: _takeAttendance,
+                                child: Container(
+                                  height: 70,
+                                  width: 70,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: const Color(0xFF800000), width: 4),
+                                    boxShadow: [
+                                      BoxShadow(color: Colors.redAccent.withOpacity(0.3), blurRadius: 15, spreadRadius: 1)
+                                    ]
+                                  ),
+                                  child: const Icon(Icons.face_retouching_natural, color: Color(0xFF800000), size: 35),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Foto Selfie",
+                                style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              )
+                            ],
                           ),
-                          child: Icon(Icons.camera_alt, color: Color(0xFF800000), size: 40),
-                        ),
+                          const SizedBox(width: 40),
+                          // Tombol Button (Baru)
+                          Column(
+                            children: [
+                              GestureDetector(
+                                onTap: _takeAttendanceByButton,
+                                child: Container(
+                                  height: 70,
+                                  width: 70,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF800000),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 4),
+                                    boxShadow: [
+                                      BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 15, spreadRadius: 1)
+                                    ]
+                                  ),
+                                  child: const Icon(Icons.touch_app, color: Colors.white, size: 35),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Via Tombol",
+                                style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              )
+                            ],
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 20),
                       Text(
-                        "Klik untuk Ambil Absen",
+                        "Pilih metode absensi Anda",
                         style: GoogleFonts.outfit(color: Colors.white70, fontSize: 14),
                       )
                     ],

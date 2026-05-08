@@ -141,6 +141,36 @@ export default function LiveAttendancePage() {
     return d * 1000; // Return in meters
   };
 
+  const handleAttendanceWithoutPhoto = async (type: 'check-in' | 'check-out') => {
+    if (!location) {
+      alert("Menunggu titik koordinat lokasi GPS...");
+      return;
+    }
+
+    setLoading(true);
+    setStatusMsg("Memproses Absensi (Via Tombol)...");
+
+    try {
+      const payload = {
+        latitude: location.lat,
+        longitude: location.lng,
+        image: null // No image for button attendance
+      };
+
+      const res = await axiosInstance.post(`/attendance/${type}`, payload);
+      
+      setStatusMsg(`Berhasil ${type === 'check-in' ? 'Absen Masuk' : 'Absen Keluar'}!`);
+      alert(`Sukses: ${res.data.message}`);
+      router.push('/dashboard');
+      
+    } catch (error: any) {
+      setStatusMsg("Gagal melakukan absensi.");
+      alert(error.response?.data?.message || "Terjadi kesalahan sistem.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAttendance = async (type: 'check-in' | 'check-out') => {
     if (!location) {
       alert("Menunggu titik koordinat lokasi GPS...");
@@ -329,7 +359,7 @@ export default function LiveAttendancePage() {
                  className="bg-[#107c41] hover:bg-[#0c6130] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-2 group"
                >
                  <ScanFace size={24} className="group-hover:scale-110 transition-transform" />
-                 <span>CLOCK IN</span>
+                 <span className="text-xs uppercase tracking-wider">Clock In (Selfie)</span>
                </button>
                
                <button 
@@ -338,7 +368,25 @@ export default function LiveAttendancePage() {
                  className="bg-[#8B0000] hover:bg-[#660000] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-2 group"
                >
                  <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
-                 <span>CLOCK OUT</span>
+                 <span className="text-xs uppercase tracking-wider">Clock Out (Selfie)</span>
+               </button>
+
+               <button 
+                 onClick={() => handleAttendanceWithoutPhoto('check-in')}
+                 disabled={loading || !location}
+                 className="bg-white border-2 border-[#107c41] text-[#107c41] hover:bg-emerald-50 disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200 font-bold py-3 rounded-2xl transition-all flex flex-col items-center justify-center gap-1"
+               >
+                 <CheckCircle size={18} />
+                 <span className="text-[10px] uppercase tracking-wider">Clock In (Tombol)</span>
+               </button>
+
+               <button 
+                 onClick={() => handleAttendanceWithoutPhoto('check-out')}
+                 disabled={loading || !location}
+                 className="bg-white border-2 border-[#8B0000] text-[#8B0000] hover:bg-red-50 disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200 font-bold py-3 rounded-2xl transition-all flex flex-col items-center justify-center gap-1"
+               >
+                 <AlertCircle size={18} />
+                 <span className="text-[10px] uppercase tracking-wider">Clock Out (Tombol)</span>
                </button>
             </div>
             

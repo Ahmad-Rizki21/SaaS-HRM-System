@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../api/api_service.dart';
 import 'profile_screen.dart';
 import 'riwayat_screen.dart';
@@ -50,6 +51,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _hasUnreadNotification = false;
   int _pendingTaskCount = 0;
   bool _isLoadingContent = true;
+  bool _isProcessingAttendance = false;
 
   final Color primaryColor = Color(0xFF800000);
   final Color secondaryColor = Color(0xFFB00000);
@@ -295,23 +297,171 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<Position> _determinePosition() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return Future.error('GPS belum diaktifkan.');
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return Future.error('Izin lokasi ditolak.');
+    }
+    
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+
+  Future<void> _takeQuickAttendance() async {
+    if (_isProcessingAttendance) return;
+    setState(() => _isProcessingAttendance = true);
+
+    try {
+      Position position = await _determinePosition();
+      if (position.isMocked) {
+        throw "Lokasi Palsu Terdeteksi!";
+      }
+
+      String deviceId = await ApiService.getDeviceId();
+      bool isCheckIn = _attendanceData?['check_in'] == null;
+
+      Map<String, dynamic>? result;
+      if (isCheckIn) {
+        result = await ApiService.checkIn(
+          position.latitude, 
+          position.longitude, 
+          image: null,
+          deviceId: deviceId,
+          isMocked: position.isMocked,
+        );
+      } else {
+        result = await ApiService.checkOut(
+          position.latitude, 
+          position.longitude, 
+          image: null,
+          deviceId: deviceId,
+          isMocked: position.isMocked,
+        );
+      }
+
+      if (result != null && (result['status'] == 'success' || result['status'] == true)) {
+        await _refreshData();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Absensi Cepat Berhasil!"), backgroundColor: Colors.green),
+          );
+        }
+      } else {
+        throw result?['message'] ?? "Gagal memproses absensi";
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessingAttendance = false);
+    }
+  }
+
   Future<void> _onAbsenTapped() async {
-    final dynamic res = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (c) =>
-            AttendanceScreen(isCheckIn: _attendanceData?['check_in'] == null),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(25),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 50,
+              height: 5,
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
+            ),
+            const SizedBox(height: 25),
+            Text(
+              "Pilih Metode Absensi",
+              style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Gunakan Selfie untuk verifikasi wajah atau Absen Cepat jika Anda sedang terburu-buru.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
+            const SizedBox(height: 30),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _takeQuickAttendance();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: primaryColor, width: 2),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.touch_app, color: primaryColor, size: 32),
+                          const SizedBox(height: 10),
+                          Text("Absen Cepat", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+                          Text("(Tanpa Foto)", style: TextStyle(color: primaryColor, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final dynamic res = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (c) => AttendanceScreen(isCheckIn: _attendanceData?['check_in'] == null),
+                        ),
+                      );
+                      if (res != null) {
+                        _refreshData();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Absensi Berhasil!"), backgroundColor: Colors.green),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [BoxShadow(color: primaryColor.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
+                      ),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.face_retouching_natural, color: Colors.white, size: 32),
+                          const SizedBox(height: 10),
+                          const Text("Absen Selfie", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          const Text("(Face ID)", style: TextStyle(color: Colors.white, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
-    if (res != null) {
-      _refreshData(); // Refresh everything after check-in
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Absensi Berhasil Tercatat!"),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
   }
 
   void _onItemTapped(int index) {
@@ -379,6 +529,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _isLoadingContent
                       ? const DashboardSkeleton()
                       : _getBody(),
+                  if (_isProcessingAttendance)
+                    Container(
+                      color: Colors.black54,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const CircularProgressIndicator(color: Colors.white),
+                            const SizedBox(height: 20),
+                            Text(
+                              "Memproses Absensi Cepat...",
+                              style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
