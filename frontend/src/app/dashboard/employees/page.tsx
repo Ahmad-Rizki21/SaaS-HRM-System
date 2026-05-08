@@ -511,11 +511,12 @@ function EmployeesContent() {
       const data = new FormData();
       Object.keys(formData).forEach(key => {
         const val = (formData as any)[key];
-        if (val !== undefined && val !== null) {
+        if (val !== undefined) {
           if (key === 'photo') {
-            data.append('photo', val);
+            if (val instanceof File) data.append('photo', val);
           } else {
-            data.append(key, val.toString());
+            // Kirim string kosong untuk nilai null agar Laravel bisa menghapus nilai di DB (nullable)
+            data.append(key, val === null ? "" : val.toString());
           }
         }
       });
