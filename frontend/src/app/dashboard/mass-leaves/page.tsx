@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import axiosInstance from "@/lib/axios";
 import { Search, Plus, Trash2, Calendar, FileText, CheckCircle2, AlertCircle, X, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import Pagination from "@/components/Pagination";
 import { TableSkeleton } from "@/components/Skeleton";
@@ -78,7 +79,7 @@ function MassLeaveContent() {
     setIsSubmitting(true);
     try {
       await axiosInstance.post('/mass-leave', formData);
-      alert("Cuti bersama berhasil ditambahkan!");
+      toast.success("Cuti bersama berhasil ditambahkan!");
       setIsModalOpen(false);
       setFormData({
         name: "",
@@ -91,18 +92,28 @@ function MassLeaveContent() {
       });
       fetchMassLeaves(1);
     } catch (err: any) {
-      alert(err.response?.data?.message || "Gagal menyimpan cuti bersama.");
+      toast.error(err.response?.data?.message || "Gagal menyimpan cuti bersama.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus cuti bersama ini? Saldo cuti karyawan yang terpotong akan dikembalikan.")) return;
-    try {
-      await axiosInstance.delete(`/mass-leave/${id}`);
-      fetchMassLeaves(page);
-    } catch (e) { alert("Gagal menghapus."); }
+    toast("Apakah Anda yakin ingin menghapus cuti bersama ini?", {
+      description: "Saldo cuti karyawan yang terpotong akan dikembalikan.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/mass-leave/${id}`);
+            toast.success("Cuti bersama berhasil dihapus.");
+            fetchMassLeaves(page);
+          } catch (e) { 
+            toast.error("Gagal menghapus."); 
+          }
+        }
+      }
+    });
   };
 
   return (

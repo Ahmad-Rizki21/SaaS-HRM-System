@@ -7,6 +7,7 @@ import Pagination from "@/components/Pagination";
 import SignaturePad from "@/components/SignaturePad";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 export default function PermitsPage() {
   const { hasPermission, user } = useAuth();
@@ -59,51 +60,58 @@ export default function PermitsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.signature) {
-      alert("Tanda tangan digital wajib diisi!");
+      toast.warning("Tanda tangan digital wajib diisi!");
       return;
     }
     
     setIsSubmitting(true);
     try {
       await axiosInstance.post("/permits", formData);
-      alert("Pengajuan Izin berhasil! Menunggu persetujuan.");
+      toast.success("Pengajuan Izin berhasil! Menunggu persetujuan.");
       setIsModalOpen(false);
       setFormData({ start_date: "", end_date: "", type: "Sakit", reason: "", signature: "" });
       fetchpermits(page);
     } catch (error: any) {
-      alert(error.response?.data?.message || "Gagal mengajukan Izin");
+      toast.error(error.response?.data?.message || "Gagal mengajukan Izin");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleApprove = async (id: number) => {
-    const remark = prompt("Ketik catatan persetujuan (opsional):");
-    if (remark === null) return;
-    
-    try {
-      await axiosInstance.post(`/permits/${id}/approve`, { remark });
-      alert("Izin disetujui!");
-      fetchpermits(page);
-    } catch (e) {
-      alert("Gagal memproses persetujuan.");
-    }
+    toast("Setujui izin ini?", {
+      description: "Konfirmasi persetujuan pengajuan izin.",
+      action: {
+        label: "Setujui",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/permits/${id}/approve`, { remark: "Disetujui" });
+            toast.success("Izin disetujui!");
+            fetchpermits(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses persetujuan.");
+          }
+        },
+      },
+    });
   };
 
   const handleReject = async (id: number) => {
-    const remark = prompt("Ketik alasan penolakan (WAJIB):");
-    if (!remark) {
-      if (remark === "") alert("Alasan penolakan harus diisi!");
-      return;
-    }
-    
-    try {
-      await axiosInstance.post(`/permits/${id}/reject`, { remark });
-      alert("Izin ditolak.");
-      fetchpermits(page);
-    } catch (e) {
-      alert("Gagal memproses penolakan.");
-    }
+    toast("Tolak izin ini?", {
+      description: "Anda yakin ingin menolak pengajuan ini?",
+      action: {
+        label: "Tolak",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/permits/${id}/reject`, { remark: "Ditolak oleh atasan/sistem" });
+            toast.success("Izin ditolak.");
+            fetchpermits(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses penolakan.");
+          }
+        },
+      },
+    });
   };
 
   const handleViewDetail = (item: any) => {

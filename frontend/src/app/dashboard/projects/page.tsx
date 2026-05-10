@@ -12,6 +12,7 @@ import { Skeleton, TableSkeleton } from "@/components/Skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useDebounce } from "@/hooks/useDebounce";
+import { toast } from "sonner";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   planning: { label: "Perencanaan", color: "text-blue-700", bg: "bg-blue-50 border-blue-200", icon: Clock },
@@ -130,29 +131,38 @@ export default function ProjectsPage() {
 
       if (editingProject) {
         await axiosInstance.put(`/projects/${editingProject.id}`, payload);
-        alert("Proyek berhasil diperbarui!");
+        toast.success("Proyek berhasil diperbarui!");
       } else {
         await axiosInstance.post("/projects", payload);
-        alert("Proyek berhasil dibuat!");
+        toast.success("Proyek berhasil dibuat!");
       }
       setIsModalOpen(false);
       fetchProjects(page);
       fetchDashboard();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Gagal menyimpan proyek.");
+      toast.error(error.response?.data?.message || "Gagal menyimpan proyek.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus proyek ini?")) return;
-    try {
-      await axiosInstance.delete(`/projects/${id}`);
-      alert("Proyek berhasil dihapus.");
-      fetchProjects(page);
-      fetchDashboard();
-    } catch (e) { alert("Gagal menghapus proyek."); }
+    toast("Hapus proyek ini?", {
+      description: "Seluruh data terkait proyek ini akan dihapus permanen.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/projects/${id}`);
+            toast.success("Proyek berhasil dihapus.");
+            fetchProjects(page);
+            fetchDashboard();
+          } catch (e) {
+            toast.error("Gagal menghapus proyek.");
+          }
+        }
+      }
+    });
   };
 
   const getStatusBadge = (status: string) => {

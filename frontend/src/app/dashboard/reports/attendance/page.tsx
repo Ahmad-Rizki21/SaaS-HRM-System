@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { 
   User, 
   Calendar, 
@@ -75,11 +76,11 @@ const LogView = ({ employees, startDate, endDate, selectedUser, onStartDateChang
       await axiosInstance.put(`/attendance/${selectedRow.id}`, {
         check_out: editData.check_out
       });
-      alert("Absensi berhasil diperbarui!");
+      toast.success("Absensi berhasil diperbarui!");
       setIsEditModalOpen(false);
       fetchHistory(page);
     } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal memperbarui absensi.");
+      toast.error(e.response?.data?.message || "Gagal memperbarui absensi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -538,7 +539,7 @@ const CorrectionView = ({ startDate, endDate, selectedUser }: any) => {
                     const link = document.createElement('a'); link.href = url;
                     link.setAttribute('download', `Rekap_Koreksi_${startDate}_to_${endDate}.xlsx`);
                     document.body.appendChild(link); link.click(); link.remove();
-                  } catch(e) { alert("Gagal export koreksi."); }
+                  } catch(e) { toast.error("Gagal export koreksi."); }
                }}
                className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all shadow-lg shadow-amber-100"
              >
@@ -642,7 +643,7 @@ const ShiftView = ({ employees, startDate, endDate, selectedUser }: any) => {
                     const link = document.createElement('a'); link.href = url;
                     link.setAttribute('download', `Laporan_Shift_${startDate}_to_${endDate}.xlsx`);
                     document.body.appendChild(link); link.click(); link.remove();
-                  } catch(e) { alert("Gagal export jadwal shift."); }
+                  } catch(e) { toast.error("Gagal export jadwal shift."); }
                }}
                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all shadow-lg shadow-blue-100"
              >
@@ -811,7 +812,7 @@ export default function ReportsAttendancePage() {
       link.click();
       link.remove();
     } catch (e) {
-      alert("Gagal mengunduh Laporan Excel.");
+      toast.error("Gagal mengunduh Laporan Excel.");
     }
   };
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import axiosInstance from "@/lib/axios";
 import { Building2, Plus, Pencil, Trash2, MapPin, Users, Search, X, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface Office {
   id: number;
@@ -23,7 +24,6 @@ export default function OfficesPage() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingOffice, setEditingOffice] = useState<Office | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -70,6 +70,24 @@ export default function OfficesPage() {
     setShowModal(true);
   };
 
+  const handleDelete = async (id: number) => {
+    toast("Hapus kantor cabang?", {
+      description: "Tindakan ini tidak dapat dibatalkan.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/offices/${id}`);
+            toast.success("Kantor cabang berhasil dihapus.");
+            fetchOffices();
+          } catch (err: any) {
+            toast.error(err.response?.data?.message || "Gagal menghapus kantor cabang.");
+          }
+        }
+      }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -83,25 +101,17 @@ export default function OfficesPage() {
 
       if (editingOffice) {
         await axiosInstance.put(`/offices/${editingOffice.id}`, payload);
+        toast.success("Berhasil memperbarui data kantor!");
       } else {
         await axiosInstance.post("/offices", payload);
+        toast.success("Kantor cabang baru berhasil ditambahkan!");
       }
       setShowModal(false);
       fetchOffices();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Gagal menyimpan data kantor cabang.");
+      toast.error(err.response?.data?.message || "Gagal menyimpan data kantor cabang.");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await axiosInstance.delete(`/offices/${id}`);
-      setDeleteConfirm(null);
-      fetchOffices();
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Gagal menghapus kantor cabang.");
     }
   };
 
@@ -226,29 +236,12 @@ export default function OfficesPage() {
                 >
                   <Pencil size={14} /> Edit
                 </button>
-                {deleteConfirm === office.id ? (
-                  <div className="flex-1 flex gap-1">
-                    <button
-                      onClick={() => handleDelete(office.id)}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition-all"
-                    >
-                      Ya, Hapus
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      className="px-3 bg-gray-200 hover:bg-gray-300 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition-all"
-                    >
-                      Batal
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setDeleteConfirm(office.id)}
-                    className="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2.5 px-4 rounded-xl text-xs transition-all"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
+                <button
+                  onClick={() => handleDelete(office.id)}
+                  className="flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2.5 px-4 rounded-xl text-xs transition-all"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             </div>
           ))}

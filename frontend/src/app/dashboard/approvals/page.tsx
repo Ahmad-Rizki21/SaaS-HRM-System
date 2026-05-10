@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, ExternalLink } from "lucide-react";
 import { ListPageSkeleton } from "@/components/Skeleton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -174,7 +175,7 @@ export default function ApprovalsPage() {
     if (!action || !item || isSubmitting) return;
 
     if (action === 'reject' && !remarkInput.trim() && (item.type === 'reimbursement' || item.type === 'overtime')) {
-        alert("Alasan penolakan WAJIB diisi!");
+        toast.warning("Alasan penolakan WAJIB diisi!");
         return;
     }
     
@@ -199,12 +200,12 @@ export default function ApprovalsPage() {
           audio.play().catch(e => console.log(e));
       } catch (e) {}
 
-      alert(`Berhasil ${action === 'approve' ? 'menyetujui' : 'menolak'} pengajuan.`);
+      toast.success(`Berhasil ${action === 'approve' ? 'menyetujui' : 'menolak'} pengajuan.`);
       setActionModal({ isOpen: false, action: null, item: null });
       await fetchApprovals();
     } catch (e: any) {
       console.error("Error processing approval:", e);
-      alert("Gagal memproses pengajuan: " + (e.response?.data?.message || "Terjadi kesalahan server"));
+      toast.error("Gagal memproses pengajuan: " + (e.response?.data?.message || "Terjadi kesalahan server"));
     } finally {
       setIsSubmitting(false);
       setProcessingId(null);

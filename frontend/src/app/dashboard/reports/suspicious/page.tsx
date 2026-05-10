@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { 
   User, 
   Calendar, 
@@ -93,7 +94,7 @@ export default function SuspiciousAttendanceReportPage() {
       link.remove();
     } catch (e) {
       console.error("Gagal mengunduh laporan", e);
-      alert("Gagal mengunduh Laporan Excel.");
+      toast.error("Gagal mengunduh Laporan Excel.");
     }
   };
 

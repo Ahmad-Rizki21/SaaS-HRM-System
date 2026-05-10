@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { User, Calendar, Filter, AlertCircle, ArrowRightLeft, CheckCircle2, Clock, FileSpreadsheet } from "lucide-react";
+import { toast } from "sonner";
 import Pagination from "@/components/Pagination";
 import { ReportSkeleton } from "@/components/Skeleton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,7 +79,7 @@ export default function ReportsShiftSwapPage() {
       link.remove();
     } catch (e) {
       console.error("Gagal mendownload laporan Excel", e);
-      alert("Gagal mengunduh Laporan Excel.");
+      toast.error("Gagal mengunduh Laporan Excel.");
     }
   };
 

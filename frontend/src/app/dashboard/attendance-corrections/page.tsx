@@ -7,6 +7,7 @@ import { PermissionGuard } from "@/components/PermissionGuard";
 import { TableSkeleton } from "@/components/Skeleton";
 import Pagination from "@/components/Pagination";
 import { FileDown, Plus, Search, Check, X, Eye, Clock, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AttendanceCorrectionsPage() {
   const { hasPermission, user } = useAuth();
@@ -89,43 +90,50 @@ export default function AttendanceCorrectionsPage() {
     setIsSubmitting(true);
     try {
       await axiosInstance.post("/attendance-corrections", formData);
-      alert("Pengajuan koreksi absen berhasil! Menunggu persetujuan HR/Supervisor.");
+      toast.success("Pengajuan koreksi absen berhasil! Menunggu persetujuan HR/Supervisor.");
       setIsModalOpen(false);
       fetchCorrections(page);
     } catch (error: any) {
-      alert(error.response?.data?.message || "Gagal mengajukan koreksi absen");
+      toast.error(error.response?.data?.message || "Gagal mengajukan koreksi absen");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleApprove = async (id: number) => {
-    const remark = prompt("Ketik catatan persetujuan (opsional):");
-    if (remark === null) return;
-
-    try {
-      await axiosInstance.post(`/attendance-corrections/${id}/approve`, { remark });
-      alert("Koreksi absen disetujui! Data absen telah diperbarui.");
-      fetchCorrections(page);
-    } catch (e) {
-      alert("Gagal memproses persetujuan.");
-    }
+    toast("Setujui koreksi absen?", {
+      description: "Data absen karyawan akan diperbarui secara otomatis.",
+      action: {
+        label: "Setujui",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/attendance-corrections/${id}/approve`, { remark: "Approved via dashboard" });
+            toast.success("Koreksi absen disetujui!");
+            fetchCorrections(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses persetujuan.");
+          }
+        }
+      }
+    });
   };
 
   const handleReject = async (id: number) => {
-    const remark = prompt("Ketik alasan penolakan (WAJIB):");
-    if (!remark) {
-      if (remark === "") alert("Alasan penolakan harus diisi!");
-      return;
-    }
-
-    try {
-      await axiosInstance.post(`/attendance-corrections/${id}/reject`, { remark });
-      alert("Koreksi absen ditolak.");
-      fetchCorrections(page);
-    } catch (e) {
-      alert("Gagal memproses penolakan.");
-    }
+    toast("Tolak koreksi absen?", {
+      description: "Silakan pilih alasan penolakan.",
+      action: {
+        label: "Tolak",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/attendance-corrections/${id}/reject`, { remark: "Rejected via dashboard" });
+            toast.success("Koreksi absen ditolak.");
+            fetchCorrections(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses penolakan.");
+          }
+        }
+      }
+    });
   };
 
   const getStatusBadge = (status: string) => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { 
   ArrowLeftRight, 
   Plus, 
@@ -131,44 +132,58 @@ export default function ShiftSwapPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.receiver_id || !formData.requester_schedule_id || !formData.receiver_schedule_id) {
-      alert("Mohon lengkapi semua pilihan jadwal.");
+      toast.warning("Mohon lengkapi semua pilihan jadwal.");
       return;
     }
 
     setIsSubmitLoading(true);
     try {
       await axiosInstance.post("/shift-swap", formData);
-      alert("Permintaan tukar shift berhasil dikirim!");
+      toast.success("Permintaan tukar shift berhasil dikirim!");
       setIsModalOpen(false);
       setFormData({ receiver_id: "", requester_schedule_id: "", receiver_schedule_id: "", reason: "" });
       fetchSwaps(1);
     } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal mengirim permintaan.");
+      toast.error(e.response?.data?.message || "Gagal mengirim permintaan.");
     } finally {
       setIsSubmitLoading(false);
     }
   };
 
   const handleRespond = async (id: number, status: 'approved_by_receiver' | 'rejected') => {
-    const remark = prompt("Masukkan catatan (opsional):");
-    try {
-      await axiosInstance.post(`/shift-swap/${id}/respond`, { status, remark });
-      alert("Respon berhasil dikirim.");
-      fetchSwaps(currentPage);
-    } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal memproses respon.");
-    }
+    toast(status === 'approved_by_receiver' ? "Terima tukar shift ini?" : "Tolak tukar shift ini?", {
+      description: status === 'approved_by_receiver' ? "Konfirmasi untuk menyetujui pertukaran." : "Anda akan menolak permintaan ini.",
+      action: {
+        label: status === 'approved_by_receiver' ? "Terima" : "Tolak",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/shift-swap/${id}/respond`, { status, remark: "" });
+            toast.success("Respon berhasil dikirim.");
+            fetchSwaps(currentPage);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses respon.");
+          }
+        },
+      },
+    });
   };
 
   const handleApprove = async (id: number, status: 'approved' | 'rejected') => {
-    if (!confirm(`Apakah Anda yakin ingin ${status === 'approved' ? 'menyetujui' : 'menolak'} tukar shift ini secara permanen?`)) return;
-    try {
-      await axiosInstance.post(`/shift-swap/${id}/approve`, { status });
-      alert(`Berhasil ${status === 'approved' ? 'menyetujui' : 'menolak'} pengajuan.`);
-      fetchSwaps(currentPage);
-    } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal memproses approval.");
-    }
+    toast(status === 'approved' ? "Setujui tukar shift?" : "Tolak tukar shift?", {
+      description: status === 'approved' ? "Konfirmasi persetujuan permanen." : "Pengajuan akan ditolak permanen.",
+      action: {
+        label: status === 'approved' ? "Setujui" : "Tolak",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/shift-swap/${id}/approve`, { status });
+            toast.success(`Berhasil ${status === 'approved' ? 'menyetujui' : 'menolak'} pengajuan.`);
+            fetchSwaps(currentPage);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses approval.");
+          }
+        },
+      },
+    });
   };
 
   const getStatusBadge = (status: string) => {

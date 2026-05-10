@@ -10,6 +10,7 @@ import {
   CheckCircle2, Clock, Pause, BarChart3, MapPin, Users, Building2,
   ArrowUpRight, ArrowDownRight, ChevronRight
 } from "lucide-react";
+import { toast } from "sonner";
 import { Skeleton, TableSkeleton } from "@/components/Skeleton";
 
 const TABS = [
@@ -104,24 +105,37 @@ export default function ProjectDetailPage() {
       else await axiosInstance.post(url, payload);
       setModal(null);
       fetchData();
-      alert("Data berhasil disimpan!");
-    } catch (e: any) { alert(e.response?.data?.message || "Gagal menyimpan."); }
+      toast.success("Data berhasil disimpan!");
+    } catch (e: any) { toast.error(e.response?.data?.message || "Gagal menyimpan."); }
     finally { setSubmitting(false); }
   };
 
   const deleteItem = async (url: string) => {
-    if (!confirm("Hapus data ini?")) return;
-    try { await axiosInstance.delete(url); fetchData(); } catch { alert("Gagal menghapus."); }
+    toast("Hapus data ini?", {
+      description: "Tindakan ini tidak dapat dibatalkan.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try { 
+            await axiosInstance.delete(url); 
+            toast.success("Data berhasil dihapus."); 
+            fetchData(); 
+          } catch { 
+            toast.error("Gagal menghapus data."); 
+          }
+        }
+      }
+    });
   };
 
   const approveCost = async (costId: number) => {
-    try { await axiosInstance.post(`/projects/${projectId}/costs/${costId}/approve`); fetchData(); }
-    catch { alert("Gagal."); }
+    try { await axiosInstance.post(`/projects/${projectId}/costs/${costId}/approve`); toast.success("Biaya disetujui."); fetchData(); }
+    catch { toast.error("Gagal."); }
   };
 
   const rejectCost = async (costId: number) => {
-    try { await axiosInstance.post(`/projects/${projectId}/costs/${costId}/reject`); fetchData(); }
-    catch { alert("Gagal."); }
+    try { await axiosInstance.post(`/projects/${projectId}/costs/${costId}/reject`); toast.success("Biaya ditolak."); fetchData(); }
+    catch { toast.error("Gagal."); }
   };
 
   if (loading) return (

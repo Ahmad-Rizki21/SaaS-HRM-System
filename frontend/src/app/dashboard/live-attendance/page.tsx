@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { Camera, MapPin, ScanFace, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -143,7 +144,7 @@ export default function LiveAttendancePage() {
 
   const handleAttendanceWithoutPhoto = async (type: 'check-in' | 'check-out') => {
     if (!location) {
-      alert("Menunggu titik koordinat lokasi GPS...");
+      toast.warning("Menunggu titik koordinat lokasi GPS...");
       return;
     }
 
@@ -160,12 +161,12 @@ export default function LiveAttendancePage() {
       const res = await axiosInstance.post(`/attendance/${type}`, payload);
       
       setStatusMsg(`Berhasil ${type === 'check-in' ? 'Absen Masuk' : 'Absen Keluar'}!`);
-      alert(`Sukses: ${res.data.message}`);
+      toast.success(res.data.message || `Berhasil ${type === 'check-in' ? 'Check-in' : 'Check-out'}!`);
       router.push('/dashboard');
       
     } catch (error: any) {
       setStatusMsg("Gagal melakukan absensi.");
-      alert(error.response?.data?.message || "Terjadi kesalahan sistem.");
+      toast.error(error.response?.data?.message || "Terjadi kesalahan sistem.");
     } finally {
       setLoading(false);
     }
@@ -173,12 +174,12 @@ export default function LiveAttendancePage() {
 
   const handleAttendance = async (type: 'check-in' | 'check-out') => {
     if (!location) {
-      alert("Menunggu titik koordinat lokasi GPS...");
+      toast.warning("Menunggu titik koordinat lokasi GPS...");
       return;
     }
 
     if (!videoRef.current || !canvasRef.current) {
-      alert("Kamera tidak siap!");
+      toast.error("Kamera tidak siap!");
       return;
     }
     
@@ -215,12 +216,12 @@ export default function LiveAttendancePage() {
         const res = await axiosInstance.post(`/attendance/${type}`, payload);
         
         setStatusMsg(`Berhasil ${type === 'check-in' ? 'Absen Masuk' : 'Absen Keluar'}!`);
-        alert(`Sukses: ${res.data.message}`);
+        toast.success(res.data.message || `Berhasil ${type === 'check-in' ? 'Check-in' : 'Check-out'}!`);
         router.push('/dashboard');
         
       } catch (error: any) {
         setStatusMsg("Gagal melakukan absensi.");
-        alert(error.response?.data?.message || "Terjadi kesalahan sistem.");
+        toast.error(error.response?.data?.message || "Terjadi kesalahan sistem.");
       } finally {
         setLoading(false);
       }
@@ -395,17 +396,6 @@ export default function LiveAttendancePage() {
         
       </div>
 
-      <style jsx>{`
-        @keyframes scan {
-          0% { top: 0; opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
-        }
-        .animate-scan {
-          animation: scan 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-      `}</style>
     </div>
   );
 }

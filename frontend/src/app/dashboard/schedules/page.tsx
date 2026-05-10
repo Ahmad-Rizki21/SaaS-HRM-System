@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { 
   Plus, 
   Search, 
@@ -116,23 +117,31 @@ export default function SchedulesPage() {
     setIsSubmitting(true);
     try {
       await axiosInstance.post("/schedules", scheduleData);
+      toast.success("Jadwal berhasil dibuat");
       setIsScheduleModalOpen(false);
       fetchSchedules(currentDate);
-    } catch (e) {
-      alert("Gagal membuat jadwal");
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Gagal membuat jadwal");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteSchedule = async (id: number) => {
-    if (!confirm("Hapus jadwal ini?")) return;
-    try {
-      await axiosInstance.delete(`/schedules/${id}`);
-      fetchSchedules(currentDate);
-    } catch (e) {
-      alert("Gagal menghapus jadwal");
-    }
+    toast("Hapus jadwal ini?", {
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/schedules/${id}`);
+            toast.success("Jadwal berhasil dihapus");
+            fetchSchedules(currentDate);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal menghapus jadwal");
+          }
+        },
+      },
+    });
   };
 
   const handleShiftSubmit = async (e: React.FormEvent) => {
@@ -141,27 +150,37 @@ export default function SchedulesPage() {
     try {
       if (editingShiftId) {
         await axiosInstance.put(`/shifts/${editingShiftId}`, shiftData);
+        toast.success("Shift berhasil diperbarui");
       } else {
         await axiosInstance.post("/shifts", shiftData);
+        toast.success("Shift berhasil ditambahkan");
       }
       setShiftData({ name: "", start_time: "", end_time: "" });
       setEditingShiftId(null);
       fetchShifts();
-    } catch (e) {
-      alert("Gagal menyimpan shift");
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Gagal menyimpan shift");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteShift = async (id: number) => {
-    if (!confirm("Hapus shift ini? Peringatan: Jadwal yang menggunakan shift ini mungkin terpengaruh.")) return;
-    try {
-      await axiosInstance.delete(`/shifts/${id}`);
-      fetchShifts();
-    } catch (e) {
-      alert("Gagal menghapus shift");
-    }
+    toast("Hapus shift ini?", {
+      description: "Jadwal yang menggunakan shift ini mungkin terpengaruh.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/shifts/${id}`);
+            toast.success("Shift berhasil dihapus");
+            fetchShifts();
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal menghapus shift");
+          }
+        },
+      },
+    });
   };
 
   const handleOpenAddSchedule = (date?: string) => {

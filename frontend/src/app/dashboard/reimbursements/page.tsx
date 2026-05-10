@@ -6,6 +6,7 @@ import { Plus, Search, Check, X, Eye, ReceiptCent, Upload, AlertCircle, XCircle 
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 export default function ReimbursementsPage() {
   const { hasPermission } = useAuth();
@@ -61,32 +62,39 @@ export default function ReimbursementsPage() {
   };
 
   const handleApprove = async (id: number) => {
-    const remark = prompt("Ketik catatan persetujuan (opsional):");
-    if (remark === null) return; // Cancelled
-    
-    try {
-      await axiosInstance.post(`/reimbursements/${id}/approve`, { remark });
-      alert("Klaim disetujui!");
-      fetchReimbursements(page);
-    } catch (e) {
-      alert("Gagal memproses klaim.");
-    }
+    toast("Setujui klaim ini?", {
+      description: "Konfirmasi persetujuan klaim reimbursement.",
+      action: {
+        label: "Setujui",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/reimbursements/${id}/approve`, { remark: "Disetujui oleh admin" });
+            toast.success("Klaim disetujui!");
+            fetchReimbursements(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses klaim.");
+          }
+        },
+      },
+    });
   };
 
   const handleReject = async (id: number) => {
-    const remark = prompt("Ketik alasan penolakan (WAJIB):");
-    if (!remark) {
-      if (remark === "") alert("Alasan penolakan harus diisi!");
-      return; // Cancelled or empty
-    }
-    
-    try {
-      await axiosInstance.post(`/reimbursements/${id}/reject`, { remark });
-      alert("Klaim ditolak.");
-      fetchReimbursements(page);
-    } catch (e) {
-      alert("Gagal memproses klaim.");
-    }
+    toast("Tolak klaim ini?", {
+      description: "Anda yakin ingin menolak pengajuan reimbursement ini?",
+      action: {
+        label: "Tolak",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/reimbursements/${id}/reject`, { remark: "Ditolak karena alasan administratif/tidak valid" });
+            toast.success("Klaim ditolak.");
+            fetchReimbursements(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses klaim.");
+          }
+        },
+      },
+    });
   };
 
   const handleViewDetail = (item: any) => {
@@ -112,7 +120,7 @@ export default function ReimbursementsPage() {
       await axiosInstance.post("/reimbursements", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("Klaim berhasil diajukan! Menunggu persetujuan admin.");
+      toast.success("Klaim berhasil diajukan! Menunggu persetujuan admin.");
       setIsModalOpen(false);
       setFormData({ title: "", amount: "", description: "", attachments: [] });
       fetchReimbursements(page);
@@ -120,10 +128,10 @@ export default function ReimbursementsPage() {
       if (e.response?.status === 422 && e.response?.data?.errors) {
         const errorDetails = Object.values(e.response.data.errors)
           .map((err: any) => err[0])
-          .join("\n");
-        alert(`Gagal: ${e.response.data.message}\n\n${errorDetails}`);
+          .join(", ");
+        toast.error(`Gagal: ${e.response.data.message}. ${errorDetails}`);
       } else {
-        alert(e.response?.data?.message || "Gagal mengajukan klaim.");
+        toast.error(e.response?.data?.message || "Gagal mengajukan klaim.");
       }
     } finally {
       setIsSubmitting(false);

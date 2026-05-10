@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { Search, Download, CheckCircle, Clock, Eye, X, MapPin, User as UserIcon, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
@@ -68,22 +69,30 @@ export default function AttendancePage() {
   };
 
   const handleExport = async () => {
-    try {
-      const response = await axiosInstance.get('/attendance/export', {
-        responseType: 'blob', // Penting untuk handle file
-      });
-      // Buat URL lokal untuk blob
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Riwayat_Absensi_${new Date().getTime()}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (e) {
-      console.error("Gagal mendownload laporan Excel", e);
-      alert("Gagal mengunduh Laporan Excel.");
-    }
+    toast("Unduh Laporan Absensi?", {
+      description: "Laporan akan diunduh dalam format Excel (.xlsx).",
+      action: {
+        label: "Unduh",
+        onClick: async () => {
+          try {
+            const response = await axiosInstance.get('/attendance/export', {
+              responseType: 'blob',
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Riwayat_Absensi_${new Date().getTime()}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.success("Laporan berhasil diunduh.");
+          } catch (e) {
+            console.error("Gagal mendownload laporan Excel", e);
+            toast.error("Gagal mengunduh Laporan Excel.");
+          }
+        }
+      }
+    });
   };
 
   return (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { 
   Download, Search, Calendar, User, ReceiptCent, Filter, Eye, 
   XCircle, ExternalLink, FileSpreadsheet, CheckSquare, Square
@@ -78,7 +79,7 @@ export default function ReimbursementReportsPage() {
     const dataToExport = selectedIds.length > 0 ? selectedData : filteredData;
     
     if (dataToExport.length === 0) {
-      alert("Tidak ada data untuk diexport!");
+      toast.warning("Tidak ada data untuk diexport!");
       return;
     }
 
@@ -108,7 +109,7 @@ export default function ReimbursementReportsPage() {
     const dataToPrint = selectedIds.length > 0 ? selectedData : filteredData;
 
     if (dataToPrint.length === 0) {
-      alert("Tidak ada data untuk dicetak!");
+      toast.warning("Tidak ada data untuk dicetak!");
       return;
     }
 

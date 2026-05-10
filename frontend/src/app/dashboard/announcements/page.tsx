@@ -5,6 +5,7 @@ import axiosInstance from "@/lib/axios";
 import { Plus, Megaphone, Calendar, User, Trash2, Edit2, Loader2, Info, X } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface Announcement {
   id: number;
@@ -36,10 +37,6 @@ export default function AnnouncementsPage() {
     title: "",
     content: ""
   });
-
-  // Modal delete
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [idToDelete, setIdToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     fetchAnnouncements(page);
@@ -88,28 +85,31 @@ export default function AnnouncementsPage() {
       }
       setIsModalOpen(false);
       fetchAnnouncements(page);
-    } catch (e) {
-      alert("Gagal menyimpan pengumuman.");
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Gagal menyimpan pengumuman.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const confirmDelete = (id: number) => {
-    setIdToDelete(id);
-    setIsDeleteModalOpen(true);
+    toast("Hapus pengumuman ini?", {
+      description: "Tindakan ini tidak dapat dibatalkan.",
+      action: {
+        label: "Hapus",
+        onClick: () => handleDelete(id),
+      },
+    });
   };
 
-  const handleDelete = async () => {
-    if (!idToDelete) return;
+  const handleDelete = async (id: number) => {
     setIsSubmitting(true);
     try {
-      await axiosInstance.delete(`/announcements/${idToDelete}`);
-      setIsDeleteModalOpen(false);
-      setIdToDelete(null);
+      await axiosInstance.delete(`/announcements/${id}`);
+      toast.success("Pengumuman berhasil dihapus.");
       fetchAnnouncements(page);
-    } catch (e) {
-      alert("Gagal menghapus pengumuman.");
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Gagal menghapus pengumuman.");
     } finally {
       setIsSubmitting(false);
     }
@@ -291,35 +291,6 @@ export default function AnnouncementsPage() {
           </div>
       )}
 
-      {/* Custom Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-              <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 p-8 text-center">
-                  <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500">
-                      <Trash2 size={40} />
-                  </div>
-                  <h3 className="text-xl font-black text-gray-900 mb-2">Hapus Pengumuman?</h3>
-                  <p className="text-gray-500 text-sm font-medium mb-8 leading-relaxed px-4">
-                      Tindakan ini tidak dapat dibatalkan. Pengumuman ini akan dihapus permanen dari sistem.
-                  </p>
-                  <div className="flex flex-col gap-3">
-                      <button 
-                        onClick={handleDelete}
-                        disabled={isSubmitting}
-                        className="w-full h-12 bg-rose-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-rose-200 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
-                      >
-                         {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : "Ya, Hapus Sekarang"}
-                      </button>
-                      <button 
-                        onClick={() => setIsDeleteModalOpen(false)}
-                        className="w-full h-12 bg-white text-gray-400 hover:text-gray-600 rounded-2xl text-sm font-bold transition-all"
-                      >
-                          Batal
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
     </div>
   );
 }

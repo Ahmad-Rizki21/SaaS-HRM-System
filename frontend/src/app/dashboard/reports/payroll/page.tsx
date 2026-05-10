@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Download, Search, FileSpreadsheet, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { ReportSkeleton } from "@/components/Skeleton";
 import * as XLSX from 'xlsx';
 
@@ -36,7 +37,10 @@ export default function ReportsPayrollPage() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Payroll_Preview");
     XLSX.writeFile(workbook, `Dummy_Template_Payroll_${new Date().getTime()}.xlsx`);
     
-    alert("Karena modul Payroll masih dikembangkan, file yang terunduh adalah DUMMY TEMPLATE sebagai pratinjau format laporan penggajian.");
+    toast.info("Pratinjau Penggajian", {
+      description: "Karena modul Payroll masih dikembangkan, file yang terunduh adalah DUMMY TEMPLATE sebagai pratinjau format laporan penggajian.",
+      duration: 6000,
+    });
   };
 
   return (

@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "Advanced Human Resource Management System - Efficiency in Time",
 };
 
+import { Toaster } from "@/components/ui/sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,6 +24,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${inter.className}`}>
         {children}
+        <Toaster position="top-center" expand={true} richColors />
       </body>
     </html>
   );

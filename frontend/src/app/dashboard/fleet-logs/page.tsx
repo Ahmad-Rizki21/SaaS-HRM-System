@@ -11,6 +11,7 @@ import {
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 function FleetLogsContent() {
   const { hasPermission } = useAuth();
@@ -141,7 +142,7 @@ function FleetLogsContent() {
       await axiosInstance.post("/vehicle-logs/departure", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("Pencatatan keberangkatan berhasil!");
+      toast.success("Pencatatan keberangkatan berhasil!");
       setIsDepartureModalOpen(false);
       setDepartureForm({
         vehicle_name: "", plate_number: "", purpose: "", destination: "",
@@ -153,9 +154,9 @@ function FleetLogsContent() {
     } catch (e: any) {
       if (e.response?.status === 422) {
         const errors = Object.values(e.response.data.errors || {}).map((er: any) => er[0]).join("\n");
-        alert(`Validasi gagal:\n${errors}`);
+        toast.error(`Validasi gagal: ${errors}`);
       } else {
-        alert(e.response?.data?.message || "Gagal mencatat keberangkatan.");
+        toast.error(e.response?.data?.message || "Gagal mencatat keberangkatan.");
       }
     } finally {
       setIsSubmitting(false);
@@ -187,7 +188,7 @@ function FleetLogsContent() {
       await axiosInstance.post(`/vehicle-logs/${selectedItem.id}/return`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert("Pencatatan kepulangan berhasil! Menunggu validasi.");
+      toast.success("Pencatatan kepulangan berhasil! Menunggu validasi.");
       setIsReturnModalOpen(false);
       setReturnForm({
         return_date: new Date().toISOString().split("T")[0],
@@ -199,9 +200,9 @@ function FleetLogsContent() {
     } catch (e: any) {
       if (e.response?.status === 422) {
         const errors = Object.values(e.response.data.errors || {}).map((er: any) => er[0]).join("\n");
-        alert(`Validasi gagal:\n${errors}`);
+        toast.error(`Validasi gagal: ${errors}`);
       } else {
-        alert(e.response?.data?.message || "Gagal mencatat kepulangan.");
+        toast.error(e.response?.data?.message || "Gagal mencatat kepulangan.");
       }
     } finally {
       setIsSubmitting(false);
@@ -209,32 +210,56 @@ function FleetLogsContent() {
   };
 
   const handleApprove = async (id: number) => {
-    const remark = prompt("Catatan validasi (opsional):");
-    if (remark === null) return;
-    try {
-      await axiosInstance.post(`/vehicle-logs/${id}/approve`, { remark });
-      alert("Log kendaraan divalidasi!");
-      fetchLogs(page);
-    } catch (e) { alert("Gagal memvalidasi."); }
+    toast("Validasi log kendaraan ini?", {
+      description: "Berikan catatan validasi (opsional).",
+      action: {
+        label: "Validasi",
+        onClick: async () => {
+          const remark = window.prompt("Catatan validasi (opsional):");
+          if (remark === null) return;
+          try {
+            await axiosInstance.post(`/vehicle-logs/${id}/approve`, { remark });
+            toast.success("Log kendaraan divalidasi!");
+            fetchLogs(page);
+          } catch (e) { toast.error("Gagal memvalidasi."); }
+        }
+      }
+    });
   };
 
   const handleReject = async (id: number) => {
-    const remark = prompt("Alasan penolakan (WAJIB):");
-    if (!remark) { if (remark === "") alert("Alasan wajib diisi!"); return; }
-    try {
-      await axiosInstance.post(`/vehicle-logs/${id}/reject`, { remark });
-      alert("Log kendaraan ditolak.");
-      fetchLogs(page);
-    } catch (e) { alert("Gagal menolak."); }
+    toast("Tolak log kendaraan ini?", {
+      description: "Alasan penolakan wajib diisi.",
+      action: {
+        label: "Tolak",
+        onClick: async () => {
+          const remark = window.prompt("Alasan penolakan (WAJIB):");
+          if (!remark) { if (remark === "") toast.warning("Alasan wajib diisi!"); return; }
+          try {
+            await axiosInstance.post(`/vehicle-logs/${id}/reject`, { remark });
+            toast.success("Log kendaraan ditolak.");
+            fetchLogs(page);
+          } catch (e) { toast.error("Gagal menolak."); }
+        }
+      }
+    });
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Hapus log kendaraan ini?")) return;
-    try {
-      await axiosInstance.delete(`/vehicle-logs/${id}`);
-      alert("Log dihapus.");
-      fetchLogs(page);
-    } catch (e: any) { alert(e.response?.data?.message || "Gagal menghapus."); }
+    toast("Hapus log kendaraan ini?", {
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/vehicle-logs/${id}`);
+            toast.success("Log dihapus.");
+            fetchLogs(page);
+          } catch (e: any) { 
+            toast.error(e.response?.data?.message || "Gagal menghapus."); 
+          }
+        }
+      }
+    });
   };
 
   const openReturnModal = (item: any) => {

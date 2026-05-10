@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { PayrollSkeleton } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 export default function PayrollHistoryPage() {
   const { t } = useLanguage();
@@ -56,7 +57,7 @@ export default function PayrollHistoryPage() {
       link.click();
       link.remove();
     } catch (e) {
-      alert("Gagal ekspor Excel");
+      toast.error("Gagal ekspor Excel");
     } finally {
       setExporting(false);
     }
@@ -75,7 +76,7 @@ export default function PayrollHistoryPage() {
       link.click();
       link.remove();
     } catch (e) {
-      alert("Gagal unduh PDF");
+      toast.error("Gagal unduh PDF");
     }
   };
 
@@ -87,7 +88,7 @@ export default function PayrollHistoryPage() {
       const res = await axiosInstance.get(`/payroll/preview-slip/${salary.id}`);
       setPreviewHtml(res.data.html);
     } catch (e) {
-      alert("Gagal memuat preview slip gaji");
+      toast.error("Gagal memuat preview slip gaji");
       setPreviewOpen(false);
     } finally {
       setPreviewLoading(false);

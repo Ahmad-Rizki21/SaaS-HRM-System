@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { Plus, Search, Check, X, Eye, Plane, Printer } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import SignaturePad from "@/components/SignaturePad";
@@ -59,51 +60,58 @@ export default function LeavesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.signature) {
-      alert("Tanda tangan digital wajib diisi!");
+      toast.warning("Tanda tangan digital wajib diisi!");
       return;
     }
     
     setIsSubmitting(true);
     try {
       await axiosInstance.post("/leave", formData);
-      alert("Pengajuan cuti berhasil! Menunggu persetujuan.");
+      toast.success("Pengajuan cuti berhasil! Menunggu persetujuan.");
       setIsModalOpen(false);
       setFormData({ start_date: "", end_date: "", type: "Cuti Tahunan", reason: "", signature: "" });
       fetchLeaves(page);
     } catch (error: any) {
-      alert(error.response?.data?.message || "Gagal mengajukan cuti");
+      toast.error(error.response?.data?.message || "Gagal mengajukan cuti");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleApprove = async (id: number) => {
-    const remark = prompt("Ketik catatan persetujuan (opsional):");
-    if (remark === null) return;
-    
-    try {
-      await axiosInstance.post(`/leave/${id}/approve`, { remark });
-      alert("Cuti disetujui!");
-      fetchLeaves(page);
-    } catch (e) {
-      alert("Gagal memproses persetujuan.");
-    }
+    toast("Setujui cuti ini?", {
+      description: "Berikan catatan persetujuan jika diperlukan.",
+      action: {
+        label: "Setujui",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/leave/${id}/approve`, { remark: "" });
+            toast.success("Cuti disetujui!");
+            fetchLeaves(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses persetujuan.");
+          }
+        },
+      },
+    });
   };
 
   const handleReject = async (id: number) => {
-    const remark = prompt("Ketik alasan penolakan (WAJIB):");
-    if (!remark) {
-      if (remark === "") alert("Alasan penolakan harus diisi!");
-      return;
-    }
-    
-    try {
-      await axiosInstance.post(`/leave/${id}/reject`, { remark });
-      alert("Cuti ditolak.");
-      fetchLeaves(page);
-    } catch (e) {
-      alert("Gagal memproses penolakan.");
-    }
+    toast("Tolak cuti ini?", {
+      description: "Anda yakin ingin menolak pengajuan cuti ini?",
+      action: {
+        label: "Tolak",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/leave/${id}/reject`, { remark: "Ditolak oleh sistem/atasan" });
+            toast.success("Cuti ditolak.");
+            fetchLeaves(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses penolakan.");
+          }
+        },
+      },
+    });
   };
 
   const handleViewDetail = (item: any) => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense, useCallback } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { Plus, Search, Edit2, Trash2, X, FileUp, FileDown, User as UserIcon, Camera, MoreVertical, ArrowRightLeft, UserX, ShieldAlert, CreditCard, Mail, MapPin, Phone, Building2, Calendar, BadgeCheck, Clock, Eye } from "lucide-react";
 import * as XLSX from "xlsx";
 import { useAuth } from "@/contexts/AuthContext";
@@ -114,12 +115,9 @@ function EmployeesContent() {
   });
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  // Delete modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  // Delete state
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const [potentialSupervisors, setPotentialSupervisors] = useState<{id: number, name: string}[]>([]);
@@ -143,11 +141,11 @@ function EmployeesContent() {
     try {
       // Mock request
       await new Promise(r => setTimeout(r, 800));
-      alert(`Tindakan disiplin untuk ${disciplinedEmployee?.name} berhasil dicatat.`);
+      toast.success(`Tindakan disiplin untuk ${disciplinedEmployee?.name} berhasil dicatat.`);
       setDisciplineModalOpen(false);
       setDisciplineNote("");
     } catch (e) {
-      alert("Gagal mencatat tindakan disiplin");
+      toast.error("Gagal mencatat tindakan disiplin");
     } finally {
       setIsSubmitting(false);
     }
@@ -525,112 +523,134 @@ function EmployeesContent() {
         await axiosInstance.post("/employees", data, {
           headers: { "Content-Type": "multipart/form-data" }
         });
-        alert("Karyawan baru berhasil ditambahkan! Undangan email sedang dikirim.");
+        toast.success("Karyawan baru berhasil ditambahkan! Undangan email sedang dikirim.");
       } else {
         data.append('_method', 'PUT');
         await axiosInstance.post(`/employees/${formData.id}`, data, {
           headers: { "Content-Type": "multipart/form-data" }
         });
-        alert("Berhasil memperbarui data karyawan!");
+        toast.success("Berhasil memperbarui data karyawan!");
       }
       handleCloseModal();
       fetchEmployees(pagination?.current_page || 1);
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data.");
+      toast.error(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleResendVerification = async (id?: number) => {
-    try {
-      setIsSubmitting(true);
-      if (id) {
-        await axiosInstance.post(`/employees/${id}/resend-verification`);
-        setErrorMessage("Email verifikasi berhasil dikirim ulang.");
-        setModalType("success");
-        setErrorModalOpen(true);
-      } else {
-        // If there are selected IDs, we use those.
-        let idsToResend: number[] = [];
-        
-        if (selectedIds.length > 0) {
-          idsToResend = selectedIds;
+    const executeResend = async (targetId?: number) => {
+      try {
+        setIsSubmitting(true);
+        if (targetId) {
+          await axiosInstance.post(`/employees/${targetId}/resend-verification`);
+          toast.success("Email verifikasi berhasil dikirim ulang.");
         } else {
-          // Banner logic: resend to all unverified on current page
-          idsToResend = employees.filter(e => !e.email_verified_at).map(e => e.id);
-        }
+          let idsToResend: number[] = [];
+          if (selectedIds.length > 0) {
+            idsToResend = selectedIds;
+          } else {
+            idsToResend = employees.filter(e => !e.email_verified_at).map(e => e.id);
+          }
 
-        if (idsToResend.length === 0) {
-          setErrorMessage("Tidak ada karyawan yang perlu diverifikasi.");
-          setModalType("error");
-          setErrorModalOpen(true);
-          return;
-        }
+          if (idsToResend.length === 0) {
+            toast.info("Tidak ada karyawan yang perlu diverifikasi.");
+            return;
+          }
 
-        await axiosInstance.post(`/employees/bulk-resend-verification`, { ids: idsToResend });
-        setErrorMessage(`Berhasil mengirim ulang ${idsToResend.length} email verifikasi.`);
-        setModalType("success");
-        setErrorModalOpen(true);
-        setSelectedIds([]);
+          await axiosInstance.post(`/employees/bulk-resend-verification`, { ids: idsToResend });
+          toast.success(`Berhasil mengirim ulang ${idsToResend.length} email verifikasi.`);
+          setSelectedIds([]);
+        }
+      } catch (e: any) {
+        toast.error(e.response?.data?.message || "Gagal mengirim ulang verifikasi.");
+      } finally {
+        setIsSubmitting(false);
+        setActionMenuId(null);
       }
-    } catch (e: any) {
-      setErrorMessage(e.response?.data?.message || "Gagal mengirim ulang verifikasi.");
-      setModalType("error");
-      setErrorModalOpen(true);
-    } finally {
-      setIsSubmitting(false);
-      setActionMenuId(null);
+    };
+
+    if (id) {
+      toast("Kirim ulang verifikasi?", {
+        description: "Link verifikasi baru akan dikirim ke email karyawan.",
+        action: {
+          label: "Kirim",
+          onClick: () => executeResend(id)
+        }
+      });
+    } else {
+      executeResend();
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deleteId) return;
-    setIsSubmitting(true);
-    try {
-      await axiosInstance.delete(`/employees/${deleteId}`);
-      alert("Karyawan berhasil dihapus.");
-      setDeleteModalOpen(false);
-      fetchEmployees(pagination?.current_page || 1);
-    } catch (e) {
-      console.error(e);
-      alert("Gagal menghapus data karyawan.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleResetDevice = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin meriset Device ID karyawan ini? Ini akan memungkinkan karyawan login di perangkat baru.")) return;
-    setIsSubmitting(true);
-    try {
-      await axiosInstance.post(`/employees/${id}/reset-device`);
-      alert("Device ID berhasil direset!");
-      fetchEmployees(pagination?.current_page || 1);
-    } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal mereset Device ID.");
-    } finally {
-      setIsSubmitting(false);
-      setActionMenuId(null);
-    }
+  const handleConfirmDelete = async (id: number) => {
+    toast("Hapus karyawan ini?", {
+      description: "Peringatan: Semua data yang terhubung dengan pekerja ini (absensi, cuti, dll) akan kehilangan akses loginnya.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          setIsSubmitting(true);
+          try {
+            await axiosInstance.delete(`/employees/${id}`);
+            toast.success("Karyawan berhasil dihapus.");
+            fetchEmployees(pagination?.current_page || 1);
+          } catch (e) {
+            toast.error("Gagal menghapus data karyawan.");
+          } finally {
+            setIsSubmitting(false);
+          }
+        }
+      }
+    });
   };
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    setIsSubmitting(true);
-    try {
-      await axiosInstance.post("/employees/bulk-delete", { ids: selectedIds });
-      alert(`${selectedIds.length} karyawan berhasil dihapus.`);
-      setBulkDeleteModalOpen(false);
-      setSelectedIds([]);
-      fetchEmployees(pagination?.current_page || 1);
-    } catch (e) {
-      console.error(e);
-      alert("Gagal menghapus data karyawan secara massal.");
-    } finally {
-      setIsSubmitting(false);
-    }
+
+    toast(`Hapus ${selectedIds.length} karyawan?`, {
+      description: "Peringatan: Semua data yang terhubung dengan pekerja terpilih akan dihapus secara permanen.",
+      action: {
+        label: "Hapus Semua",
+        onClick: async () => {
+          setIsSubmitting(true);
+          try {
+            await axiosInstance.post(`/employees/bulk-delete`, { ids: selectedIds });
+            toast.success(`${selectedIds.length} karyawan berhasil dihapus.`);
+            setSelectedIds([]);
+            fetchEmployees(pagination?.current_page || 1);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal menghapus beberapa data karyawan.");
+          } finally {
+            setIsSubmitting(false);
+          }
+        }
+      }
+    });
+  };
+
+  const handleResetDevice = async (id: number) => {
+    toast("Apakah Anda yakin ingin meriset Device ID karyawan ini?", {
+      description: "Ini akan memungkinkan karyawan login di perangkat baru.",
+      action: {
+        label: "Reset",
+        onClick: async () => {
+          setIsSubmitting(true);
+          try {
+            await axiosInstance.post(`/employees/${id}/reset-device`);
+            toast.success("Device ID berhasil direset!");
+            fetchEmployees(pagination?.current_page || 1);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal mereset Device ID.");
+          } finally {
+            setIsSubmitting(false);
+          }
+        }
+      }
+    });
+    setActionMenuId(null);
   };
 
   const getRoleBadgeColor = (roleName?: string) => {
@@ -769,7 +789,7 @@ function EmployeesContent() {
                </button>
 
                <button 
-                 onClick={() => setBulkDeleteModalOpen(true)}
+                 onClick={handleBulkDelete}
                  className="flex items-center gap-2 px-6 py-2 bg-red-50 text-red-600 rounded-full text-xs font-black hover:bg-red-100 transition-all border border-red-100 shadow-sm"
                >
                  <Trash2 size={14} />
@@ -942,7 +962,7 @@ function EmployeesContent() {
                                     </button>
                                     
                                     <button 
-                                      onClick={() => { setDeleteId(emp.id); setDeleteModalOpen(true); setActionMenuId(null); }}
+                                      onClick={() => { handleConfirmDelete(emp.id); setActionMenuId(null); }}
                                       className="w-full flex items-center gap-3 p-3 text-left hover:bg-red-50/50 rounded-xl transition-colors group/item"
                                     >
                                         <div className="w-9 h-9 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 group-hover/item:bg-red-100 group-hover/item:text-red-600 transition-colors">
@@ -1358,65 +1378,7 @@ function EmployeesContent() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteModalOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center animate-in fade-in zoom-in-95 duration-200">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <Trash2 className="h-6 w-6 text-red-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Hapus Karyawan?</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Peringatan: Semua data yang terhubung dengan pekerja ini (absensi, cuti, dll) akan kehilangan akses loginnya. Tindakan tidak bisa dibatalkan secara manual.
-            </p>
-            <div className="flex gap-3 w-full">
-              <button 
-                onClick={() => setDeleteModalOpen(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Batal
-              </button>
-              <button 
-                onClick={handleConfirmDelete}
-                disabled={isSubmitting}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-              >
-                {isSubmitting ? "Proses..." : "Ya, Hapus!"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Bulk Delete confirmation Modal */}
-      {bulkDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center animate-in fade-in zoom-in-95 duration-200">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <Trash2 className="h-6 w-6 text-red-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Hapus Massal?</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Peringatan: Kamu akan menghapus **{selectedIds.length}** data karyawan sekaligus. Tindakan ini tidak dapat dibatalkan.
-            </p>
-            <div className="flex gap-3 w-full">
-              <button 
-                onClick={() => setBulkDeleteModalOpen(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Batal
-              </button>
-              <button 
-                onClick={handleBulkDelete}
-                disabled={isSubmitting}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-              >
-                {isSubmitting ? "Menghapus..." : "Ya, Hapus Semua"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* View Data Modal */}
       {viewModalOpen && viewedEmployee && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">

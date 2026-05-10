@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Check, X, Eye } from "lucide-react";
 import { TableSkeleton } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 export default function RequestsPage() {
   const [leaves, setLeaves] = useState<any[]>([]);
@@ -32,6 +33,42 @@ export default function RequestsPage() {
       case 'rejected': return <span className="dash-badge dash-badge-danger">Ditolak</span>;
       default: return <span className="dash-badge dash-badge-neutral">{status}</span>;
     }
+  };
+
+  const handleApprove = async (id: number) => {
+    toast("Setujui pengajuan cuti?", {
+      description: "Tindakan ini akan memotong saldo cuti karyawan jika disetujui.",
+      action: {
+        label: "Setujui",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/leave/${id}/approve`, { remark: "Approved via Dashboard" });
+            toast.success("Pengajuan cuti disetujui.");
+            fetchLeaves();
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal menyetujui cuti.");
+          }
+        }
+      }
+    });
+  };
+
+  const handleReject = async (id: number) => {
+    toast("Tolak pengajuan cuti?", {
+      description: "Anda yakin ingin menolak pengajuan ini?",
+      action: {
+        label: "Tolak",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/leave/${id}/reject`, { remark: "Rejected via Dashboard" });
+            toast.success("Pengajuan cuti ditolak.");
+            fetchLeaves();
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal menolak cuti.");
+          }
+        }
+      }
+    });
   };
 
   return (
@@ -101,8 +138,20 @@ export default function RequestsPage() {
                     <td className="text-right">
                       {leave.status === 'pending' ? (
                         <div className="flex items-center justify-end gap-1">
-                          <button className="dash-action-btn edit" title="Setujui"><Check size={16} /></button>
-                          <button className="dash-action-btn delete" title="Tolak"><X size={16} /></button>
+                          <button 
+                            className="dash-action-btn edit" 
+                            title="Setujui"
+                            onClick={() => handleApprove(leave.id)}
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button 
+                            className="dash-action-btn delete" 
+                            title="Tolak"
+                            onClick={() => handleReject(leave.id)}
+                          >
+                            <X size={16} />
+                          </button>
                         </div>
                       ) : (
                         <div className="flex items-center justify-end">

@@ -22,6 +22,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localesID } from "date-fns/locale";
 import TaskActivitiesModal from "@/components/TaskActivitiesModal";
@@ -157,7 +158,7 @@ export default function TasksPage() {
       setAssignType('users');
       fetchTasks();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Gagal membuat tugas");
+      toast.error(error.response?.data?.message || "Gagal membuat tugas");
     } finally {
       setIsSubmitting(false);
     }
@@ -207,13 +208,21 @@ export default function TasksPage() {
   };
 
   const handleDeleteTask = async (taskId: number) => {
-    if (!confirm(t('confirm_delete'))) return;
-    try {
-      await axiosInstance.delete(`/tasks/${taskId}`);
-      fetchTasks();
-    } catch (error) {
-       console.error("Failed to delete task");
-    }
+    toast("Hapus tugas ini?", {
+      description: "Tugas yang dihapus tidak dapat dikembalikan.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/tasks/${taskId}`);
+            toast.success("Tugas berhasil dihapus");
+            fetchTasks();
+          } catch (error) {
+            toast.error("Gagal menghapus tugas");
+          }
+        },
+      },
+    });
   };
 
   const getStatusStyle = (status: string) => {

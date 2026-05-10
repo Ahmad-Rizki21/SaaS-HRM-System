@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Skeleton, TableSkeleton } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 export default function PayrollApprovalPage() {
   const { t } = useLanguage();
@@ -62,20 +63,25 @@ export default function PayrollApprovalPage() {
   };
 
   const handleStatusChange = async (action: 'submit' | 'approve' | 'reject' | 'paid', note?: string) => {
-    if (!confirm(`Are you sure you want to ${action} this payroll batch?`)) return;
-    
-    try {
-      setSubmitting(true);
-      const payload = action === 'reject' ? { rejection_note: note || 'Rejected' } : {};
-      await axiosInstance.post(`/payroll/batches/${selectedBatch.id}/${action}`, payload);
-      alert(`Payroll ${action} successful`);
-      fetchBatches();
-      handleSelectBatch(selectedBatch);
-    } catch (e: any) {
-      alert(e.response?.data?.message || 'Action failed');
-    } finally {
-      setSubmitting(false);
-    }
+    toast(`Apakah Anda yakin ingin melakukan ${action} pada batch payroll ini?`, {
+      action: {
+        label: "Ya",
+        onClick: async () => {
+          try {
+            setSubmitting(true);
+            const payload = action === 'reject' ? { rejection_note: note || 'Rejected' } : {};
+            await axiosInstance.post(`/payroll/batches/${selectedBatch.id}/${action}`, payload);
+            toast.success(`Payroll ${action} berhasil`);
+            fetchBatches();
+            handleSelectBatch(selectedBatch);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || 'Aksi gagal');
+          } finally {
+            setSubmitting(false);
+          }
+        }
+      }
+    });
   };
 
   const handleSaveSalary = async (e: React.FormEvent) => {
@@ -83,12 +89,12 @@ export default function PayrollApprovalPage() {
     try {
       setSubmitting(true);
       await axiosInstance.put(`/payroll/salaries/${editingSalary.id}`, editingSalary);
-      alert('Salary details updated');
+      toast.success('Detail gaji berhasil diperbarui');
       setEditingSalary(null);
       handleSelectBatch(selectedBatch); // refresh details
       fetchBatches(); // refresh total summary
     } catch (e: any) {
-      alert(e.response?.data?.message || 'Failed to update');
+      toast.error(e.response?.data?.message || 'Gagal memperbarui data');
     } finally {
       setSubmitting(false);
     }
@@ -96,24 +102,30 @@ export default function PayrollApprovalPage() {
 
   const handleDeletePayrollBatch = async () => {
     if (!batchDetails) return;
-    if (!confirm("Apakah Anda yakin ingin menghapus draft payroll ini? Semua data penyesuaian akan hilang.")) return;
-
-    setSubmitting(true);
-    try {
-      await axiosInstance.delete(`/payroll/batches/${batchDetails.id}`);
-      setBatchDetails(null);
-      setSelectedBatch(null);
-      
-      // Refresh list
-      const response = await axiosInstance.get('/payroll/batches');
-      setBatches(response.data.data);
-      
-      alert("Draft payroll berhasil dihapus");
-    } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal menghapus draft");
-    } finally {
-      setSubmitting(false);
-    }
+    toast("Apakah Anda yakin ingin menghapus draft payroll ini?", {
+      description: "Semua data penyesuaian akan hilang.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          setSubmitting(true);
+          try {
+            await axiosInstance.delete(`/payroll/batches/${batchDetails.id}`);
+            setBatchDetails(null);
+            setSelectedBatch(null);
+            
+            // Refresh list
+            const response = await axiosInstance.get('/payroll/batches');
+            setBatches(response.data.data);
+            
+            toast.success("Draft payroll berhasil dihapus");
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal menghapus draft");
+          } finally {
+            setSubmitting(false);
+          }
+        }
+      }
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -146,7 +158,7 @@ export default function PayrollApprovalPage() {
       const res = await axiosInstance.get(`/payroll/preview-slip/${salary.id}`);
       setPreviewHtml(res.data.html);
     } catch (e) {
-      alert("Gagal memuat preview slip gaji");
+      toast.error("Gagal memuat preview slip gaji");
       setPreviewOpen(false);
     } finally {
       setPreviewLoading(false);
@@ -164,7 +176,7 @@ export default function PayrollApprovalPage() {
       link.click();
       link.remove();
     } catch (e) {
-      alert("Gagal mengunduh slip");
+      toast.error("Gagal mengunduh slip");
     }
   };
 
@@ -285,7 +297,7 @@ export default function PayrollApprovalPage() {
                         link.click();
                         link.remove();
                       } catch (e) {
-                        alert("Gagal mengunduh rekap");
+                        toast.error("Gagal mengunduh rekap");
                       }
                     }}
                     className="h-10 px-4 bg-emerald-50 text-emerald-600 rounded-xl font-bold flex items-center gap-2 hover:bg-emerald-100 transition-colors"
@@ -347,8 +359,16 @@ export default function PayrollApprovalPage() {
                     <>
                       <button 
                         onClick={() => {
-                          const note = prompt("Alasan penolakan:");
-                          if (note) handleStatusChange('reject', note);
+                          toast("Tolak payroll ini?", {
+                            description: "Berikan alasan penolakan untuk revisi.",
+                            action: {
+                              label: "Tolak",
+                              onClick: () => {
+                                const note = window.prompt("Alasan penolakan:");
+                                if (note) handleStatusChange('reject', note);
+                              }
+                            }
+                          });
                         }}
                         disabled={submitting}
                         className="flex-1 h-12 bg-white border border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-50 transition-all shadow-sm"

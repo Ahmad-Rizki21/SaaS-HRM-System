@@ -6,6 +6,7 @@ import { Plus, Search, Check, X, Eye, Clock, Printer, FileDown } from "lucide-re
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 export default function OvertimesPage() {
   const { hasPermission, user } = useAuth();
@@ -61,12 +62,12 @@ export default function OvertimesPage() {
     setIsSubmitting(true);
     try {
       await axiosInstance.post("/overtimes", formData);
-      alert("Pengajuan lembur berhasil! Menunggu persetujuan.");
+      toast.success("Pengajuan lembur berhasil! Menunggu persetujuan.");
       setIsModalOpen(false);
       setFormData({ date: "", start_time: "", end_time: "", reason: "" });
       fetchOvertimes(page);
     } catch (error: any) {
-      alert(error.response?.data?.message || "Gagal mengajukan lembur");
+      toast.error(error.response?.data?.message || "Gagal mengajukan lembur");
     } finally {
       setIsSubmitting(false);
     }
@@ -82,7 +83,7 @@ export default function OvertimesPage() {
     if (!action || !id) return;
 
     if (action === 'reject' && !remarkInput.trim()) {
-        alert("Alasan penolakan WAJIB diisi!");
+        toast.warning("Alasan penolakan WAJIB diisi!");
         return;
     }
 
@@ -90,10 +91,10 @@ export default function OvertimesPage() {
     
     try {
       await axiosInstance.post(`/overtimes/${id}/${action}`, { remark: remarkInput });
-      alert(`Lembur ${action === 'approve' ? 'disetujui' : 'ditolak'}.`);
+      toast.success(`Lembur ${action === 'approve' ? 'disetujui' : 'ditolak'}.`);
       fetchOvertimes(page);
     } catch (e: any) {
-      alert("Gagal memproses persetujuan: " + (e.response?.data?.message || "Kesalahan server"));
+      toast.error("Gagal memproses persetujuan: " + (e.response?.data?.message || "Kesalahan server"));
     }
   };
 
@@ -117,7 +118,7 @@ export default function OvertimesPage() {
       link.remove();
     } catch (e) {
       console.error("Gagal mengekspor data lembur", e);
-      alert("Gagal mengekspor data lembur. Silakan coba lagi nanti.");
+      toast.error("Gagal mengekspor data lembur. Silakan coba lagi nanti.");
     }
   };
 

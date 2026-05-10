@@ -43,6 +43,7 @@ import { ErrorModal } from "@/components/ErrorModal";
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import Cookies from 'js-cookie';
+import { toast } from 'sonner';
 
 /**
  * PdfEmbed: Fetches PDF via authenticated API and renders using blob URL.
@@ -230,19 +231,21 @@ export default function DocumentsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus dokumen ini?')) return;
-
-    try {
-      await axiosInstance.delete(`/documents/${id}`);
-      setModalType("success");
-      setModalMessage('Dokumen berhasil dihapus');
-      setIsErrorModalOpen(true);
-      fetchDocuments();
-    } catch (error) {
-      setModalType("error");
-      setModalMessage('Gagal menghapus dokumen');
-      setIsErrorModalOpen(true);
-    }
+    toast("Hapus dokumen ini?", {
+      description: "Tindakan ini tidak dapat dibatalkan.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/documents/${id}`);
+            toast.success("Dokumen berhasil dihapus");
+            fetchDocuments();
+          } catch (error) {
+            toast.error("Gagal menghapus dokumen");
+          }
+        },
+      },
+    });
   };
 
   const resetForm = () => {

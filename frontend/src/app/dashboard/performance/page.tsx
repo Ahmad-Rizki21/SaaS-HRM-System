@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { 
   Users, UserCheck, Search, Filter, Plus, Calendar, Star, MoreVertical,
   Eye, Edit, Trash2, CheckCircle, Clock, AlertCircle, X, ArrowUpRight
@@ -93,16 +94,16 @@ export default function PerformanceReviewsPage() {
     try {
       if (editingId) {
         await axiosInstance.put(`/kpi-reviews/${editingId}`, formData);
-        alert("Review KPI berhasil diperbarui!");
+        toast.success("Review KPI berhasil diperbarui!");
       } else {
         await axiosInstance.post('/kpi-reviews', formData);
-        alert("Review KPI berhasil disimpan!");
+        toast.success("Review KPI berhasil disimpan!");
       }
       setIsModalOpen(false);
       setEditingId(null);
       fetchReviews();
     } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal menyimpan review");
+      toast.error(e.response?.data?.message || "Gagal menyimpan review");
     } finally {
       setSubmitting(false);
     }
@@ -130,7 +131,7 @@ export default function PerformanceReviewsPage() {
       const res = await axiosInstance.get(`/kpi-reviews/${id}`);
       setViewingReview(res.data.data);
     } catch (e) {
-      alert("Gagal memuat detail review");
+      toast.error("Gagal memuat detail review");
     }
   };
 
@@ -217,7 +218,7 @@ export default function PerformanceReviewsPage() {
     
     img.onerror = () => {
        // Fallback without logo if error
-       alert("Gagal memuat logo, sistem akan mencetak tanpa logo.");
+       toast.warning("Gagal memuat logo, sistem akan mencetak tanpa logo.");
        doc.setFontSize(22);
        doc.setTextColor(139, 0, 0); 
        doc.text("LAPORAN PENILAIAN KPI", 105, 25, { align: 'center' });
@@ -227,11 +228,21 @@ export default function PerformanceReviewsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Hapus review ini?")) return;
-    try {
-      await axiosInstance.delete(`/kpi-reviews/${id}`);
-      fetchReviews();
-    } catch (e) { console.error(e); }
+    toast("Hapus review ini?", {
+      description: "Review yang dihapus tidak dapat dipulihkan.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/kpi-reviews/${id}`);
+            toast.success("Review berhasil dihapus.");
+            fetchReviews();
+          } catch (e) {
+            toast.error("Gagal menghapus review.");
+          }
+        }
+      }
+    });
   };
 
   const isAdmin = user?.role?.name === 'Admin' || user?.role?.name === 'Super Admin' || user?.role?.name === 'HR';

@@ -6,6 +6,7 @@ import { Save, Building2, MapPin, Mail, Phone, Loader2, Camera, Target } from "l
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { CompanySkeleton } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 export default function CompanySettingsPage() {
   const { hasPermission } = useAuth();
@@ -72,12 +73,12 @@ export default function CompanySettingsPage() {
         headers: { "Content-Type": "multipart/form-data" }
       });
       
-      alert(t('success_save'));
+      toast.success(t('success_save'));
       fetchCompany();
     } catch (e: any) {
       console.error("Error updating company:", e.response?.data || e);
       const errorMessage = e.response?.data?.message || t('failed_to_fetch');
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

@@ -6,6 +6,7 @@ import { Plus, Search, Check, X, Eye, ReceiptCent, Upload, AlertCircle, XCircle,
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
+import { toast } from "sonner";
 
 export default function FundRequestsPage() {
   const { hasPermission, user } = useAuth();
@@ -59,31 +60,38 @@ export default function FundRequestsPage() {
   };
 
   const handleApprove = async (id: number) => {
-    if (!confirm("Setujui pengajuan dana ini?")) return;
-    
-    try {
-      await axiosInstance.post(`/fund-requests/${id}/approve`);
-      alert("Pengajuan disetujui!");
-      fetchRequests(page);
-    } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal memproses pengajuan.");
-    }
+    toast("Setujui pengajuan dana ini?", {
+      action: {
+        label: "Setujui",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/fund-requests/${id}/approve`);
+            toast.success("Pengajuan disetujui!");
+            fetchRequests(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses pengajuan.");
+          }
+        }
+      }
+    });
   };
 
   const handleReject = async (id: number) => {
-    const reason = prompt("Ketik alasan penolakan (WAJIB):");
-    if (!reason) {
-      if (reason === "") alert("Alasan penolakan harus diisi!");
-      return;
-    }
-    
-    try {
-      await axiosInstance.post(`/fund-requests/${id}/reject`, { reject_reason: reason });
-      alert("Pengajuan ditolak.");
-      fetchRequests(page);
-    } catch (e) {
-      alert("Gagal memproses pengajuan.");
-    }
+    toast("Tolak pengajuan dana ini?", {
+      description: "Anda yakin ingin menolak pengajuan ini?",
+      action: {
+        label: "Tolak",
+        onClick: async () => {
+          try {
+            await axiosInstance.post(`/fund-requests/${id}/reject`, { reject_reason: "Ditolak oleh atasan/sistem" });
+            toast.success("Pengajuan ditolak.");
+            fetchRequests(page);
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal memproses penolakan.");
+          }
+        },
+      },
+    });
   };
 
   const handleViewDetail = (item: any) => {
@@ -111,12 +119,12 @@ export default function FundRequestsPage() {
           reason: formData.reason,
           attachment: base64Attachment
       });
-      alert("Pengajuan dana berhasil dikirim!");
+      toast.success("Pengajuan dana berhasil dikirim!");
       setIsModalOpen(false);
       setFormData({ amount: "", reason: "", attachment: null });
       fetchRequests(page);
     } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal mengajukan dana.");
+      toast.error(e.response?.data?.message || "Gagal mengajukan dana.");
     } finally {
       setIsSubmitting(false);
     }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Calendar, Trash2, Edit2, Loader2, Info, X, MapPin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -32,10 +33,6 @@ export default function HolidaysPage() {
     date: ""
   });
 
-  // Modal delete
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [idToDelete, setIdToDelete] = useState<number | null>(null);
-
   useEffect(() => {
     fetchHolidays();
   }, []);
@@ -61,7 +58,7 @@ export default function HolidaysPage() {
 
   const handleOpenEdit = (h: Holiday) => {
     if (!h.company_id) {
-        alert("Hari libur nasional tidak dapat diubah.");
+        toast.warning("Hari libur nasional tidak dapat diubah.");
         return;
     }
     setModalMode("edit");
@@ -80,29 +77,34 @@ export default function HolidaysPage() {
         await axiosInstance.put(`/holidays/${selectedId}`, formData);
       }
       setIsModalOpen(false);
+      toast.success("Hari libur berhasil disimpan!");
       fetchHolidays();
     } catch (e) {
-      alert("Gagal menyimpan hari libur.");
+      toast.error("Gagal menyimpan hari libur.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const confirmDelete = (id: number) => {
-    setIdToDelete(id);
-    setIsDeleteModalOpen(true);
+    toast("Hapus hari libur ini?", {
+      description: "Tindakan ini tidak dapat dibatalkan.",
+      action: {
+        label: "Hapus",
+        onClick: () => handleDelete(id),
+      },
+    });
   };
 
-  const handleDelete = async () => {
-    if (!idToDelete) return;
+  const handleDelete = async (id: number) => {
     setIsSubmitting(true);
     try {
-      await axiosInstance.delete(`/holidays/${idToDelete}`);
-      setIsDeleteModalOpen(false);
-      setIdToDelete(null);
+      await axiosInstance.delete(`/holidays/${id}`);
+      toast.success("Hari libur berhasil dihapus.");
+      setIsModalOpen(false);
       fetchHolidays();
     } catch (e) {
-      alert("Gagal menghapus hari libur.");
+      toast.error("Gagal menghapus hari libur.");
     } finally {
       setIsSubmitting(false);
     }
@@ -134,13 +136,12 @@ export default function HolidaysPage() {
     
     const h = arg.event.extendedProps?.originalData;
     if (!h) {
-        // External ICS events don't have originalData
-        alert("Hari libur nasional dari Google Calendar tidak dapat diubah.");
+        toast.info("Hari libur nasional dari Google Calendar tidak dapat diubah.");
         return;
     }
 
     if (!h.company_id) {
-        alert("Hari libur nasional dari sistem tidak dapat diubah (Otomatis).");
+        toast.info("Hari libur nasional dari sistem tidak dapat diubah (Otomatis).");
         return;
     }
     
@@ -307,35 +308,6 @@ export default function HolidaysPage() {
           </div>
       )}
 
-      {/* Delete Modal */}
-      {isDeleteModalOpen && (
-          <div className="fixed inset-0 z-110 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-              <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 p-8 text-center">
-                  <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500">
-                      <Trash2 size={40} />
-                  </div>
-                  <h3 className="text-xl font-black text-gray-900 mb-2">Hapus Hari Libur?</h3>
-                  <p className="text-gray-500 text-sm font-medium mb-8 leading-relaxed px-4">
-                      Tindakan ini akan menghapus hari libur dari kalender perusahaan. Karyawan akan kembali dianggap masuk pada tanggal ini.
-                  </p>
-                  <div className="flex flex-col gap-3">
-                      <button 
-                        onClick={handleDelete}
-                        disabled={isSubmitting}
-                        className="w-full h-12 bg-rose-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-rose-200 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
-                      >
-                         {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : "Ya, Hapus Sekarang"}
-                      </button>
-                      <button 
-                        onClick={() => setIsDeleteModalOpen(false)}
-                        className="w-full h-12 bg-white text-gray-400 hover:text-gray-600 rounded-2xl text-sm font-bold transition-all"
-                      >
-                          Batal
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import * as XLSX from "xlsx";
 import { FileDown, FileUp } from "lucide-react";
+import { toast } from "sonner";
 
 export default function PayrollProcessPage() {
   const { t } = useLanguage();
@@ -61,10 +62,10 @@ export default function PayrollProcessPage() {
       const res = await axiosInstance.post("/payroll/import-data", formDataUpload, {
         headers: { "Content-Type": "multipart/form-data" }
       });
-      alert(res.data.message);
+      toast.success(res.data.message);
       fetchStats(); // refresh counts
     } catch (err: any) {
-      alert(err.response?.data?.message || "Gagal mengimpor data payroll.");
+      toast.error(err.response?.data?.message || "Gagal mengimpor data payroll.");
     } finally {
       setImporting(false);
       e.target.value = '';
@@ -94,9 +95,9 @@ export default function PayrollProcessPage() {
       const res = await axiosInstance.post('/payroll/settings', editingSettings);
       setSettings(res.data.data);
       setIsSettingsOpen(false);
-      alert("Pengaturan berhasil disimpan");
+      toast.success("Pengaturan berhasil disimpan");
     } catch (e) {
-      alert("Gagal menyimpan pengaturan");
+      toast.error("Gagal menyimpan pengaturan");
     }
   };
 
@@ -117,7 +118,7 @@ export default function PayrollProcessPage() {
       await axiosInstance.post('/payroll/generate', { month, year });
       setStep(3);
     } catch (e: any) {
-      alert(e.response?.data?.message || "Generation failed");
+      toast.error(e.response?.data?.message || "Generation failed");
     } finally {
       setLoading(false);
     }

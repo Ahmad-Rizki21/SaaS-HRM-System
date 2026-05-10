@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { 
   Download, Search, ClipboardList, User, FileText, Filter, Eye, 
   XCircle, FileSpreadsheet, CheckSquare, Square, CheckCircle2, Clock, PlayCircle, Calendar
@@ -100,7 +101,7 @@ export default function TaskReportsPage() {
 
   const exportToExcel = () => {
     const dataToExport = selectedIds.length > 0 ? selectedData : filteredData;
-    if (dataToExport.length === 0) return alert("Pilih data dulu!");
+    if (dataToExport.length === 0) return toast.warning("Pilih data dulu!");
 
     const exportData = dataToExport.map((item, index) => ({
       "No": index + 1,
@@ -120,7 +121,7 @@ export default function TaskReportsPage() {
 
   const generatePDF = async () => {
     const dataToPrint = selectedIds.length > 0 ? selectedData : filteredData;
-    if (dataToPrint.length === 0) return alert("Pilih data dulu!");
+    if (dataToPrint.length === 0) return toast.warning("Pilih data dulu!");
 
     const doc = new jsPDF();
     doc.setFontSize(16);

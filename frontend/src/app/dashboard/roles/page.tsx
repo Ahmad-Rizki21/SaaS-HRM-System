@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { toast } from "sonner";
 import { Plus, Search, Edit2, Trash2, Shield, Info, X } from "lucide-react";
 import { RolesSkeleton } from "@/components/Skeleton";
 
@@ -98,8 +99,9 @@ export default function RolesPage() {
       }
       fetchRoles();
       setModalOpen(false);
+      toast.success(selectedRole ? "Jabatan diperbarui!" : "Jabatan berhasil ditambahkan!");
     } catch (e) {
-      alert("Gagal menyimpan role. Pastikan nama unik.");
+      toast.error("Gagal menyimpan role. Pastikan nama unik.");
     } finally {
       setIsSubmitting(false);
     }
@@ -112,10 +114,10 @@ export default function RolesPage() {
       await axiosInstance.post(`/roles/${selectedRole.id}/permissions`, {
         permissions: rolePermissions
       });
-      alert("Hak akses berhasil diperbarui!");
+      toast.success("Hak akses berhasil diperbarui!");
       setPermissionModalOpen(false);
     } catch (e) {
-      alert("Gagal sinkron hak akses");
+      toast.error("Gagal sinkron hak akses");
     } finally {
       setIsSubmitting(false);
     }
@@ -128,13 +130,21 @@ export default function RolesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Hapus role ini?")) return;
-    try {
-      await axiosInstance.delete(`/roles/${id}`);
-      fetchRoles();
-    } catch (e: any) {
-      alert(e.response?.data?.message || "Gagal hapus role");
-    }
+    toast("Apakah Anda yakin ingin menghapus role ini?", {
+      description: "Tindakan ini tidak dapat dibatalkan.",
+      action: {
+        label: "Hapus",
+        onClick: async () => {
+          try {
+            await axiosInstance.delete(`/roles/${id}`);
+            toast.success("Jabatan berhasil dihapus.");
+            fetchRoles();
+          } catch (e: any) {
+            toast.error(e.response?.data?.message || "Gagal hapus role");
+          }
+        }
+      }
+    });
   };
 
   if (loading && roles.length === 0) {
@@ -277,21 +287,6 @@ export default function RolesPage() {
         </div>
       )}
       
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f9f9f9;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #eee;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #ddd;
-        }
-      `}</style>
     </div>
   );
 }
