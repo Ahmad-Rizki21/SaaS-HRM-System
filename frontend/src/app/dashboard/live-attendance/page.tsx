@@ -148,6 +148,11 @@ export default function LiveAttendancePage() {
       return;
     }
 
+    if (distance !== null && officeConfig && distance > officeConfig.radius) {
+      toast.error(`Akses Ditolak: Anda berada ${Math.round(distance - officeConfig.radius)}m di luar radius kantor!`);
+      return;
+    }
+
     setLoading(true);
     setStatusMsg("Memproses Absensi (Via Tombol)...");
 
@@ -180,6 +185,11 @@ export default function LiveAttendancePage() {
 
     if (!videoRef.current || !canvasRef.current) {
       toast.error("Kamera tidak siap!");
+      return;
+    }
+
+    if (distance !== null && officeConfig && distance > officeConfig.radius) {
+      toast.error(`Akses Ditolak: Anda berada ${Math.round(distance - officeConfig.radius)}m di luar radius kantor!`);
       return;
     }
     
@@ -344,8 +354,8 @@ export default function LiveAttendancePage() {
               </div>
               
               {distance !== null && officeConfig && distance > officeConfig.radius && (
-                 <p className="text-xs text-[#8B0000] font-medium mt-3 bg-[#fef2f2] p-2 rounded-lg border border-[#fee2e2]">
-                   <strong>Peringatan:</strong> Anda terdeteksi berada {distance - officeConfig.radius} meter di luar area Radius Kantor! Anda masih dapat absensi untuk bypass pengujian ini selama development.
+                 <p className="text-xs text-[#8B0000] font-bold mt-3 bg-[#fef2f2] p-3 rounded-xl border border-red-200 animate-pulse">
+                   <strong>AKSES DIBLOKIR:</strong> Anda terdeteksi berada {Math.round(distance - officeConfig.radius)} meter di luar area Radius Kantor yang diizinkan. Silakan mendekat ke area kantor untuk melakukan absensi.
                  </p>
               )}
             </div>
@@ -356,7 +366,7 @@ export default function LiveAttendancePage() {
             <div className="grid grid-cols-2 gap-4 mt-auto">
                <button 
                  onClick={() => handleAttendance('check-in')}
-                 disabled={loading || !streamActive || !location}
+                 disabled={loading || !streamActive || !location || (distance !== null && officeConfig && distance > officeConfig.radius)}
                  className="bg-[#107c41] hover:bg-[#0c6130] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-2 group"
                >
                  <ScanFace size={24} className="group-hover:scale-110 transition-transform" />
@@ -365,10 +375,10 @@ export default function LiveAttendancePage() {
                
                <button 
                  onClick={() => handleAttendance('check-out')}
-                 disabled={loading || !streamActive || !location}
+                 disabled={loading || !streamActive || !location || (distance !== null && officeConfig && distance > officeConfig.radius)}
                  className="bg-[#8B0000] hover:bg-[#660000] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-2 group"
                >
-                 <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
+                 <ScanFace size={24} className="group-hover:scale-110 transition-transform" />
                  <span className="text-xs uppercase tracking-wider">Clock Out (Selfie)</span>
                </button>
 
