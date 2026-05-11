@@ -20,6 +20,12 @@ until mysql -h"${DB_HOST:-mysql}" -P"${DB_PORT:-3306}" -u"${DB_USERNAME:-root}" 
     echo "[*] MySQL Master is unavailable - retrying in 2s... ($counter/$max_retries)"
     sleep 2
 done
+
+if [ $counter -ge $max_retries ]; then
+    echo "[!] CRITICAL: MySQL Master could not be reached. Exiting."
+    exit 1
+fi
+
 echo "[✓] MySQL Master is ready!"
 
 # Clear any existing caches that might interfere with initialization
