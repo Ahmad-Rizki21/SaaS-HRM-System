@@ -25,7 +25,9 @@ echo "[✓] MySQL Master is ready!"
 # Clear any existing caches that might interfere with initialization
 echo "[*] Preparing Laravel..."
 php artisan config:clear
-php artisan cache:clear
+# cache:clear after config:clear needs explicit DB_CONNECTION since
+# Laravel 11 defaults to sqlite without cached config
+php artisan cache:clear 2>/dev/null || echo "[*] Cache clear skipped (first deploy or no cache table yet)"
 
 # Run migrations and seeders - FORCING MASTER for both read/write to avoid slave lag/sync issues
 if [ "${SKIP_MIGRATIONS}" != "true" ]; then
