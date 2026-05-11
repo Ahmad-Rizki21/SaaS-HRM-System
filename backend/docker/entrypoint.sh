@@ -32,10 +32,22 @@ php artisan cache:clear 2>/dev/null || echo "[*] Cache clear skipped (first depl
 # Run migrations and seeders - FORCING MASTER for both read/write to avoid slave lag/sync issues
 if [ "${SKIP_MIGRATIONS}" != "true" ]; then
     echo "[*] Running database migrations on Master..."
-    DB_READ_HOST="${DB_HOST:-mysql}" php artisan migrate --force --no-interaction
+    DB_HOST="${DB_HOST:-mysql-master}" \
+    DB_PORT="${DB_PORT:-3306}" \
+    DB_DATABASE="${DB_DATABASE:-hrm_saas}" \
+    DB_USERNAME="${DB_USERNAME:-hrms_user}" \
+    DB_PASSWORD="${DB_PASSWORD}" \
+    DB_READ_HOST="${DB_HOST:-mysql-master}" \
+    php artisan migrate --force --no-interaction
     
     echo "[*] Syncing Roles and Permissions..."
-    DB_READ_HOST="${DB_HOST:-mysql}" php artisan db:seed --force --no-interaction
+    DB_HOST="${DB_HOST:-mysql-master}" \
+    DB_PORT="${DB_PORT:-3306}" \
+    DB_DATABASE="${DB_DATABASE:-hrm_saas}" \
+    DB_USERNAME="${DB_USERNAME:-hrms_user}" \
+    DB_PASSWORD="${DB_PASSWORD}" \
+    DB_READ_HOST="${DB_HOST:-mysql-master}" \
+    php artisan db:seed --force --no-interaction
 else
     echo "[*] Skipping migrations (SKIP_MIGRATIONS=true)..."
 fi
