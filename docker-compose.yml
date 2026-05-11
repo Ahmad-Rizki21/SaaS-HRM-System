@@ -30,7 +30,7 @@ services:
     networks:
       - hrms-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$${MYSQL_ROOT_PASSWORD:-HrmsN@rwasthu2026!}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-HrmsN@rwasthu2026!}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -130,6 +130,11 @@ services:
       BCRYPT_ROUNDS: 12
       LOG_CHANNEL: stack
       LOG_LEVEL: ${LOG_LEVEL:-warning}
+      REVERB_APP_ID: ${REVERB_APP_ID:-856423}
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-vbovvxvpylkuw8p9x3lp}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-m6uom8x89mizl9n5p30h}
+      REVERB_SCHEME: ${REVERB_SCHEME:-http}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-1015918555814-0qod31fvuc96odo10a2uqmppoqf9vegi.apps.googleusercontent.com}
     volumes:
       - ./backend/storage/app/public:/var/www/html/storage/app/public
       - ./backend/storage/logs:/var/www/html/storage/logs
@@ -170,6 +175,10 @@ services:
       CACHE_STORE: redis
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD:-HrmsRedis2026!}
+      REVERB_APP_ID: ${REVERB_APP_ID:-856423}
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-vbovvxvpylkuw8p9x3lp}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-m6uom8x89mizl9n5p30h}
+      REVERB_SCHEME: ${REVERB_SCHEME:-http}
       REVERB_HOST: ${REVERB_HOST:-0.0.0.0}
     depends_on:
       mysql-master:
