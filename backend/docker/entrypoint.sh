@@ -11,7 +11,7 @@ echo "[*] Waiting for MySQL..."
 echo "[*] Waiting for MySQL Master..."
 max_retries=60
 counter=0
-until mysql -h"${DB_HOST:-mysql}" -P"${DB_PORT:-3306}" -u"${DB_USERNAME:-root}" -p"${DB_PASSWORD}" -e "SELECT 1" > /dev/null 2>&1; do
+until mysql -h"${DB_HOST:-mysql-master}" -P"${DB_PORT:-3306}" -u"${DB_USERNAME:-hrms_user}" -p"${DB_PASSWORD}" -e "SELECT 1" > /dev/null 2>&1; do
     counter=$((counter + 1))
     if [ $counter -ge $max_retries ]; then
         echo "[!] MySQL connection failed after ${max_retries} attempts."
