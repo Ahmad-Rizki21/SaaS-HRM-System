@@ -5,16 +5,39 @@ echo "========================================="
 echo "  HRMS Narwasthu Group - Starting..."  
 echo "========================================="
 
+# ── Debug: Print connection info ──
+echo "[DEBUG] DB_HOST=${DB_HOST:-'(not set, default: mysql-master)'}"
+echo "[DEBUG] DB_PORT=${DB_PORT:-'(not set, default: 3306)'}"
+echo "[DEBUG] DB_USERNAME=${DB_USERNAME:-'(not set, default: hrms_user)'}"
+echo "[DEBUG] DB_DATABASE=${DB_DATABASE:-'(not set)'}"
+echo "[DEBUG] DB_CONNECTION=${DB_CONNECTION:-'(not set)'}"
+if [ -n "${DB_PASSWORD}" ]; then
+    echo "[DEBUG] DB_PASSWORD=******* (is set, length: $(echo -n "${DB_PASSWORD}" | wc -c))"
+else
+    echo "[DEBUG] DB_PASSWORD=(EMPTY or NOT SET!) <-- THIS IS THE PROBLEM"
+fi
+
 # Wait for MySQL to be ready
-echo "[*] Waiting for MySQL..."
-# Wait for MySQL (Master) to be fully ready
 echo "[*] Waiting for MySQL Master..."
-max_retries=60
+MYSQL_HOST="${DB_HOST:-mysql-master}"
+MYSQL_PORT="${DB_PORT:-3306}"
+MYSQL_USER="${DB_USERNAME:-hrms_user}"
+MYSQL_PASS="${DB_PASSWORD}"
+
+max_retries=90
 counter=0
-until mysql -h"${DB_HOST:-mysql-master}" -P"${DB_PORT:-3306}" -u"${DB_USERNAME:-hrms_user}" -p"${DB_PASSWORD}" -e "SELECT 1" > /dev/null 2>&1; do
+
+# First attempt: show the actual error for debugging
+echo "[DEBUG] Testing connection: mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p*****"
+mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" 2>&1 || echo "[DEBUG] Initial connection test failed (this is expected if MySQL is still starting)"
+
+until mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" > /dev/null 2>&1; do
     counter=$((counter + 1))
     if [ $counter -ge $max_retries ]; then
         echo "[!] MySQL connection failed after ${max_retries} attempts."
+        # Show the actual error before exiting
+        echo "[DEBUG] Last error:"
+        mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" 2>&1 || true
         break
     fi
     echo "[*] MySQL Master is unavailable - retrying in 2s... ($counter/$max_retries)"
