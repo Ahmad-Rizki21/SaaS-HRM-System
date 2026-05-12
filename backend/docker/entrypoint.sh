@@ -5,18 +5,6 @@ echo "========================================="
 echo "  HRMS Narwasthu Group - Starting..."  
 echo "========================================="
 
-# ── Debug: Print connection info ──
-echo "[DEBUG] DB_HOST=${DB_HOST:-'(not set, default: mysql-master)'}"
-echo "[DEBUG] DB_PORT=${DB_PORT:-'(not set, default: 3306)'}"
-echo "[DEBUG] DB_USERNAME=${DB_USERNAME:-'(not set, default: hrms_user)'}"
-echo "[DEBUG] DB_DATABASE=${DB_DATABASE:-'(not set)'}"
-echo "[DEBUG] DB_CONNECTION=${DB_CONNECTION:-'(not set)'}"
-if [ -n "${DB_PASSWORD}" ]; then
-    echo "[DEBUG] DB_PASSWORD=******* (is set, length: $(echo -n "${DB_PASSWORD}" | wc -c))"
-else
-    echo "[DEBUG] DB_PASSWORD=(EMPTY or NOT SET!) <-- THIS IS THE PROBLEM"
-fi
-
 # Wait for MySQL to be ready
 echo "[*] Waiting for MySQL Master..."
 MYSQL_HOST="${DB_HOST:-mysql-master}"
@@ -27,17 +15,14 @@ MYSQL_PASS="${DB_PASSWORD}"
 max_retries=90
 counter=0
 
-# First attempt: show the actual error for debugging
-echo "[DEBUG] Testing connection: mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p*****"
-mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" 2>&1 || echo "[DEBUG] Initial connection test failed (this is expected if MySQL is still starting)"
-
-until mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" > /dev/null 2>&1; do
+# --skip-ssl: MySQL 8.4 auto-generates self-signed SSL certs,
+# but the Alpine MariaDB client rejects them with "self-signed certificate in certificate chain"
+until mysql --skip-ssl -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" > /dev/null 2>&1; do
     counter=$((counter + 1))
     if [ $counter -ge $max_retries ]; then
         echo "[!] MySQL connection failed after ${max_retries} attempts."
-        # Show the actual error before exiting
         echo "[DEBUG] Last error:"
-        mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" 2>&1 || true
+        mysql --skip-ssl -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" 2>&1 || true
         break
     fi
     echo "[*] MySQL Master is unavailable - retrying in 2s... ($counter/$max_retries)"
@@ -58,7 +43,7 @@ php artisan config:clear
 # Laravel 11 defaults to sqlite without cached config
 php artisan cache:clear 2>/dev/null || echo "[*] Cache clear skipped (first deploy or no cache table yet)"
 
-# Run migrations and seeders - FORCING MASTER for both read/write to avoid slave lag/sync issues
+# Run migrations and seeders
 if [ "${SKIP_MIGRATIONS}" != "true" ]; then
     echo "[*] Running database migrations on Master..."
     php artisan migrate --force --no-interaction
