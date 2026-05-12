@@ -3,9 +3,20 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Calendar, DollarSign, User, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import { ListPageSkeleton } from "@/components/Skeleton";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 interface ApprovalItem {
   id: number;
@@ -21,11 +32,29 @@ interface ApprovalItem {
   created_at: string;
 }
 
+const typeLabel: Record<string, string> = {
+  leave: "Cuti",
+  reimbursement: "Klaim",
+  overtime: "Lembur",
+  permit: "Izin",
+  profile: "Profil",
+};
+
+const typeColor: Record<string, string> = {
+  leave: "bg-blue-50 text-blue-700 border-blue-200",
+  reimbursement: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  overtime: "bg-amber-50 text-amber-700 border-amber-200",
+  permit: "bg-purple-50 text-purple-700 border-purple-200",
+  profile: "bg-orange-50 text-orange-700 border-orange-200",
+};
+
 export default function ApprovalsPage() {
   const { user: currentUser, hasPermission } = useAuth();
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "leave" | "reimbursement" | "profile" | "overtime" | "permit">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -135,16 +164,12 @@ export default function ApprovalsPage() {
         .filter(item => {
            if (item.type === 'leave') {
               if (item.status === 'pending_supervisor') {
-                 // Hanya supervisor dari ybs ATAU HRD (kalau bypass diizinkan, tp lbh baik cm supervisor) yang liat
-                 // Sesuai request: HRD gausah liat dulu sblm diacc supervisor biar ga nyampah di dahsboard HRD
                  return item.target_supervisor_id === currentUser?.id;
               }
               if (item.status === 'pending_hr') {
-                 // Hanya HRD yang lihat
                  return isHR;
               }
               if (item.status === 'pending') {
-                 // Fallback untuk legacy single-stage
                  return isHR || item.target_supervisor_id === currentUser?.id;
               }
               return false;
@@ -152,7 +177,6 @@ export default function ApprovalsPage() {
            if (item.type === 'permit') {
                return isHR && item.status === "pending";
            }
-           // Untuk modul lain spt lembur, klaim dll (masih single stage)
            return item.status === "pending" || item.status === "waiting_approval";
         })
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -217,13 +241,23 @@ export default function ApprovalsPage() {
     setIsDetailModalOpen(true);
   };
 
+  const filteredItems = items.filter(item => filter === 'all' || item.type === filter);
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+  const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
+
   if (loading && items.length === 0) {
     return <ListPageSkeleton />;
   }
 
   return (
-    <div className="max-w-[1000px] mx-auto p-4 md:p-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Persetujuan Pending</h1>
           <p className="text-sm text-gray-500 mt-1">Review dan proses pengajuan karyawan yang memerlukan persetujuan Anda.</p>
@@ -238,81 +272,186 @@ export default function ApprovalsPage() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {items.filter(item => filter === 'all' || item.type === filter).length === 0 ? (
-          <div className="bg-white border rounded-2xl p-12 text-center">
-            <div className="w-16 h-16 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle size={32} />
-            </div>
-            <h3 className="text-lg font-bold text-gray-900">Semua Beres!</h3>
-            <p className="text-sm text-gray-500">Tidak ada pengajuan yang memerlukan tindakan saat ini.</p>
-          </div>
-        ) : (
-          items.filter(item => filter === 'all' || item.type === filter).map(item => (
-            <div key={`${item.type}-${item.id}`} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row items-start gap-6">
-              <div className={`w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center ${
-                item.type === 'leave' ? 'bg-blue-50 text-blue-600' : 
-                item.type === 'reimbursement' ? 'bg-emerald-50 text-emerald-600' :
-                'bg-orange-50 text-orange-600'
-              }`}>
-                {item.type === 'leave' ? <Calendar size={28} /> : 
-                 item.type === 'permit' ? <CheckCircle size={28} /> : 
-                 item.type === 'reimbursement' ? <DollarSign size={28} /> : 
-                 item.type === 'overtime' ? <Clock size={28} /> : 
-                 <User size={28} />}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="text-sm font-bold text-gray-900">{item.user_name}</span>
-                  <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold uppercase">{item.type}</span>
-                </div>
-                <h4 className="text-base font-bold text-gray-800 mb-1">{item.category}</h4>
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2 italic">"{item.description || 'Tanpa keterangan'}"</p>
-                
-                <div className="flex flex-wrap gap-4 text-xs text-gray-400">
-                  {item.start_date && (
-                    <div className="flex items-center gap-1.5 font-medium">
-                      <Clock size={14} /> {item.start_date} s/d {item.end_date}
-                    </div>
-                  )}
-                  {item.amount && (
-                    <div className="flex items-center gap-1.5 font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
-                      IDR {parseInt(item.amount).toLocaleString()}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1.5">{new Date(item.created_at).toLocaleDateString()}</div>
-                  {item.attachment && (
-                    <button 
-                      onClick={() => handleViewDetail(item)}
-                      className="flex items-center gap-1 text-[#8B0000] font-bold hover:underline"
-                    >
-                      <ExternalLink size={14} /> Lihat Bukti
-                    </button>
-                  )}
-                </div>
-              </div>
+      {/* Table */}
+      <Card>
+        <CardHeader className="pb-3 px-6 pt-5">
+          <p className="text-sm text-muted-foreground">
+            Menampilkan <span className="font-semibold text-foreground">{paginatedItems.length}</span> dari <span className="font-semibold text-foreground">{filteredItems.length}</span> pengajuan yang memerlukan tindakan
+          </p>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="rounded-md border-t">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40">
+                  <TableHead className="pl-6">Karyawan</TableHead>
+                  <TableHead>Tipe</TableHead>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Tanggal / Nominal</TableHead>
+                  <TableHead>Keterangan</TableHead>
+                  <TableHead>Diajukan</TableHead>
+                  <TableHead className="text-right pr-6">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-40 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="w-12 h-12 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center">
+                          <CheckCircle size={24} />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900">Semua Beres!</h3>
+                        <p className="text-sm text-gray-500">Tidak ada pengajuan yang memerlukan tindakan saat ini.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedItems.map(item => {
+                    const isProcessing = processingId === `${item.type}-${item.id}`;
+                    return (
+                      <TableRow key={`${item.type}-${item.id}`} className="group">
+                        {/* Karyawan */}
+                        <TableCell className="pl-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 shrink-0">
+                              {item.user_name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-medium text-gray-900">{item.user_name}</span>
+                          </div>
+                        </TableCell>
 
-              <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
-                <button 
-                  onClick={() => handleActionClick(item, 'reject')}
-                  disabled={processingId === `${item.type}-${item.id}`}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 border border-red-100 rounded-xl hover:bg-red-50 transition disabled:opacity-50"
+                        {/* Tipe */}
+                        <TableCell>
+                          <Badge variant="outline" className={`text-xs font-semibold ${typeColor[item.type]}`}>
+                            {typeLabel[item.type] || item.type}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Kategori */}
+                        <TableCell>
+                          <span className="text-sm text-gray-700 font-medium">{item.category}</span>
+                        </TableCell>
+
+                        {/* Tanggal / Nominal */}
+                        <TableCell>
+                          <div className="space-y-1">
+                            {item.start_date && (
+                              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                <Clock size={12} />
+                                <span>{item.start_date} s/d {item.end_date}</span>
+                              </div>
+                            )}
+                            {item.amount && (
+                              <div className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md w-fit">
+                                IDR {parseInt(item.amount).toLocaleString()}
+                              </div>
+                            )}
+                            {!item.start_date && !item.amount && (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* Keterangan */}
+                        <TableCell className="max-w-[200px]">
+                          <p className="text-sm text-gray-500 truncate italic" title={item.description || 'Tanpa keterangan'}>
+                            {item.description || 'Tanpa keterangan'}
+                          </p>
+                          {item.attachment && (
+                            <button
+                              onClick={() => handleViewDetail(item)}
+                              className="flex items-center gap-1 text-xs text-[#8B0000] font-bold hover:underline mt-1"
+                            >
+                              <ExternalLink size={12} /> Lihat Bukti
+                            </button>
+                          )}
+                        </TableCell>
+
+                        {/* Diajukan */}
+                        <TableCell>
+                          <span className="text-xs text-gray-400">{new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                        </TableCell>
+
+                        {/* Aksi */}
+                        <TableCell className="text-right pr-6">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleActionClick(item, 'reject')}
+                              disabled={isProcessing}
+                              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 h-8 px-3 text-xs font-bold"
+                            >
+                              <XCircle size={14} className="mr-1" />
+                              {isProcessing ? "..." : "Tolak"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleActionClick(item, 'approve')}
+                              disabled={isProcessing}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-3 text-xs font-bold shadow-sm"
+                            >
+                              <CheckCircle size={14} className="mr-1" />
+                              {isProcessing ? "..." : "Setujui"}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          {/* Pagination */}
+          {filteredItems.length > itemsPerPage && (
+            <div className="flex items-center justify-between px-6 py-4 border-t">
+              <p className="text-sm text-muted-foreground">
+                Halaman {currentPage} dari {totalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 px-3 text-xs"
                 >
-                  <XCircle size={18} /> {processingId === `${item.type}-${item.id}` ? "..." : "Tolak"}
-                </button>
-                <button 
-                  onClick={() => handleActionClick(item, 'approve')}
-                  disabled={processingId === `${item.type}-${item.id}`}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-700 transition disabled:opacity-50"
+                  <ChevronLeft size={14} className="mr-1" /> Sebelumnya
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).slice(
+                    Math.max(0, currentPage - 3),
+                    Math.min(totalPages, currentPage + 2)
+                  ).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 text-xs font-medium rounded-lg transition ${
+                        page === currentPage
+                          ? 'bg-[#8B0000] text-white shadow-sm'
+                          : 'text-gray-500 hover:bg-gray-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 px-3 text-xs"
                 >
-                  <CheckCircle size={18} /> {processingId === `${item.type}-${item.id}` ? "..." : "Setujui"}
-                </button>
+                  Selanjutnya <ChevronRight size={14} className="ml-1" />
+                </Button>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Detail Modal */}
       {isDetailModalOpen && selectedItem && (
