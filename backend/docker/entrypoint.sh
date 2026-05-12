@@ -11,18 +11,21 @@ MYSQL_HOST="${DB_HOST:-mysql-master}"
 MYSQL_PORT="${DB_PORT:-3306}"
 MYSQL_USER="${DB_USERNAME:-hrms_user}"
 MYSQL_PASS="${DB_PASSWORD}"
+MYSQL_DB="${DB_DATABASE:-hrm_saas}"
 
 max_retries=90
 counter=0
 
-# --skip-ssl: MySQL 8.4 auto-generates self-signed SSL certs,
-# but the Alpine MariaDB client rejects them with "self-signed certificate in certificate chain"
-until mysql --skip-ssl -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" > /dev/null 2>&1; do
+# Use PHP PDO instead of mysql CLI because:
+# - Alpine's mysql-client is actually MariaDB
+# - MariaDB client doesn't support MySQL 8.4's caching_sha2_password plugin
+# - PHP's pdo_mysql extension handles caching_sha2_password natively
+until php -r "try { new PDO('mysql:host=${MYSQL_HOST};port=${MYSQL_PORT};dbname=${MYSQL_DB}', '${MYSQL_USER}', '${MYSQL_PASS}'); echo 'ok'; } catch(Exception \$e) { exit(1); }" > /dev/null 2>&1; do
     counter=$((counter + 1))
     if [ $counter -ge $max_retries ]; then
         echo "[!] MySQL connection failed after ${max_retries} attempts."
         echo "[DEBUG] Last error:"
-        mysql --skip-ssl -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASS}" -e "SELECT 1" 2>&1 || true
+        php -r "try { new PDO('mysql:host=${MYSQL_HOST};port=${MYSQL_PORT};dbname=${MYSQL_DB}', '${MYSQL_USER}', '${MYSQL_PASS}'); } catch(Exception \$e) { echo \$e->getMessage(); }" 2>&1 || true
         break
     fi
     echo "[*] MySQL Master is unavailable - retrying in 2s... ($counter/$max_retries)"
