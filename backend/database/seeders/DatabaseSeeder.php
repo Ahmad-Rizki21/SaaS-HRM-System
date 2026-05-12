@@ -15,15 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Always run RolePermissionSeeder to sync new features/permissions
-        $this->call(RolePermissionSeeder::class);
-
-        // ONLY run these in local/development environments
-        if (!app()->isProduction()) {
-            $this->call([
-                UserSeeder::class,
-                DemoDataSeeder::class,
-            ]);
-        }
+        $this->call([
+            RolePermissionSeeder::class,
+            RealCompanySeeder::class,
+        ]);
     }
 }
