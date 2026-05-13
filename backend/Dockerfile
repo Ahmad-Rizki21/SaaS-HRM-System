@@ -38,16 +38,16 @@ RUN apk add --no-cache \
     libxml2-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
-        pdo_mysql \
-        mysqli \
-        gd \
-        zip \
-        intl \
-        mbstring \
-        xml \
-        bcmath \
-        opcache \
-        pcntl \
+    pdo_mysql \
+    mysqli \
+    gd \
+    zip \
+    intl \
+    mbstring \
+    xml \
+    bcmath \
+    opcache \
+    pcntl \
     && rm -rf /var/cache/apk/*
 
 # Install Redis extension
