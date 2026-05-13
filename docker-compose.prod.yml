@@ -189,7 +189,7 @@ services:
       MYSQLD_EXPORTER_PASSWORD: ${DB_PASSWORD:-OnTimeNarwastugo2026}
     command:
       - "--mysqld.address=mysql-master:3306"
-      - "--mysqld.username=root"
+      - "--mysqld.username=hrms_user"
       - "--no-collect.slave_status"
     ports:
       - "9104:9104"
