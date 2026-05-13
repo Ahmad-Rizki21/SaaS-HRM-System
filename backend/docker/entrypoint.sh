@@ -46,13 +46,15 @@ php artisan config:clear
 # Laravel 11 defaults to sqlite without cached config
 php artisan cache:clear 2>/dev/null || echo "[*] Cache clear skipped (first deploy or no cache table yet)"
 
-# Run migrations and seeders
+# Run migrations
 if [ "${SKIP_MIGRATIONS}" != "true" ]; then
     echo "[*] Running database migrations on Master..."
     php artisan migrate --force --no-interaction
     
-    echo "[*] Syncing Roles and Permissions..."
-    php artisan db:seed --force --no-interaction
+    # Seeding is disabled by default to prevent data duplication on restart.
+    # Run manually if needed: docker exec hrms-backend php artisan db:seed
+    # echo "[*] Syncing Roles and Permissions..."
+    # php artisan db:seed --force --no-interaction
 else
     echo "[*] Skipping migrations (SKIP_MIGRATIONS=true)..."
 fi
