@@ -33,6 +33,11 @@ class CompanyController extends Controller
 
         $data = $request->only(['name', 'email', 'phone', 'address', 'latitude', 'longitude', 'radius_meters', 'watzap_api_key', 'watzap_number_key', 'watzap_base_url']);
         
+        // Trim WhatsApp fields to prevent copy-paste errors (spaces)
+        if (isset($data['watzap_api_key'])) $data['watzap_api_key'] = trim($data['watzap_api_key']);
+        if (isset($data['watzap_number_key'])) $data['watzap_number_key'] = trim($data['watzap_number_key']);
+        if (isset($data['watzap_base_url'])) $data['watzap_base_url'] = trim($data['watzap_base_url']);
+
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('companies', 'public');
             $data['logo'] = $path;
