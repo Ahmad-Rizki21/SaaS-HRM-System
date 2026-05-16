@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\Log;
 trait Notifiable
 {
     /**
-     * Send both database and email notification to a user
+     * Send database, push (FCM), email, and WhatsApp notifications to a user
      */
-    public function notify(User $user, string $title, string $message, string $type = 'info', string $link = null, string $category = 'notif', bool $sendEmail = true)
+    public function notify(User $user, string $title, string $message, string $type = 'info', string $link = null, string $category = 'notif', bool $sendEmail = true, bool $sendWA = true)
     {
         // 1. Create database notification
         Notification::create([
@@ -43,6 +43,22 @@ trait Notifiable
                 Mail::to($user->email)->send(new UserNotification($user, $title, $message));
             } catch (\Exception $e) {
                 Log::error("Failed to send email to {$user->email}: " . $e->getMessage());
+            }
+        }
+
+        // 3. Send WhatsApp message via WatZap
+        if ($sendWA && $user->phone) {
+            try {
+                $waService = new \App\Services\WhatsAppService($user->company);
+                $waMessage = "*{$title}*\n\n{$message}";
+                
+                if ($link) {
+                    $waMessage .= "\n\nCek di sini: " . $link;
+                }
+
+                $waService->sendMessage($user->phone, $waMessage);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("WhatsApp notification failed for user {$user->id}: " . $e->getMessage());
             }
         }
     }

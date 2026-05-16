@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 
 class HolidayController extends Controller
 {
+    use \App\Traits\Notifiable;
+
     public function index(Request $request)
     {
         $holidays = Holiday::where(function($q) use ($request) {
@@ -23,6 +25,7 @@ class HolidayController extends Controller
         $request->validate([
             'name' => 'required|string',
             'date' => 'required|date',
+            'broadcast' => 'nullable|boolean', // Option to broadcast
         ]);
 
         $holiday = Holiday::create([
@@ -30,6 +33,22 @@ class HolidayController extends Controller
             'name' => $request->name,
             'date' => $request->date,
         ]);
+
+        if ($request->broadcast) {
+            $members = \App\Models\User::where('company_id', $request->user()->company_id)->get();
+            foreach ($members as $member) {
+                $this->notify(
+                    $member,
+                    "HARI LIBUR: {$request->name}",
+                    "Halo {$member->name}, terdapat informasi Hari Libur: *{$request->name}* pada tanggal {$request->date}.",
+                    'info',
+                    null,
+                    'notif',
+                    true,
+                    true
+                );
+            }
+        }
 
         $this->logActivity('CREATE_HOLIDAY', "Menambahkan hari libur: {$request->name} ({$request->date})", $holiday);
 

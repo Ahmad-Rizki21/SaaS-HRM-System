@@ -408,4 +408,77 @@ class AuthController extends Controller
             return $this->errorResponse('Terjadi kesalahan pada server saat verifikasi Google: ' . $e->getMessage(), 500);
         }
     }
+
+    public function sendOtp(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+        ]);
+
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return $this->errorResponse('Nomor WhatsApp tidak terdaftar.', 404);
+        }
+
+        $otp = rand(100000, 999999);
+        
+        // Store OTP in cache for 5 minutes
+        \Illuminate\Support\Facades\Cache::put('otp_' . $user->id, $otp, now()->addMinutes(5));
+
+        $waService = new \App\Services\WhatsAppService();
+        $message = "*[OTP] HRMS Narwastu Arthatama*\n\nKode verifikasi Anda adalah: *{$otp}*\n\nJangan berikan kode ini kepada siapapun. Kode berlaku selama 5 menit.";
+
+        if ($waService->sendMessage($user->phone, $message)) {
+            return $this->successResponse(null, 'Kode OTP telah dikirim ke WhatsApp Anda.');
+        } else {
+            return $this->errorResponse('Gagal mengirim OTP ke WhatsApp. Silakan coba lagi.', 500);
+        }
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return $this->errorResponse('User tidak ditemukan.', 404);
+        }
+
+        $cachedOtp = \Illuminate\Support\Facades\Cache::get('otp_' . $user->id);
+
+        if (!$cachedOtp || $cachedOtp != $request->otp) {
+            return $this->errorResponse('Kode OTP salah atau sudah kadaluarsa.', 400);
+        }
+
+        // OTP Valid, Clear it
+        \Illuminate\Support\Facades\Cache::forget('otp_' . $user->id);
+
+        // Auto-verify email if not verified
+        if (!$user->email_verified_at) {
+            $user->email_verified_at = now();
+            $user->save();
+        }
+
+        // Generate Login Token
+        $accessToken = $user->createToken('auth_token', ['*'], now()->addMinutes(60))->plainTextToken;
+        
+        $refreshTokenData = RefreshToken::generateFor(
+            $user,
+            $request->device_id,
+            $request->ip(),
+            $request->userAgent(),
+            30
+        );
+
+        return $this->successResponse([
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshTokenData['plain_token'],
+            'user' => $user->load(['role.permissions', 'office'])
+        ], 'Verifikasi OTP berhasil. Anda telah masuk.');
+    }
 }

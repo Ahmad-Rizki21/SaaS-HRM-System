@@ -68,6 +68,8 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->midd
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/companies/search', [AuthController::class, 'searchCompanies']);
 Route::get('/verify-email/{token}', [AuthController::class, 'verifyEmail']);
+Route::post('/send-otp', [AuthController::class, 'sendOtp']);
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/refresh-token', [AuthController::class, 'refreshToken'])->middleware('throttle:10,1');
 
 

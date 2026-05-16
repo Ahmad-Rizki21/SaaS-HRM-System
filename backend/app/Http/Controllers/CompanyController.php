@@ -26,9 +26,12 @@ class CompanyController extends Controller
             'latitude' => 'sometimes|nullable|numeric',
             'longitude' => 'sometimes|nullable|numeric',
             'radius_meters' => 'sometimes|nullable|numeric',
+            'watzap_api_key' => 'sometimes|nullable|string',
+            'watzap_number_key' => 'sometimes|nullable|string',
+            'watzap_base_url' => 'sometimes|nullable|url',
         ]);
 
-        $data = $request->only(['name', 'email', 'phone', 'address', 'latitude', 'longitude', 'radius_meters']);
+        $data = $request->only(['name', 'email', 'phone', 'address', 'latitude', 'longitude', 'radius_meters', 'watzap_api_key', 'watzap_number_key', 'watzap_base_url']);
         
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('companies', 'public');

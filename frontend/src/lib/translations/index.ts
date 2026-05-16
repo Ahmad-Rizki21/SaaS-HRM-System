@@ -101,6 +101,7 @@ export const translations = {
     payroll_settings: "Pengaturan Payroll",
     my_payroll_slip: "Slip Gaji Saya",
     company_documents: "SK & Regulasi",
+    whatsapp_settings: "WhatsApp Gateway",
 
     // Common Messages
     failed_to_fetch: "Gagal memuat data",
@@ -209,6 +210,7 @@ export const translations = {
     payroll_settings: "Payroll Settings",
     my_payroll_slip: "My Payroll Slip",
     company_documents: "Documents & SK",
+    whatsapp_settings: "WhatsApp Gateway",
 
     // Common Messages
     failed_to_fetch: "Failed to fetch data",

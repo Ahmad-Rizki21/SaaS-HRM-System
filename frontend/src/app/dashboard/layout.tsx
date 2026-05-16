@@ -148,6 +148,7 @@ const sidebarLinks: SidebarLink[] = [
       { name: "approvals", href: "/dashboard/approvals", permission: 'manage-approvals' },
       { name: "tasks", href: "/dashboard/tasks", permission: 'view-tasks' },
       { name: "announcements", href: "/dashboard/announcements", permission: 'view-announcements' },
+      { name: "whatsapp_settings", href: "/dashboard/whatsapp", permission: 'manage-company' },
       { name: "employee_directory", href: "/dashboard/directory", permission: 'view-directory' },
       { name: "organization_chart", href: "/dashboard/organization", permission: 'view-organization' },
     ]

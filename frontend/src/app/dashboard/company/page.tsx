@@ -64,6 +64,9 @@ export default function CompanySettingsPage() {
       formData.append("latitude", company.latitude || "");
       formData.append("longitude", company.longitude || "");
       formData.append("radius_meters", String(company.radius_meters || "50"));
+      formData.append("watzap_api_key", company.watzap_api_key || "");
+      formData.append("watzap_number_key", company.watzap_number_key || "");
+      formData.append("watzap_base_url", company.watzap_base_url || "https://api.watzap.id/v1/");
       
       if (photoFile) {
         formData.append("logo", photoFile);
@@ -227,6 +230,55 @@ export default function CompanySettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-500 font-medium">Batas jangkauan kelonggaran absensi dari titik area. Disarankan minimal 50 meter untuk offset GPS ponsel karyawan.</p>
+              </div>
+            </form>
+          </div>
+
+          {/* Integrasi WhatsApp Gateway (WatZap) */}
+          <div className="dash-table-container p-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-5 border-b border-[#ebedf0] pb-3 flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              Integrasi WhatsApp Gateway (WatZap)
+            </h2>
+            <p className="text-xs text-gray-500 mb-6 font-medium bg-green-50 p-3 rounded-lg border border-green-100">
+              Konfigurasikan API WatZap Anda di sini untuk mengaktifkan fitur notifikasi otomatis, OTP, dan broadcast pesan ke karyawan melalui WhatsApp.
+            </p>
+            
+            <form className="space-y-5">
+              <div className="grid gap-2">
+                <label className="text-sm font-bold text-gray-800">WatZap API Key</label>
+                <input
+                  type="password"
+                  disabled={!canEdit}
+                  placeholder="Masukkan API Key dari WatZap"
+                  value={company?.watzap_api_key || ""}
+                  onChange={(e) => setCompany({...company, watzap_api_key: e.target.value})}
+                  className={`w-full h-11 px-4 text-sm ${!canEdit ? 'bg-gray-100' : 'bg-white shadow-sm'} border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all`}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <label className="text-sm font-bold text-gray-800">WatZap Phone Key (Number Key)</label>
+                <input
+                  type="text"
+                  disabled={!canEdit}
+                  placeholder="Masukkan Number/Phone Key WhatsApp"
+                  value={company?.watzap_number_key || ""}
+                  onChange={(e) => setCompany({...company, watzap_number_key: e.target.value})}
+                  className={`w-full h-11 px-4 text-sm ${!canEdit ? 'bg-gray-100' : 'bg-white shadow-sm'} border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-mono`}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <label className="text-sm font-bold text-gray-800">API Base URL</label>
+                <input
+                  type="url"
+                  disabled={!canEdit}
+                  value={company?.watzap_base_url || "https://api.watzap.id/v1/"}
+                  onChange={(e) => setCompany({...company, watzap_base_url: e.target.value})}
+                  className={`w-full h-11 px-4 text-sm ${!canEdit ? 'bg-gray-100' : 'bg-white shadow-sm'} border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-gray-500`}
+                />
+                <p className="text-[11px] text-gray-400">Default: https://api.watzap.id/v1/</p>
               </div>
             </form>
           </div>
