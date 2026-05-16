@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 class MassLeaveController extends Controller
 {
+    use \App\Traits\Notifiable;
+
     public function index(Request $request)
     {
         $massLeaves = MassLeave::where('company_id', $request->user()->company_id)
@@ -45,16 +47,32 @@ class MassLeaveController extends Controller
                 'employee_ids' => $request->employee_ids,
             ]);
 
-            if ($request->is_deduction) {
-                $days = Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date)) + 1;
-                
-                $query = User::where('company_id', $request->user()->company_id);
-                
-                if (!$request->all_employees && !empty($request->employee_ids)) {
-                    $query->whereIn('id', $request->employee_ids);
-                }
+            $days = Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date)) + 1;
+            
+            $query = User::where('company_id', $request->user()->company_id);
+            if (!$request->all_employees && !empty($request->employee_ids)) {
+                $query->whereIn('id', $request->employee_ids);
+            }
 
+            if ($request->is_deduction) {
                 $query->decrement('leave_balance', $days);
+            }
+
+            // Notify employees
+            $employees = $query->get();
+            $deductionText = $request->is_deduction ? " (Memotong saldo cuti tahunan)" : "";
+            
+            foreach ($employees as $employee) {
+                $this->notify(
+                    $employee,
+                    "CUTI BERSAMA: {$request->name}",
+                    "Halo {$employee->name}, terdapat informasi Cuti Bersama: *{$request->name}* dari tanggal {$request->start_date} s/d {$request->end_date}.{$deductionText}",
+                    'info',
+                    '/dashboard/leave',
+                    'mail',
+                    true,
+                    true
+                );
             }
 
             $this->logActivity('CREATE_MASS_LEAVE', "Membuat cuti bersama: {$request->name}");

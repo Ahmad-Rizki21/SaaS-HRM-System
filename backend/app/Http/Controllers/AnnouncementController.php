@@ -45,37 +45,19 @@ class AnnouncementController extends Controller
 
         foreach ($members as $member) {
             /** @var \App\Models\User $member */
-            // 1. In-App Notification (Kotak Pesan)
+            
+            // Send multi-channel notification via Trait
+            // Includes: Database, FCM, Email, and WhatsApp
             $this->notify(
                 $member, 
-                "PENGUMUMAN: {$request->title}", 
-                "Terdapat pengumuman resmi baru: {$request->title}", 
+                "PENGUMUMAN RESMI: {$announcement->title}", 
+                "Halo {$member->name}, terdapat pengumuman baru dari perusahaan:\n\n*{$announcement->title}*\n\n{$announcement->content}", 
                 'info',
                 '/dashboard/announcements',
                 'mail', // Category KOTAK PESAN
-                false 
+                true,   // Send Email
+                true    // Send WhatsApp
             );
-
-            // 2. Real-time Push Notification (FCM)
-            \App\Services\FCMService::sendNotification(
-                $member, 
-                "Pengumuman Baru: {$request->title}", 
-                "Buka aplikasi untuk melihat detail pengumuman terbaru."
-            );
-
-            // 3. Premium Email Notification
-            try {
-                Mail::send('emails.premium_announcement', [
-                    'member' => $member,
-                    'title' => $request->input('title'),
-                    'announcement_content' => $request->input('content')
-                ], function ($message) use ($member, $request) {
-                    $message->to($member->email)
-                        ->subject("PENGUMUMAN RESMI: {$request->title}");
-                });
-            } catch (\Exception $e) {
-                // Silently skip email if fails
-            }
         }
 
         $this->logActivity('CREATE_ANNOUNCEMENT', "Membuat pengumuman baru: {$request->title}", $announcement);

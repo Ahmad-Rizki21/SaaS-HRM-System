@@ -203,16 +203,8 @@ class LeaveController extends Controller
             'success'
         );
 
-        // Real-time Push Notification (FCM)
-        \App\Services\FCMService::sendNotification(
-            $leave->user, 
-            'Permohonan Cuti Disetujui', 
-            "Cuti Anda untuk tanggal {$leave->start_date} s/d {$leave->end_date} telah DISETUJUI."
-        );
-
-        try {
-            Mail::to($leave->user->email)->send(new LeaveNotification($leave, 'Disetujui'));
-        } catch (\Exception $e) {}
+        // Notification is already handled by $this->notify above.
+        // It now includes Database, FCM, Email, and WhatsApp.
 
         return $this->successResponse(null, 'Permohonan cuti disetujui.');
     }
@@ -251,16 +243,7 @@ class LeaveController extends Controller
             'danger'
         );
 
-        // Real-time Push Notification (FCM)
-        \App\Services\FCMService::sendNotification(
-            $leave->user, 
-            'Permohonan Cuti Ditolak', 
-            "Mohon maaf, cuti Anda untuk tanggal {$leave->start_date} s/d {$leave->end_date} telah DITOLAK."
-        );
-
-        try {
-            Mail::to($leave->user->email)->send(new LeaveNotification($leave, 'Ditolak'));
-        } catch (\Exception $e) {}
+        // Notification is already handled by $this->notify above.
 
         return $this->successResponse(null, 'Permohonan cuti ditolak.');
     }
