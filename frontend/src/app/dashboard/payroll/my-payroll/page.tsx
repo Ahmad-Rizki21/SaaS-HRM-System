@@ -4,6 +4,17 @@ import { useState, useEffect } from "react";
 import axiosInstance from "@/lib/axios";
 import { Download, CreditCard, Receipt, Eye, X, Printer, Loader2 } from "lucide-react";
 import { PayrollCardSkeleton } from "@/components/Skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function MyPayrollPage() {
   const [loading, setLoading] = useState(true);
@@ -75,85 +86,110 @@ export default function MyPayrollPage() {
   if (loading) return <PayrollCardSkeleton />;
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 md:pb-20 p-4 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-black text-gray-900 leading-tight">Riwayat <span className="text-[#8B0000]">Gaji Saya</span></h1>
-        <p className="text-gray-500 text-sm font-bold flex items-center gap-2">
-           <CreditCard size={14} className="text-[#8B0000]" />
-           Akses slip gaji digital Anda dengan aman.
-        </p>
-      </div>
-
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-8 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">Periode</th>
-                <th className="px-8 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">Nominal Netto</th>
-                <th className="px-8 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Status</th>
-                <th className="px-8 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {salaries.map((salary) => (
-                <tr key={salary.id} className="group hover:bg-red-50/10 transition-all">
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-red-50 text-[#8B0000] rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Receipt size={18} />
-                      </div>
-                      <div>
-                        <p className="font-black text-gray-900 text-base">{salary.month} {salary.year}</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">E-SLIP #{salary.id.toString().padStart(6, '0')}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5">
-                    <p className="text-lg font-black text-[#8B0000] tracking-tight">
-                      Rp {parseInt(salary.net_salary).toLocaleString('id-ID')}
-                    </p>
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="flex justify-center">
-                      <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase border border-emerald-100">
-                        Paid
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => handlePreviewSlip(salary)}
-                        className="h-10 px-4 bg-blue-50 text-blue-600 rounded-xl flex items-center gap-2 hover:bg-blue-600 hover:text-white transition-all font-bold text-xs border border-blue-100"
-                      >
-                        <Eye size={14} /> View
-                      </button>
-                      <button 
-                        onClick={() => handleDownloadPDF(salary.id, salary.month, salary.year)}
-                        className="w-10 h-10 bg-gray-50 text-[#8B0000] rounded-xl flex items-center justify-center hover:bg-[#8B0000] hover:text-white transition-all border border-red-100"
-                        title="Download PDF"
-                      >
-                        <Download size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {salaries.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-center py-20 bg-white italic">
-                    <div className="flex flex-col items-center gap-3">
-                      <Receipt size={40} className="text-gray-100" />
-                      <p className="text-gray-400 font-bold">Belum ada riwayat slip gaji untuk Anda.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+    <div className="p-4 md:p-6 space-y-6 max-w-5xl mx-auto animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Riwayat Gaji Saya</h1>
+          <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
+            <CreditCard size={14} className="text-[#8B0000]" />
+            Akses slip gaji digital Anda dengan aman.
+          </p>
         </div>
       </div>
+
+      {/* Table */}
+      <Card>
+        <CardHeader className="pb-3 px-6 pt-5">
+          <p className="text-sm text-muted-foreground">
+            Menampilkan <span className="font-semibold text-foreground">{salaries.length}</span> slip gaji Anda
+          </p>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="rounded-md border-t">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40">
+                  <TableHead className="pl-6">Periode</TableHead>
+                  <TableHead>Nominal Netto</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-right pr-6">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {salaries.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-40 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="w-12 h-12 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center">
+                          <Receipt size={24} />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900">Belum Ada Slip Gaji</h3>
+                        <p className="text-sm text-gray-500">Belum ada riwayat slip gaji untuk Anda.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  salaries.map((salary) => (
+                    <TableRow key={salary.id} className="group">
+                      {/* Periode */}
+                      <TableCell className="pl-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-red-50 text-[#8B0000] flex items-center justify-center text-sm font-bold shrink-0">
+                            <Receipt size={14} />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-900">{salary.month} {salary.year}</span>
+                            <p className="text-[10px] text-gray-400">E-SLIP #{salary.id.toString().padStart(6, '0')}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Nominal Netto */}
+                      <TableCell>
+                        <span className="font-semibold text-gray-900">
+                          Rp {parseInt(salary.net_salary).toLocaleString('id-ID')}
+                        </span>
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-semibold">
+                          PAID
+                        </Badge>
+                      </TableCell>
+
+                      {/* Aksi */}
+                      <TableCell className="text-right pr-6">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePreviewSlip(salary)}
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 h-8 px-3 text-xs font-bold"
+                          >
+                            <Eye size={14} className="mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadPDF(salary.id, salary.month, salary.year)}
+                            className="text-[#8B0000] border-red-200 hover:bg-red-50 hover:text-[#8B0000] h-8 w-8 p-0 flex items-center justify-center"
+                            title="Download PDF"
+                          >
+                            <Download size={14} />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ═══ SLIP PREVIEW MODAL ═══ */}
       {previewOpen && (

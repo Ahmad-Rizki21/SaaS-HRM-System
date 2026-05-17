@@ -3,7 +3,13 @@
 <head>
     <meta charset="utf-8">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+        }
         body { font-family: 'Helvetica', 'Arial', sans-serif; color: #222; font-size: 11px; line-height: 1.5; background: #fff; }
 
         .slip-container { max-width: 750px; margin: 0 auto; padding: 30px 35px; }
@@ -15,6 +21,8 @@
             padding: 8px 20px;
             margin-bottom: 20px;
             display: inline-block;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         .confidential-banner span {
             font-size: 14px;
@@ -202,6 +210,36 @@
             border: none;
             border-top: 1px solid #ddd;
             margin: 12px 0;
+        }
+
+        /* Print Specific Rules */
+        @media print {
+            .section-table {
+                border: 1px solid #E53935 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .section-table .section-header,
+            .section-table .section-header-right {
+                background-color: #E53935 !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .section-table .total-row td {
+                background-color: #fff5f5 !important;
+                border-top: 1.5px solid #E53935 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .confidential-banner {
+                border: 1.5px solid #333 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .confidential-banner span {
+                color: #E53935 !important;
+            }
         }
 
         /* Responsive Tweaks */
