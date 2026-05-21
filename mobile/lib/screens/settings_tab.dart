@@ -321,7 +321,7 @@ class _SettingsTabState extends State<SettingsTab> {
             "FAQ dan bantuan penggunaan",
             onTap: () => _showInfoModal(
               "Pusat Bantuan",
-              "Selamat datang di Pusat Bantuan.\n\nJika Anda mengalami kendala saat melakukan absensi, pastikan GPS Anda aktif dan Anda berada di radius kantor.\n\nKontak Support: support@hrmsaas.com",
+              "Selamat datang di Pusat Bantuan.\n\nJika Anda mengalami kendala saat melakukan absensi, pastikan GPS Anda aktif dan Anda berada di radius kantor.\n\nKontak Support: ahmad@ajnusa.com - abbas@ajnusa.com",
             ),
           ),
           _buildSettingItem(
@@ -330,7 +330,7 @@ class _SettingsTabState extends State<SettingsTab> {
             "Syarat dan ketentuan layanan",
             onTap: () => _showInfoModal(
               "Kebijakan Privasi",
-              "Kebijakan Privasi Aplikasi HRM SaaS MVP.\n\nKerahasiaan data Anda adalah prioritas kami. Kami mengumpulkan data lokasi hanya saat Anda melakukan absensi masuk dan keluar untuk memastikan validitas kehadiran.\n\nData wajah Anda diproses secara lokal untuk verifikasi identitas.",
+              "Kebijakan Privasi Aplikasi HRM SaaS.\n\nKerahasiaan data Anda adalah prioritas kami. Kami mengumpulkan data lokasi hanya saat Anda melakukan absensi masuk dan keluar untuk memastikan validitas kehadiran.\n\nData wajah Anda diproses secara lokal untuk verifikasi identitas.",
             ),
           ),
           _buildSettingItem(
@@ -339,7 +339,7 @@ class _SettingsTabState extends State<SettingsTab> {
             "Versi 1.9.1",
             onTap: () => _showInfoModal(
               "Tentang Aplikasi",
-              "HRM SaaS Mobile Application\nVersi 1.0.0 (Stable)\n\nDeveloped by Ahmad Rizki & Team Enginner.\nCopyright © 2026.",
+              "HRM SaaS Mobile Application\nVersi 1.5.2 (Stable)\n\nDeveloped by Ahmad Rizki & Team Enginner.\nCopyright © 2026.",
             ),
           ),
 

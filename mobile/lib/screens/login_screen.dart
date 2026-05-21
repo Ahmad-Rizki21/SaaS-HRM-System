@@ -6,6 +6,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/api_service.dart';
 import '../services/fcm_service.dart';
 import '../services/google_auth_service.dart';
+import '../services/tracking_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -150,6 +151,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (result['success']) {
         await FcmService.init();
+        try {
+          await TrackingService.startTracking();
+        } catch (e) {
+          debugPrint("Failed to start tracking on login: $e");
+        }
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/dashboard');
         }

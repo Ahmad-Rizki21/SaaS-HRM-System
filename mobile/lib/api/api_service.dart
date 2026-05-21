@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import '../services/secure_storage_service.dart';
+import '../services/tracking_service.dart';
 
 class ApiService {
   // Toggle between Development and Production
@@ -326,6 +327,12 @@ class ApiService {
     // Also remove old legacy plaintext token if exists
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+
+    try {
+      await TrackingService.stopTracking();
+    } catch (e) {
+      print("Failed to stop tracking: $e");
+    }
   }
 
   // ============ DASHBOARD ============
@@ -1593,5 +1600,30 @@ class ApiService {
     } catch (e) {
       return {'status': 'error', 'message': 'Koneksi gagal.'};
     }
+  }
+
+  // ==========================================
+  // EMPLOYEE TRACKING
+  // ==========================================
+  static Future<Map<String, dynamic>> updateLiveLocation(double lat, double lng, double accuracy) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) throw Exception("Token tidak ditemukan");
+
+    final res = await http.post(
+      Uri.parse('$baseUrl/tracking/update'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'latitude': lat,
+        'longitude': lng,
+        'accuracy': accuracy,
+      }),
+    );
+    
+    return jsonDecode(res.body);
   }
 }
