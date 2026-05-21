@@ -58,6 +58,7 @@ dependencies:
   webview_flutter: ^4.4.2
   firebase_auth: ^5.7.0
   google_sign_in: ^7.2.0
+  flutter_background_service: ^5.1.0
 
 dev_dependencies:
   flutter_test:

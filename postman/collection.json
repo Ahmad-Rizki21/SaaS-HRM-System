@@ -2183,6 +2183,94 @@
                     }
                 }
             ]
+        },
+        {
+            "name": "📍 Live Tracking Teknisi",
+            "description": "Endpoint untuk memantau lokasi real-time teknisi di lapangan. Mobile app mengirim koordinat GPS secara berkala dari background service, sementara Admin Dashboard mengkonsumsi data ini untuk visualisasi peta interaktif.",
+            "item": [
+                {
+                    "name": "Update Live Location (Mobile)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"latitude\": -6.200000,\n    \"longitude\": 106.816666,\n    \"accuracy\": 12.5,\n    \"battery_level\": 87\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/tracking/update",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "tracking", "update"]
+                        },
+                        "description": "Dikirim oleh **Flutter Background Service** setiap kali ada perpindahan lokasi signifikan (>10 meter). Menyimpan koordinat GPS, akurasi, dan level baterai ke tabel `employee_tracks`.\n\n**Body Parameters:**\n- `latitude` (float, required): Koordinat lintang GPS\n- `longitude` (float, required): Koordinat bujur GPS\n- `accuracy` (float, optional): Akurasi GPS dalam meter\n- `battery_level` (integer, optional): Level baterai 0–100"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Live Positions (Admin Dashboard)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/tracking/live",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "tracking", "live"]
+                        },
+                        "description": "Mengambil **posisi terakhir** dari setiap teknisi yang aktif hari ini. Digunakan oleh frontend web (`TrackingMap.tsx`) untuk menampilkan marker lokasi real-time di peta. \n\nMenggunakan strategi `MAX(id)` per `user_id` untuk efisiensi query tinggi, dan me-load relasi `user` (nama, foto profil, NIK)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Route History (Admin Dashboard)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{token}}"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/tracking/history/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "tracking", "history", "1"]
+                        },
+                        "description": "Mengambil **seluruh titik rute perjalanan** teknisi pada hari ini berdasarkan `userId`. Digunakan untuk menggambar `Polyline` di peta guna memperlihatkan jalur yang dilalui teknisi dari pagi hingga saat ini.\n\n**URL Parameter:**\n- `userId` (integer, required): ID karyawan/teknisi yang ingin dilacak rutenya"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

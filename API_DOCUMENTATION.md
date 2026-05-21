@@ -140,6 +140,13 @@ Seluruh request API harus menyertakan header `Accept: application/json`. Untuk e
 | `POST` | `/api/projects/{id}/cash-flows` | Catat transaksi arus kas |
 | `DELETE` | `/api/projects/{id}/cash-flows/{cfid}` | Hapus transaksi arus kas |
 
+## 📍 Live Tracking Teknisi
+| Method | Endpoint | Deskripsi |
+| :--- | :--- | :--- |
+| `POST` | `/api/tracking/update` | [Mobile] Update koordinat GPS teknisi (background) |
+| `GET` | `/api/tracking/live` | [Admin] Ambil posisi terakhir semua teknisi aktif |
+| `GET` | `/api/tracking/history/{userId}` | [Admin] Ambil riwayat rute teknisi hari ini |
+
 ## 🛠️ Sistem & Settings
 | Method | Endpoint | Deskripsi |
 | :--- | :--- | :--- |

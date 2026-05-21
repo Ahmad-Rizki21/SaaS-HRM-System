@@ -6,6 +6,7 @@ import 'screens/notification_screen.dart';
 import 'screens/task_screen.dart';
 import 'services/notification_service.dart';
 import 'services/secure_storage_service.dart';
+import 'services/tracking_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -24,8 +25,9 @@ void main() async {
     // Initialize Google Sign In (required for v7.x)
     await GoogleSignIn.instance.initialize();
     await FcmService.init();
+    await TrackingService.initializeService();
   } catch (e) {
-    print("Firebase initialization error: $e");
+    print("Firebase/Tracking initialization error: $e");
   }
   
   // Load Settings
@@ -43,6 +45,14 @@ void main() async {
   // Check for valid token (encrypted)
   bool hasToken = await secureStorage.hasValidToken();
   
+  if (hasToken) {
+    try {
+      await TrackingService.startTracking();
+    } catch (e) {
+      print("Failed to start tracking: $e");
+    }
+  }
+
   runApp(MyApp(isLoggedIn: hasToken));
 }
 

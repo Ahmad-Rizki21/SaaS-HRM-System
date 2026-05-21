@@ -22,6 +22,7 @@ Aplikasi ini mencakup modul-modul inti HRM yang sudah terintegrasi:
   - **RBAC**: Role-based Access Control yang mendalam.
 - **Manajemen SDM**: Data karyawan lengkap, request perubahan profil, upload foto, dan manajemen jabatan (Role).
 - **Sistem Kehadiran Geofencing (Multi-Office) & Liveness**: Validasi ketat menggunakan GPS anti-mock dan deteksi wajah. Sekarang mendukung penentuan lokasi absensi di berbagai kantor cabang dengan radius yang dapat disesuaikan.
+- **Live Tracking Teknisi**: Pemantauan lokasi dan rute pergerakan teknisi di lapangan secara real-time di latar belakang perangkat (Background Service), dengan dashboard pemetaan interaktif.
 - **Koreksi Absen Mandiri**: Fitur pengajuan koreksi dengan workflow persetujuan (Approval) jika karyawan lupa absen pulang.
 - **Delegasi & Manajemen WFH**: Memberikan izin kepada karyawan tertentu untuk absensi jarak jauh tanpa terpaku radius kantor, lengkap dengan pengumuman otomatis.
 - **Manajemen Cuti & Reimbursement**: Approval berjenjang (Supervisor -> HR) otomatis.

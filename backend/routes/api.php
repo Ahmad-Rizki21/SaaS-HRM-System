@@ -36,6 +36,7 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\ShiftSwapController;
 use App\Http\Controllers\TaskActivityController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\VehicleLogController;
 use App\Http\Middleware\TenantMiddleware;
 use Illuminate\Support\Facades\Broadcast;
@@ -456,6 +457,11 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
         Route::post('/vehicle-logs/{id}/reject', [VehicleLogController::class, 'reject']);
     });
     Route::middleware('permission:view-vehicle-logs')->delete('/vehicle-logs/{id}', [VehicleLogController::class, 'destroy']);
+
+    // Employee Tracking (Live Location)
+    Route::post('/tracking/update', [TrackingController::class, 'store']);
+    Route::get('/tracking/live', [TrackingController::class, 'live']);
+    Route::get('/tracking/history/{userId}', [TrackingController::class, 'history']);
 });
 
 // Exports (Authenticated via query token or header inside controller)

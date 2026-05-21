@@ -85,6 +85,7 @@ const sidebarLinks: SidebarLink[] = [
     permission: 'view-attendances',
     submenus: [
       { name: "Live Attendance", href: "/dashboard/live-attendance", permission: 'apply-attendances' },
+      { name: "Live Tracking", href: "/dashboard/live-tracking", permission: 'view-attendances' },
       { name: "attendance_history", href: "/dashboard/attendance", permission: 'view-attendances' },
       { name: "shift_swap", href: "/dashboard/shift-swap", permission: 'view-shift-swaps' },
       { name: "attendance_correction", href: "/dashboard/attendance-corrections", permission: 'manage-attendance-corrections' },
