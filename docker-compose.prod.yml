@@ -11,7 +11,7 @@ services:
       mysql-master:
         condition: service_healthy
       mysql-slave:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
@@ -32,7 +32,7 @@ services:
       mysql-master:
         condition: service_healthy
       mysql-slave:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
@@ -57,7 +57,7 @@ services:
       mysql-master:
         condition: service_healthy
       mysql-slave:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -130,6 +130,7 @@ services:
       - "--enforce-gtid-consistency=ON"
       - "--gtid-mode=ON"
       - "--mysql-native-password=ON"
+      - "--bind-address=0.0.0.0"
     volumes:
       - mysql_slave_data:/var/lib/mysql
       - ./docker/mysql/init-slave.sql:/docker-entrypoint-initdb.d/01-init-slave.sql:ro
