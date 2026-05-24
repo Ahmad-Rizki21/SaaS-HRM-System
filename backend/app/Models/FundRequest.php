@@ -15,6 +15,7 @@ class FundRequest extends Model
         'amount',
         'reason',
         'status',
+        'current_approval_step',
         'supervisor_id',
         'hrd_id',
         'supervisor_approved_at',

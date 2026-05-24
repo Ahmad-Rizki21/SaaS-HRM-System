@@ -6,6 +6,7 @@ use App\Exports\AttendanceCorrectionExport;
 use App\Models\Attendance;
 use App\Models\AttendanceCorrection;
 use App\Models\User;
+use App\Services\ApprovalService;
 use App\Traits\Notifiable;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -87,74 +88,177 @@ class AttendanceCorrectionController extends Controller
             $correctedCheckOut = Carbon::parse($attendanceDate.' '.$request->corrected_check_out);
         }
 
-        $correction = AttendanceCorrection::create([
-            'user_id' => $user->id,
-            'company_id' => $user->company_id,
-            'attendance_id' => $attendance->id,
-            'correction_type' => $request->correction_type,
-            'corrected_check_in' => $correctedCheckIn,
-            'corrected_check_out' => $correctedCheckOut,
-            'reason' => $request->reason,
-            'status' => 'pending',
-        ]);
+        $companyId = $user->company_id;
 
-        // Notify the employee
-        $this->notify(
-            $user,
-            'KOREKSI ABSEN DIAJUKAN',
-            "Pengajuan koreksi absen Anda untuk tanggal {$attendanceDate} telah berhasil dikirim dan menunggu persetujuan.",
-            'info',
-            null,
-            'notif',
-            false
-        );
+        // ── Dynamic Workflow Check ──
+        $workflowResult = ApprovalService::initApproval('attendance_correction', $companyId, $user);
 
-        // Notify Supervisor
-        if ($user->supervisor_id) {
-            $supervisor = User::find($user->supervisor_id);
-            if ($supervisor) {
+        if ($workflowResult) {
+            $correction = AttendanceCorrection::create([
+                'user_id' => $user->id,
+                'company_id' => $companyId,
+                'attendance_id' => $attendance->id,
+                'correction_type' => $request->correction_type,
+                'corrected_check_in' => $correctedCheckIn,
+                'corrected_check_out' => $correctedCheckOut,
+                'reason' => $request->reason,
+                'status' => $workflowResult['status'],
+                'current_approval_step' => $workflowResult['current_approval_step'],
+            ]);
+
+            $this->notify(
+                $user,
+                'KOREKSI ABSEN DIAJUKAN',
+                "Pengajuan koreksi absen Anda untuk tanggal {$attendanceDate} telah dikirim. Menunggu: {$workflowResult['step_label']}.",
+                'info',
+                null,
+                'notif',
+                false
+            );
+
+            foreach ($workflowResult['approvers'] as $approver) {
                 $this->notify(
-                    $supervisor,
-                    'KOREKSI ABSEN BAWAHAN',
+                    $approver,
+                    'KOREKSI ABSEN PERLU PERSETUJUAN',
                     "{$user->name} mengajukan koreksi absen untuk tanggal {$attendanceDate}. Alasan: {$request->reason}",
+                    'warning',
+                    '/dashboard/attendance-corrections'
+                );
+            }
+        } else {
+            // ── Fallback: Default logic ──
+            $correction = AttendanceCorrection::create([
+                'user_id' => $user->id,
+                'company_id' => $companyId,
+                'attendance_id' => $attendance->id,
+                'correction_type' => $request->correction_type,
+                'corrected_check_in' => $correctedCheckIn,
+                'corrected_check_out' => $correctedCheckOut,
+                'reason' => $request->reason,
+                'status' => 'pending',
+            ]);
+
+            // Notify the employee
+            $this->notify(
+                $user,
+                'KOREKSI ABSEN DIAJUKAN',
+                "Pengajuan koreksi absen Anda untuk tanggal {$attendanceDate} telah berhasil dikirim dan menunggu persetujuan.",
+                'info',
+                null,
+                'notif',
+                false
+            );
+
+            // Notify Supervisor
+            if ($user->supervisor_id) {
+                $supervisor = User::find($user->supervisor_id);
+                if ($supervisor) {
+                    $this->notify(
+                        $supervisor,
+                        'KOREKSI ABSEN BAWAHAN',
+                        "{$user->name} mengajukan koreksi absen untuk tanggal {$attendanceDate}. Alasan: {$request->reason}",
+                        'warning',
+                        '/dashboard/attendance-corrections'
+                    );
+                }
+            }
+
+            // Notify Admins/HR (excluding the submitter and the supervisor if already notified)
+            $adminQuery = User::where('company_id', $companyId)
+                ->where('role_id', '>', 1)
+                ->where('id', '!=', $user->id); // Exclude the user who submitted
+
+            if ($user->supervisor_id) {
+                $adminQuery->where('id', '!=', $user->supervisor_id); // Don't double-notify supervisor
+            }
+
+            $admins = $adminQuery->get();
+            foreach ($admins as $admin) {
+                /** @var User $admin */
+                $this->notify(
+                    $admin,
+                    'KOREKSI ABSEN BARU',
+                    "{$user->name} mengajukan koreksi absen untuk tanggal {$attendanceDate}.",
                     'warning',
                     '/dashboard/attendance-corrections'
                 );
             }
         }
 
-        // Notify Admins/HR (excluding the submitter and the supervisor if already notified)
-        $adminQuery = User::where('company_id', $user->company_id)
-            ->where('role_id', '>', 1)
-            ->where('id', '!=', $user->id); // Exclude the user who submitted
-
-        if ($user->supervisor_id) {
-            $adminQuery->where('id', '!=', $user->supervisor_id); // Don't double-notify supervisor
-        }
-
-        $admins = $adminQuery->get();
-        foreach ($admins as $admin) {
-            /** @var User $admin */
-            $this->notify(
-                $admin,
-                'KOREKSI ABSEN BARU',
-                "{$user->name} mengajukan koreksi absen untuk tanggal {$attendanceDate}.",
-                'warning',
-                '/dashboard/attendance-corrections'
-            );
-        }
-
         return $this->successResponse($correction, 'Pengajuan koreksi absen berhasil diajukan.', 201);
     }
 
     /**
-     * Approve a correction request (HR/Supervisor only).
+     * Approve a correction request.
      */
     public function approve(Request $request, $id)
     {
-        abort_if(! $request->user()->hasPermission('approve-leaves'), 403, 'Akses ditolak.');
-
+        $user = $request->user();
         $correction = AttendanceCorrection::with('attendance')->findOrFail($id);
+
+        // ── Dynamic Workflow Path ──
+        if ($correction->current_approval_step !== null) {
+            $result = ApprovalService::processApproval(
+                'attendance_correction', $correction->company_id, $user, $correction->user, $correction->current_approval_step, 'approve'
+            );
+
+            if ($result === null) {
+                return $this->errorResponse('Workflow tidak ditemukan.', 400);
+            }
+            if (isset($result['error'])) {
+                return $this->errorResponse($result['error'], 403);
+            }
+
+            $updateData = [
+                'status' => $result['status'],
+                'current_approval_step' => $result['current_approval_step'],
+            ];
+
+            if ($result['is_final'] && $result['status'] === 'approved') {
+                $updateData['approved_by'] = $user->id;
+                $updateData['remark'] = $request->remark;
+            }
+
+            $correction->update($updateData);
+
+            if ($result['is_final'] && $result['status'] === 'approved') {
+                // Apply the correction to the actual attendance record
+                $attendance = $correction->attendance;
+                $applyData = [];
+                if ($correction->corrected_check_in) {
+                    $applyData['check_in'] = $correction->corrected_check_in;
+                }
+                if ($correction->corrected_check_out) {
+                    $applyData['check_out'] = $correction->corrected_check_out;
+                }
+                if (! empty($applyData)) {
+                    $attendance->update($applyData);
+                }
+
+                $attendanceDate = Carbon::parse($attendance->check_in)->format('Y-m-d');
+                $this->notify(
+                    $correction->user,
+                    'KOREKSI ABSEN DISETUJUI',
+                    "Pengajuan koreksi absen Anda untuk tanggal {$attendanceDate} telah DISETUJUI oleh {$user->name}.",
+                    'success'
+                );
+
+                return $this->successResponse(null, 'Koreksi absen disetujui dan data absen telah diperbarui.');
+            }
+
+            // Notify next step
+            if (isset($result['approvers'])) {
+                foreach ($result['approvers'] as $nextApprover) {
+                    $this->notify($nextApprover, 'KOREKSI ABSEN MENUNGGU PERSETUJUAN', "Koreksi absen {$correction->user->name} menunggu persetujuan Anda. Tahap: {$result['step_label']}.", 'warning', '/dashboard/attendance-corrections');
+                }
+            }
+            $this->notify($correction->user, 'KOREKSI ABSEN DALAM PROSES', "Koreksi absen Anda disetujui di tahap sebelumnya. Menunggu: {$result['step_label']}.", 'info');
+
+            return $this->successResponse(null, "Di-approve. Menunggu: {$result['step_label']}.");
+        }
+
+        // ── Fallback: Default logic ──
+        abort_if(! $request->user()->hasPermission('approve-leaves'), 403, 'Akses ditolak.');
 
         if ($correction->status !== 'pending') {
             return $this->errorResponse('Koreksi ini sudah diproses sebelumnya.', 400);
@@ -196,13 +300,46 @@ class AttendanceCorrectionController extends Controller
     }
 
     /**
-     * Reject a correction request (HR/Supervisor only).
+     * Reject a correction request.
      */
     public function reject(Request $request, $id)
     {
-        abort_if(! $request->user()->hasPermission('approve-leaves'), 403, 'Akses ditolak.');
-
+        $user = $request->user();
         $correction = AttendanceCorrection::with('attendance')->findOrFail($id);
+
+        // ── Dynamic Workflow Path ──
+        if ($correction->current_approval_step !== null) {
+            $result = ApprovalService::processApproval(
+                'attendance_correction', $correction->company_id, $user, $correction->user, $correction->current_approval_step, 'reject'
+            );
+
+            if ($result === null) {
+                return $this->errorResponse('Workflow tidak ditemukan.', 400);
+            }
+            if (isset($result['error'])) {
+                return $this->errorResponse($result['error'], 403);
+            }
+
+            $correction->update([
+                'status' => 'rejected',
+                'current_approval_step' => null,
+                'approved_by' => $user->id,
+                'remark' => $request->remark,
+            ]);
+
+            $attendanceDate = Carbon::parse($correction->attendance->check_in)->format('Y-m-d');
+            $this->notify(
+                $correction->user,
+                'KOREKSI ABSEN DITOLAK',
+                "Mohon maaf, pengajuan koreksi absen Anda untuk tanggal {$attendanceDate} telah DITOLAK. ".($request->remark ? "Alasan: {$request->remark}" : ''),
+                'danger'
+            );
+
+            return $this->successResponse(null, 'Koreksi absen ditolak.');
+        }
+
+        // ── Fallback: Default logic ──
+        abort_if(! $request->user()->hasPermission('approve-leaves'), 403, 'Akses ditolak.');
 
         if ($correction->status !== 'pending') {
             return $this->errorResponse('Koreksi ini sudah diproses sebelumnya.', 400);
