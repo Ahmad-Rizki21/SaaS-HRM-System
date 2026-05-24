@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Reimbursement;
 use App\Models\User;
+use App\Services\ApprovalService;
 use App\Traits\Notifiable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -62,55 +63,93 @@ class ReimbursementController extends Controller
             }
         }
 
-        $reimbursement = Reimbursement::create([
-            'company_id' => $request->user()->company_id,
-            'user_id' => $request->user()->id,
-            'title' => $request->title,
-            'amount' => $request->amount,
-            'description' => $request->description,
-            'attachment' => $paths,
-            'status' => 'pending',
-        ]);
+        $user = $request->user();
+        $companyId = $user->company_id;
 
-        // 1. Notify the Submitting User (Confirmation)
-        $this->notify(
-            $request->user(),
-            'PENGAJUAN REIMBURSEMENT',
-            "Klaim reimbursement Anda '{$request->title}' sebesar Rp ".number_format($request->amount, 0, ',', '.').' telah diajukan.',
-            'info',
-            self::URL_DASHBOARD_REIMBURSEMENTS
-        );
+        // ── Dynamic Workflow Check ──
+        $workflowResult = ApprovalService::initApproval('reimbursement', $companyId, $user);
 
-        // 2. Notify User's Supervisor
-        if ($request->user()->supervisor_id) {
-            $supervisor = $request->user()->supervisor;
-            if ($supervisor) {
+        if ($workflowResult) {
+            $reimbursement = Reimbursement::create([
+                'company_id' => $companyId,
+                'user_id' => $user->id,
+                'title' => $request->title,
+                'amount' => $request->amount,
+                'description' => $request->description,
+                'attachment' => $paths,
+                'status' => $workflowResult['status'],
+                'current_approval_step' => $workflowResult['current_approval_step'],
+            ]);
+
+            $this->notify(
+                $user,
+                'PENGAJUAN REIMBURSEMENT',
+                "Klaim reimbursement Anda '{$request->title}' sebesar Rp ".number_format($request->amount, 0, ',', '.')." telah diajukan. Menunggu: {$workflowResult['step_label']}.",
+                'info',
+                self::URL_DASHBOARD_REIMBURSEMENTS
+            );
+
+            foreach ($workflowResult['approvers'] as $approver) {
                 $this->notify(
-                    $supervisor,
-                    'KLAIM REIMBURSEMENT BAWAHAN',
-                    "Karyawan {$request->user()->name} mengajukan klaim '{$request->title}' sebesar Rp ".number_format($request->amount, 0, ',', '.').'. Mohon segera tinjau.',
+                    $approver,
+                    'KLAIM REIMBURSEMENT PERLU PERSETUJUAN',
+                    "Karyawan {$user->name} mengajukan klaim '{$request->title}' sebesar Rp ".number_format($request->amount, 0, ',', '.').'. Mohon segera tinjau.',
                     'warning',
                     '/dashboard/approvals'
                 );
             }
-        }
+        } else {
+            // ── Fallback: Default logic ──
+            $reimbursement = Reimbursement::create([
+                'company_id' => $companyId,
+                'user_id' => $user->id,
+                'title' => $request->title,
+                'amount' => $request->amount,
+                'description' => $request->description,
+                'attachment' => $paths,
+                'status' => 'pending',
+            ]);
 
-        // 3. Notify Admins/Approvers/Finance in the same company
-        // Approver roles: Super Admin (7), HRD (2), Finance (10), HRD Manager (8)
-        $admins = User::where('company_id', $request->user()->company_id)
-            ->whereIn('role_id', [7, 2, 10, 8])
-            ->where('id', '!=', $request->user()->id)
-            ->where('id', '!=', $request->user()->supervisor_id) // Don't notify twice
-            ->get();
-
-        foreach ($admins as $admin) {
+            // 1. Notify the Submitting User (Confirmation)
             $this->notify(
-                $admin,
-                'KLAIM REIMBURSEMENT BARU (ADMIN)',
-                "Karyawan {$request->user()->name} mengajukan klaim '{$request->title}' sebesar Rp ".number_format($request->amount, 0, ',', '.').'.',
-                'warning',
-                '/dashboard/approvals'
+                $user,
+                'PENGAJUAN REIMBURSEMENT',
+                "Klaim reimbursement Anda '{$request->title}' sebesar Rp ".number_format($request->amount, 0, ',', '.').' telah diajukan.',
+                'info',
+                self::URL_DASHBOARD_REIMBURSEMENTS
             );
+
+            // 2. Notify User's Supervisor
+            if ($user->supervisor_id) {
+                $supervisor = $user->supervisor;
+                if ($supervisor) {
+                    $this->notify(
+                        $supervisor,
+                        'KLAIM REIMBURSEMENT BAWAHAN',
+                        "Karyawan {$user->name} mengajukan klaim '{$request->title}' sebesar Rp ".number_format($request->amount, 0, ',', '.').'. Mohon segera tinjau.',
+                        'warning',
+                        '/dashboard/approvals'
+                    );
+                }
+            }
+
+            // 3. Notify Admins/Approvers/Finance in the same company
+            // Approver roles: Super Admin (7), HRD (2), Finance (10), HRD Manager (8)
+            $admins = User::where('company_id', $companyId)
+                ->whereIn('role_id', [7, 2, 10, 8])
+                ->where('id', '!=', $user->id)
+                ->where('id', '!=', $user->supervisor_id) // Don't notify twice
+                ->get();
+
+            foreach ($admins as $admin) {
+                $this->notify(
+                    $admin,
+                    'KLAIM REIMBURSEMENT BARU (ADMIN)',
+                    "Karyawan {$user->name} mengajukan klaim '{$request->title}' sebesar Rp ".number_format($request->amount, 0, ',', '.').'.',
+                    'warning',
+                    '/dashboard/approvals'
+                );
+            }
         }
 
         $this->logActivity('SUBMIT_REIMBURSEMENT', "Mengajukan reimbursement '{$request->title}' senilai Rp ".number_format($request->amount, 0, ',', '.'), $reimbursement);
@@ -120,8 +159,57 @@ class ReimbursementController extends Controller
 
     public function approve(Request $request, $id)
     {
-        abort_if(! $request->user()->hasPermission('approve-reimbursements'), 403, self::MSG_FORBIDDEN);
+        $user = $request->user();
         $reimbursement = Reimbursement::findOrFail($id);
+
+        // ── Dynamic Workflow Path ──
+        if ($reimbursement->current_approval_step !== null) {
+            $result = ApprovalService::processApproval(
+                'reimbursement', $reimbursement->company_id, $user, $reimbursement->user, $reimbursement->current_approval_step, 'approve'
+            );
+
+            if ($result === null) {
+                return $this->errorResponse('Workflow tidak ditemukan.', 400);
+            }
+            if (isset($result['error'])) {
+                return $this->errorResponse($result['error'], 403);
+            }
+
+            $updateData = [
+                'status' => $result['status'],
+                'current_approval_step' => $result['current_approval_step'],
+            ];
+
+            if ($result['is_final'] && $result['status'] === 'approved') {
+                $updateData['remark'] = $request->remark;
+            }
+
+            $reimbursement->update($updateData);
+
+            if ($result['is_final'] && $result['status'] === 'approved') {
+                $msg = "Klaim reimbursement Anda '{$reimbursement->title}' sebesar Rp ".number_format($reimbursement->amount, 0, ',', '.').' telah DISETUJUI.';
+                if ($request->remark) {
+                    $msg .= " Catatan: {$request->remark}";
+                }
+
+                $this->notify($reimbursement->user, 'REIMBURSEMENT DISETUJUI', $msg, 'success', self::URL_DASHBOARD_REIMBURSEMENTS);
+                $this->logActivity('APPROVE_REIMBURSEMENT', "Menyetujui klaim '{$reimbursement->title}' dari {$reimbursement->user->name}", $reimbursement);
+
+                return $this->successResponse($reimbursement, 'Klaim disetujui.');
+            }
+
+            if (isset($result['approvers'])) {
+                foreach ($result['approvers'] as $nextApprover) {
+                    $this->notify($nextApprover, 'REIMBURSEMENT MENUNGGU PERSETUJUAN', "Klaim '{$reimbursement->title}' dari {$reimbursement->user->name} menunggu persetujuan Anda. Tahap: {$result['step_label']}.", 'warning', '/dashboard/approvals');
+                }
+            }
+            $this->notify($reimbursement->user, 'REIMBURSEMENT DALAM PROSES', "Klaim '{$reimbursement->title}' Anda disetujui di tahap sebelumnya. Menunggu: {$result['step_label']}.", 'info');
+
+            return $this->successResponse($reimbursement, "Di-approve. Menunggu: {$result['step_label']}.");
+        }
+
+        // ── Fallback: Default logic ──
+        abort_if(! $request->user()->hasPermission('approve-reimbursements'), 403, self::MSG_FORBIDDEN);
 
         $reimbursement->update([
             'status' => 'approved',
@@ -148,8 +236,41 @@ class ReimbursementController extends Controller
 
     public function reject(Request $request, $id)
     {
-        abort_if(! $request->user()->hasPermission('approve-reimbursements'), 403, self::MSG_FORBIDDEN);
+        $user = $request->user();
         $reimbursement = Reimbursement::findOrFail($id);
+
+        // ── Dynamic Workflow Path ──
+        if ($reimbursement->current_approval_step !== null) {
+            $result = ApprovalService::processApproval(
+                'reimbursement', $reimbursement->company_id, $user, $reimbursement->user, $reimbursement->current_approval_step, 'reject'
+            );
+
+            if ($result === null) {
+                return $this->errorResponse('Workflow tidak ditemukan.', 400);
+            }
+            if (isset($result['error'])) {
+                return $this->errorResponse($result['error'], 403);
+            }
+
+            $reimbursement->update([
+                'status' => 'rejected',
+                'current_approval_step' => null,
+                'remark' => $request->remark,
+            ]);
+
+            $msg = "Mohon maaf, klaim reimbursement Anda '{$reimbursement->title}' telah DITOLAK.";
+            if ($request->remark) {
+                $msg .= " Alasan: {$request->remark}";
+            }
+
+            $this->notify($reimbursement->user, 'REIMBURSEMENT DITOLAK', $msg, 'danger', self::URL_DASHBOARD_REIMBURSEMENTS);
+            $this->logActivity('REJECT_REIMBURSEMENT', "Menolak klaim '{$reimbursement->title}' dari {$reimbursement->user->name}", $reimbursement);
+
+            return $this->successResponse($reimbursement, 'Klaim ditolak.');
+        }
+
+        // ── Fallback: Default logic ──
+        abort_if(! $request->user()->hasPermission('approve-reimbursements'), 403, self::MSG_FORBIDDEN);
 
         $reimbursement->update([
             'status' => 'rejected',

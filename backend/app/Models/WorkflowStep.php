@@ -13,6 +13,7 @@ class WorkflowStep extends Model
         'workflow_id',
         'step_number',
         'approver_role_id',
+        'approver_user_id',
         'approver_type',
         'sla_hours',
     ];
@@ -25,5 +26,10 @@ class WorkflowStep extends Model
     public function role()
     {
         return $this->belongsTo(Role::class, 'approver_role_id');
+    }
+
+    public function approverUser()
+    {
+        return $this->belongsTo(User::class, 'approver_user_id');
     }
 }

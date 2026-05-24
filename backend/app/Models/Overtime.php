@@ -17,6 +17,7 @@ class Overtime extends Model
         'end_time',
         'reason',
         'status',
+        'current_approval_step',
         'approved_by',
         'remark',
     ];

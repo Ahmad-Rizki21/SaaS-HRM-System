@@ -11,7 +11,8 @@ class Reimbursement extends Model
 
     protected $fillable = [
         'company_id', 'user_id', 'title', 'amount',
-        'description', 'status', 'approved_by', 'attachment', 'remark',
+        'description', 'status', 'current_approval_step',
+        'approved_by', 'attachment', 'remark',
     ];
 
     protected $casts = [

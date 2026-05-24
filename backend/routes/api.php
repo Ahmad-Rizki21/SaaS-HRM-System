@@ -171,7 +171,9 @@ Route::middleware(['auth:sanctum', TenantMiddleware::class])->group(function () 
 
     // Custom Approval Workflows
     Route::get('/approval-workflows', [ApprovalWorkflowController::class, 'index']);
+    Route::get('/approval-workflows/modules', [ApprovalWorkflowController::class, 'getModuleKeys']);
     Route::get('/approval-workflows/roles', [ApprovalWorkflowController::class, 'getRoles']);
+    Route::get('/approval-workflows/users', [ApprovalWorkflowController::class, 'getUsers']);
     Route::get('/approval-workflows/{moduleKey}', [ApprovalWorkflowController::class, 'show']);
     Route::post('/approval-workflows', [ApprovalWorkflowController::class, 'store']);
 

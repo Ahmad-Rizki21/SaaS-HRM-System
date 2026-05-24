@@ -13,7 +13,7 @@ class AttendanceCorrection extends Model
     protected $fillable = [
         'user_id', 'company_id', 'attendance_id', 'correction_type',
         'corrected_check_in', 'corrected_check_out',
-        'reason', 'status', 'approved_by', 'remark',
+        'reason', 'status', 'current_approval_step', 'approved_by', 'remark',
     ];
 
     protected $appends = ['corrected_check_in_time', 'corrected_check_out_time', 'attendance_date'];

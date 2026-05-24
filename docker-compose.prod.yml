@@ -1,9 +1,7 @@
 services:
   # ── Backend 1 (Laravel) ───────────────────────────
   backend1:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/ahmad-rizki21/saas-backend:latest
     container_name: hrms-backend1
     restart: always
     env_file: .env.prod
@@ -24,9 +22,7 @@ services:
 
   # ── Backend 2 (Laravel - Failover) ────────────────
   backend2:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/ahmad-rizki21/saas-backend:latest
     container_name: hrms-backend2
     restart: always
     env_file: .env.prod
@@ -47,9 +43,7 @@ services:
 
   # ── Reverb Server (WebSockets) ─────────────────────
   reverb:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/ahmad-rizki21/saas-backend:latest
     container_name: hrms-reverb
     command: php artisan reverb:start --host="0.0.0.0" --port=8080
     restart: always
@@ -81,11 +75,7 @@ services:
 
   # ── Frontend (Next.js) ────────────────────────────
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: https://ontime.jelantik.com/api
+    image: ghcr.io/ahmad-rizki21/saas-frontend:latest
     container_name: hrms-frontend
     restart: always
     env_file: .env.prod

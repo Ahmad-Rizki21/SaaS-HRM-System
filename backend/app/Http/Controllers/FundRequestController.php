@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FundRequest;
 use App\Models\User;
+use App\Services\ApprovalService;
 use App\Traits\Notifiable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -61,6 +62,7 @@ class FundRequestController extends Controller
         ]);
 
         $user = $request->user();
+        $companyId = $user->company_id;
 
         $attachmentPath = null;
         if ($request->attachment) {
@@ -71,27 +73,62 @@ class FundRequestController extends Controller
             $attachmentPath = $imageName;
         }
 
-        $fundRequest = FundRequest::create([
-            'company_id' => $user->company_id,
-            'user_id' => $user->id,
-            'amount' => $request->amount,
-            'reason' => $request->reason,
-            'attachment' => $attachmentPath,
-            'status' => 'pending',
-            'supervisor_id' => $user->supervisor_id,
-        ]);
+        // ── Dynamic Workflow Check ──
+        $workflowResult = ApprovalService::initApproval('fund_request', $companyId, $user);
 
-        // Notify Supervisor
-        if ($user->supervisor_id) {
-            $supervisor = User::find($user->supervisor_id);
-            if ($supervisor) {
+        if ($workflowResult) {
+            $fundRequest = FundRequest::create([
+                'company_id' => $companyId,
+                'user_id' => $user->id,
+                'amount' => $request->amount,
+                'reason' => $request->reason,
+                'attachment' => $attachmentPath,
+                'status' => $workflowResult['status'],
+                'current_approval_step' => $workflowResult['current_approval_step'],
+                'supervisor_id' => $user->supervisor_id,
+            ]);
+
+            $this->notify(
+                $user,
+                'PENGAJUAN DANA BERHASIL',
+                "Pengajuan dana Anda sebesar Rp ".number_format($request->amount, 0, ',', '.')." telah diajukan. Menunggu: {$workflowResult['step_label']}.",
+                'info',
+                '/dashboard/approvals'
+            );
+
+            foreach ($workflowResult['approvers'] as $approver) {
                 $this->notify(
-                    $supervisor,
-                    'PENGAJUAN DANA BARU',
-                    "{$user->name} mengajukan dana sebesar Rp ".number_format($request->amount, 0, ',', '.').'. Mohon tinjau.',
+                    $approver,
+                    'PENGAJUAN DANA PERLU PERSETUJUAN',
+                    "{$user->name} mengajukan dana sebesar Rp ".number_format($request->amount, 0, ',', '.').'. Mohon segera tinjau.',
                     'warning',
                     '/dashboard/approvals'
                 );
+            }
+        } else {
+            // ── Fallback: Default logic ──
+            $fundRequest = FundRequest::create([
+                'company_id' => $companyId,
+                'user_id' => $user->id,
+                'amount' => $request->amount,
+                'reason' => $request->reason,
+                'attachment' => $attachmentPath,
+                'status' => 'pending',
+                'supervisor_id' => $user->supervisor_id,
+            ]);
+
+            // Notify Supervisor
+            if ($user->supervisor_id) {
+                $supervisor = User::find($user->supervisor_id);
+                if ($supervisor) {
+                    $this->notify(
+                        $supervisor,
+                        'PENGAJUAN DANA BARU',
+                        "{$user->name} mengajukan dana sebesar Rp ".number_format($request->amount, 0, ',', '.').'. Mohon tinjau.',
+                        'warning',
+                        '/dashboard/approvals'
+                    );
+                }
             }
         }
 
@@ -114,6 +151,54 @@ class FundRequestController extends Controller
         $user = $request->user();
         $fundRequest = FundRequest::findOrFail($id);
 
+        // ── Dynamic Workflow Path ──
+        if ($fundRequest->current_approval_step !== null) {
+            $result = ApprovalService::processApproval(
+                'fund_request', $fundRequest->company_id, $user, $fundRequest->user, $fundRequest->current_approval_step, 'approve'
+            );
+
+            if ($result === null) {
+                return response()->json(['status' => 'error', 'message' => 'Workflow tidak ditemukan.'], 400);
+            }
+            if (isset($result['error'])) {
+                return response()->json(['status' => 'error', 'message' => $result['error']], 403);
+            }
+
+            $updateData = [
+                'status' => $result['status'],
+                'current_approval_step' => $result['current_approval_step'],
+            ];
+
+            if ($result['is_final'] && $result['status'] === 'approved') {
+                $updateData['hrd_id'] = $user->id;
+                $updateData['hrd_approved_at'] = now();
+            }
+
+            $fundRequest->update($updateData);
+
+            if ($result['is_final'] && $result['status'] === 'approved') {
+                $this->notify(
+                    $fundRequest->user,
+                    'PENGAJUAN DANA DISETUJUI',
+                    'Pengajuan dana Anda sebesar Rp '.number_format($fundRequest->amount, 0, ',', '.').' telah DISETUJUI sepenuhnya.',
+                    'success'
+                );
+
+                return response()->json(['status' => 'success', 'message' => 'Pengajuan dana telah disetujui sepenuhnya.']);
+            }
+
+            // Notify next step
+            if (isset($result['approvers'])) {
+                foreach ($result['approvers'] as $nextApprover) {
+                    $this->notify($nextApprover, 'PENGAJUAN DANA MENUNGGU PERSETUJUAN', "Pengajuan dana {$fundRequest->user->name} menunggu persetujuan Anda. Tahap: {$result['step_label']}.", 'warning', '/dashboard/approvals');
+                }
+            }
+            $this->notify($fundRequest->user, 'PENGAJUAN DANA DALAM PROSES', "Pengajuan dana Anda disetujui di tahap sebelumnya. Menunggu: {$result['step_label']}.", 'info');
+
+            return response()->json(['status' => 'success', 'message' => "Di-approve. Menunggu: {$result['step_label']}."]);
+        }
+
+        // ── Fallback: Default 2-step logic ──
         $isSupervisor = $fundRequest->user->supervisor_id === $user->id;
         $isHR = $user->hasPermission('approve-permits') || in_array($user->role->name, ['HRD', self::ROLE_HRD_MANAGER, 'Admin', 'Super Admin']);
 
@@ -179,6 +264,37 @@ class FundRequestController extends Controller
         $user = $request->user();
         $fundRequest = FundRequest::findOrFail($id);
 
+        // ── Dynamic Workflow Path ──
+        if ($fundRequest->current_approval_step !== null) {
+            $result = ApprovalService::processApproval(
+                'fund_request', $fundRequest->company_id, $user, $fundRequest->user, $fundRequest->current_approval_step, 'reject'
+            );
+
+            if ($result === null) {
+                return response()->json(['status' => 'error', 'message' => 'Workflow tidak ditemukan.'], 400);
+            }
+            if (isset($result['error'])) {
+                return response()->json(['status' => 'error', 'message' => $result['error']], 403);
+            }
+
+            $fundRequest->update([
+                'status' => 'rejected',
+                'current_approval_step' => null,
+                'rejected_at' => now(),
+                'reject_reason' => $request->reject_reason,
+            ]);
+
+            $this->notify(
+                $fundRequest->user,
+                'PENGAJUAN DANA DITOLAK',
+                "Pengajuan dana Anda telah DITOLAK. Alasan: {$request->reject_reason}",
+                'danger'
+            );
+
+            return response()->json(['status' => 'success', 'message' => 'Pengajuan dana ditolak.']);
+        }
+
+        // ── Fallback: Default logic ──
         $fundRequest->update([
             'status' => 'rejected',
             'rejected_at' => now(),

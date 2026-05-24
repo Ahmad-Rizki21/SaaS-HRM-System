@@ -11,7 +11,8 @@ class Leave extends Model
 
     protected $fillable = [
         'user_id', 'company_id', 'start_date', 'end_date',
-        'type', 'reason', 'status', 'approved_by', 'signature', 'remark',
+        'type', 'reason', 'status', 'current_approval_step',
+        'approved_by', 'signature', 'remark',
         'supervisor_approved_by', 'supervisor_approved_at', 'supervisor_remark',
     ];
 

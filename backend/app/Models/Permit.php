@@ -14,6 +14,7 @@ class Permit extends Model
         'type',
         'reason',
         'status',
+        'current_approval_step',
         'approved_by',
         'remark',
         'signature',
