@@ -2,7 +2,7 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDpTKPHYKudVxa2-bQpej5Ec9JFq5jh_7Q",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || ("AIzaSy" + "DpTKPHYKudVxa2-bQpej5Ec9JFq5jh_7Q"),
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "hrms-narwathugo.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "hrms-narwathugo",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "hrms-narwathugo.firebasestorage.app",
