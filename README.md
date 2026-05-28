@@ -1,10 +1,14 @@
+<p align="center">
+  <img src="frontend/public/logo.png" alt="OnTime HRMS Logo" width="200"/>
+</p>
+
 # OnTime HRMS - Enterprise SaaS Solution
 
 Sistem Informasi Manajemen Sumber Daya Manusia (HRMS) berbasis SaaS dengan arsitektur multi-tenant. Aplikasi ini dirancang untuk mengelola kehadiran, jadwal kerja, pengajuan cuti, dan klaim biaya (reimbursement) secara efisien untuk berbagai perusahaan dalam satu platform.
 
 STATUS: PRODUCTION ON AIR (STABLE) 🚀
 
----
+📊 **[Lihat Presentasi Aplikasi (Google Slides)](https://docs.google.com/presentation/d/1syhQFsJ9Sb78I2IeVKOshudFbaB-teIK/edit?usp=sharing&ouid=106288745369184234344&rtpof=true&sd=true)**
 
 ---
 
