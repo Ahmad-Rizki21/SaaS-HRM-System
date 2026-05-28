@@ -25,27 +25,23 @@ class AttendanceController extends Controller
         $user = $request->user();
         $now = now();
         $today = Carbon::today()->toDateString();
+        $response = null;
 
         $attendance = Attendance::where('user_id', $user->id)
             ->whereDate('check_in', $today)
             ->first();
 
         if ($attendance) {
-            return $this->errorResponse('Anda sudah check-in hari ini.', 400);
+            $response = $this->errorResponse('Anda sudah check-in hari ini.', 400);
+        } elseif ($securityError = $this->validateDeviceAndSecurity($user, $request)) {
+            $response = $this->errorResponse($securityError['message'], $securityError['code']);
+        } elseif (!($geoResult = $this->validateGeofencing($user, $request))['success']) {
+            $response = $this->errorResponse($geoResult['message'], $geoResult['status']);
+        } else {
+            $response = $this->processCheckIn($user, $request, $geoResult['office'], $now, $today);
         }
 
-        $securityError = $this->validateDeviceAndSecurity($user, $request);
-        if ($securityError) {
-            return $this->errorResponse($securityError['message'], $securityError['code']);
-        }
-
-        // --- Geofencing Check (Multi-Office) ---
-        $geoResult = $this->validateGeofencing($user, $request);
-        if (!$geoResult['success']) {
-            return $this->errorResponse($geoResult['message'], $geoResult['status']);
-        }
-
-        return $this->processCheckIn($user, $request, $geoResult['office'], $now, $today);
+        return $response;
     }
 
     private function processCheckIn(User $user, StoreAttendanceRequest $request, $matchedOffice, Carbon $now, string $today)
@@ -86,33 +82,28 @@ class AttendanceController extends Controller
     public function checkOut(StoreAttendanceRequest $request)
     {
         $user = $request->user();
+        $response = null;
 
         $attendance = Attendance::where('user_id', $user->id)
             ->whereDate('check_in', Carbon::today())
             ->whereNull('check_out')
             ->first();
 
-        if (! $attendance) {
-            return $this->errorResponse('Anda belum check-in atau sudah check-out.', 400);
-        }
-
-        // --- 1. Fake GPS Check ---
-        if ($request->is_mocked) {
-            return $this->errorResponse('Lokasi Palsu Terdeteksi! Mohon gunakan GPS asli.', 403);
-        }
-
-        // --- 2. Device Binding Check ---
-        if ($request->device_id && $user->device_id && $user->device_id !== $request->device_id) {
-            return $this->errorResponse('HP Anda tidak terdaftar. Gunakan HP yang sama saat absen masuk.', 403);
-        }
-
-        // --- 3. Foto Selfie Check & Face Match Placeholder ---
         $faceMatch = true;
-        if ($request->image && $user->profile_photo_path && ! $faceMatch) {
-            return $this->errorResponse('Wajah tidak cocok dengan profil Anda.', 403);
+
+        if (! $attendance) {
+            $response = $this->errorResponse('Anda belum check-in atau sudah check-out.', 400);
+        } elseif ($request->is_mocked) {
+            $response = $this->errorResponse('Lokasi Palsu Terdeteksi! Mohon gunakan GPS asli.', 403);
+        } elseif ($request->device_id && $user->device_id && $user->device_id !== $request->device_id) {
+            $response = $this->errorResponse('HP Anda tidak terdaftar. Gunakan HP yang sama saat absen masuk.', 403);
+        } elseif ($request->image && $user->profile_photo_path && ! $faceMatch) {
+            $response = $this->errorResponse('Wajah tidak cocok dengan profil Anda.', 403);
+        } else {
+            $response = $this->processCheckOut($attendance, $user, $request);
         }
 
-        return $this->processCheckOut($attendance, $user, $request);
+        return $response;
     }
 
     private function processCheckOut(Attendance $attendance, User $user, StoreAttendanceRequest $request)
