@@ -71,6 +71,8 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.13.1
+  mockito: ^5.6.4
+  build_runner: ^2.15.0
 
 flutter_launcher_icons:
   android: true

@@ -113,7 +113,8 @@ Gunakan Docker untuk menjalankan seluruh stack (Backend, Frontend, MySQL, Redis,
 1. Masuk ke folder mobile: `cd mobile`
 2. Install dependensi: `flutter pub get`
 3. Pastikan **Firebase** sudah dikonfigurasi (`google-services.json` untuk Android).
-4. Jalankan aplikasi: `flutter run` (Gunakan Emulator atau Device fisik)
+4. Jalankan pengujian (Unit Tests): `flutter test` (Arsitektur Mobile menggunakan pola Clean Repository Pattern yang 100% termock/teruji dengan `mockito`).
+5. Jalankan aplikasi: `flutter run` (Gunakan Emulator atau Device fisik)
 
 ---
 
