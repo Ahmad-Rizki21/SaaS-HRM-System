@@ -46,3 +46,6 @@ sonar-project.properties/
 docker-compose.sonarqube.yml
 .scannerwork/
 sonar-scanner-*/
+
+# Security
+SECURITY_AUDIT_REPORT.md
