@@ -39,19 +39,23 @@ class AttendanceController extends Controller
             return $this->errorResponse($securityError['message'], $securityError['code']);
         }
 
+        // --- Geofencing Check (Multi-Office) ---
+        $geoResult = $this->validateGeofencing($user, $request);
+        if (!$geoResult['success']) {
+            return $this->errorResponse($geoResult['message'], $geoResult['status']);
+        }
+
+        return $this->processCheckIn($user, $request, $geoResult['office'], $now, $today);
+    }
+
+    private function processCheckIn(User $user, StoreAttendanceRequest $request, $matchedOffice, Carbon $now, string $today)
+    {
         $schedule = Schedule::with('shift')
             ->where('user_id', $user->id)
             ->where('date', $today)
             ->first();
 
         $status = $this->determineCheckInStatus($user, $schedule, $now);
-
-        // --- Geofencing Check (Multi-Office) ---
-        $geoResult = $this->validateGeofencing($user, $request);
-        if (!$geoResult['success']) {
-            return $this->errorResponse($geoResult['message'], $geoResult['status']);
-        }
-        $matchedOffice = $geoResult['office'];
 
         // Handle Image & Compression
         $imageName = null;
@@ -103,13 +107,16 @@ class AttendanceController extends Controller
         }
 
         // --- 3. Foto Selfie Check & Face Match Placeholder ---
-        // Image is now optional
-
         $faceMatch = true;
         if ($request->image && $user->profile_photo_path && ! $faceMatch) {
             return $this->errorResponse('Wajah tidak cocok dengan profil Anda.', 403);
         }
 
+        return $this->processCheckOut($attendance, $user, $request);
+    }
+
+    private function processCheckOut(Attendance $attendance, User $user, StoreAttendanceRequest $request)
+    {
         // Handle Image & Compression
         $imageName = null;
         if ($request->image) {
