@@ -51,7 +51,8 @@ pipeline {
                 script {
                     // 1. Tulis file .env.prod secara lokal di Jenkins VM dari credentials
                     withCredentials([string(credentialsId: "${ENV_PROD_ID}", variable: 'ENV_PROD_CONTENT')]) {
-                        writeFile file: '.env.prod', text: env.ENV_PROD_CONTENT
+                        // Gunakan shell untuk menulis file agar karakter khusus tidak corrupt
+                        sh 'echo "$ENV_PROD_CONTENT" > .env.prod'
                     }
                     
                     // 2. Hubungkan SSH dan jalankan proses deployment di VM Aplikasi
@@ -60,6 +61,9 @@ pipeline {
                         sh "scp -i \${SSH_KEY} -o StrictHostKeyChecking=no docker-compose.prod.yml ${TARGET_VM_USER}@${TARGET_VM_IP}:${TARGET_DIR}/docker-compose.prod.yml"
                         sh "scp -i \${SSH_KEY} -o StrictHostKeyChecking=no .env.prod ${TARGET_VM_USER}@${TARGET_VM_IP}:${TARGET_DIR}/.env.prod"
                         
+                        // Verifikasi .env.prod terkirim dengan benar
+                        sh "ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no ${TARGET_VM_USER}@${TARGET_VM_IP} 'echo \"[VERIFY] .env.prod lines: \$(wc -l < ${TARGET_DIR}/.env.prod), DB_PASSWORD set: \$(grep -c DB_PASSWORD ${TARGET_DIR}/.env.prod)\"'"
+                        
                         // Eksekusi pull dan up di server target
                         withCredentials([usernamePassword(credentialsId: "${GHCR_AUTH_ID}", usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
                             sh """
@@ -67,7 +71,7 @@ pipeline {
                                     cd ${TARGET_DIR}
                                     
                                     # Login ke GHCR di VM Aplikasi agar diizinkan pull image
-                                    echo "${GH_TOKEN}" | docker login ${REGISTRY} -u ${GH_USER} --password-stdin
+                                    echo "\${GH_TOKEN}" | docker login ${REGISTRY} -u \${GH_USER} --password-stdin
                                     
                                     echo "Menarik Image Terbaru..."
                                     docker compose -f docker-compose.prod.yml pull
