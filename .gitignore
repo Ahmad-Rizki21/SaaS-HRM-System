@@ -48,4 +48,5 @@ docker-compose.sonarqube.yml
 sonar-scanner-*/
 
 # Security
-SECURITY_AUDIT_REPORT.md
+SECURITY_AUDIT_REPORT.md
+SECURITY_MAINTENANCE_VERIFICATION.md

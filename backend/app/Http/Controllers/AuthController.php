@@ -196,6 +196,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
         $this->logActivity('LOGOUT', "User {$user->name} keluar dari sistem.");
+        AuditLogger::log('logout', "User {$user->name} logged out", ['email' => $user->email, 'company_id' => $user->company_id]);
 
         // Clear FCM token on logout for security
         $user->update(['fcm_token' => null]);
@@ -424,6 +425,8 @@ class AuthController extends Controller
                 'description' => "User {$user->name} berhasil masuk via Google Login.",
             ]);
 
+            AuditLogger::log('login_google_success', "User {$user->name} logged in via Google", ['email' => $user->email, 'company_id' => $user->company_id]);
+
             return $this->successResponse([
                 'access_token' => $accessToken,
                 'refresh_token' => $refreshTokenData['plain_token'],
@@ -481,6 +484,7 @@ class AuthController extends Controller
         $cachedOtp = Cache::get('otp_'.$user->id);
 
         if (! $cachedOtp || $cachedOtp != $request->otp) {
+            AuditLogger::log('otp_verification_failed', 'Invalid or expired OTP attempted', ['phone' => $request->phone], 'warning');
             return $this->errorResponse('Kode OTP salah atau sudah kadaluarsa.', 400);
         }
 
