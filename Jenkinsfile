@@ -51,8 +51,12 @@ pipeline {
                 script {
                     // 1. Tulis file .env.prod secara lokal di Jenkins VM dari credentials
                     withCredentials([string(credentialsId: "${ENV_PROD_ID}", variable: 'ENV_PROD_CONTENT')]) {
-                        // Gunakan shell untuk menulis file agar karakter khusus tidak corrupt
-                        sh 'echo "$ENV_PROD_CONTENT" > .env.prod'
+                        // Tulis credential lalu perbaiki format: Jenkins Secret Text kehilangan newline
+                        sh '''
+                            echo "$ENV_PROD_CONTENT" > .env.prod
+                            # Kembalikan newline sebelum setiap KEY= (huruf kapital + underscore)
+                            sed -i -E 's/ ([A-Z][A-Z_]{2,}=)/\\n\\1/g; s/ (#)/\\n\\1/g' .env.prod
+                        '''
                     }
                     
                     // 2. Hubungkan SSH dan jalankan proses deployment di VM Aplikasi
