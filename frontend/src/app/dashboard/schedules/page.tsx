@@ -46,6 +46,7 @@ interface User {
   id: number;
   name: string;
   role?: { name: string };
+  attendance_type?: string;
 }
 
 export default function SchedulesPage() {
@@ -104,7 +105,7 @@ export default function SchedulesPage() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await axiosInstance.get("/employees");
+      const response = await axiosInstance.get("/employees?per_page=100");
       const resData = response.data.data;
       setEmployees(Array.isArray(resData) ? resData : (resData?.data || []));
     } catch (e) {
@@ -412,8 +413,7 @@ export default function SchedulesPage() {
               </thead>
               <tbody>
                 {employees.filter(emp => {
-                   const roleName = emp.role?.name?.toLowerCase() || '';
-                   return roleName.includes('karyawan') || roleName.includes('staff') || roleName.includes('noc');
+                   return emp.attendance_type === 'shift';
                 }).map(emp => (
                   <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="sticky left-0 z-20 bg-white border-b border-r border-gray-100 p-4 group-hover:bg-gray-50 transition-colors">
@@ -567,9 +567,7 @@ export default function SchedulesPage() {
                   <option value="">Pilih Karyawan</option>
                   {employees
                     .filter(emp => {
-                       const roleName = emp.role?.name?.toLowerCase() || '';
-                       // Hanya role yang mengandung Karyawan, Staff, atau NOC yang masuk Shift (karena Direktur dsb tak harus di-shift)
-                       return roleName.includes('karyawan') || roleName.includes('staff') || roleName.includes('noc');
+                       return emp.attendance_type === 'shift';
                     })
                     .map(emp => {
                        const roleDisplay = emp.role?.name ? ` (${emp.role.name})` : '';
