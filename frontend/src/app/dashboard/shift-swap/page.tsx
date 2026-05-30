@@ -73,6 +73,7 @@ export default function ShiftSwapPage() {
   });
 
   const [activeTab, setActiveTab] = useState<'my_requests' | 'to_review'>('my_requests');
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchSwaps(currentPage);
@@ -111,7 +112,6 @@ export default function ShiftSwapPage() {
       // Ambil jadwal saya
       const mySchedRes = await axiosInstance.get("/schedules");
       const schedData = mySchedRes.data.data;
-      // Filter schedules to be future-ish or simple list
       setMySchedules(Array.isArray(schedData) ? schedData : (schedData?.data || []));
     } catch (e) {
       console.error("Gagal ambil data pendukung", e);
@@ -188,11 +188,16 @@ export default function ShiftSwapPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending_receiver': return <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-wider border border-blue-100 italic">Menunggu Penerima</span>;
-      case 'pending_manager': return <span className="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[10px] font-bold uppercase tracking-wider border border-orange-100 italic">Menunggu Atasan</span>;
-      case 'approved': return <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-wider border border-emerald-100 italic">Berhasil Ditukar</span>;
-      case 'rejected': return <span className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-100 italic">Ditolak</span>;
-      default: return <span className="px-3 py-1 bg-gray-50 text-gray-600 rounded-full text-[10px] font-bold uppercase tracking-wider border border-gray-100 italic text-italic">{status}</span>;
+      case 'pending_receiver': 
+        return <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-[11px] font-bold border border-blue-100 flex items-center gap-1.5 w-max"><Clock size={12} /> Menunggu Rekan</span>;
+      case 'pending_manager': 
+        return <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-[11px] font-bold border border-amber-100 flex items-center gap-1.5 w-max"><Clock size={12} /> Menunggu Atasan</span>;
+      case 'approved': 
+        return <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[11px] font-bold border border-emerald-100 flex items-center gap-1.5 w-max"><CheckCircle2 size={12} /> Selesai</span>;
+      case 'rejected': 
+        return <span className="px-2.5 py-1 bg-red-50 text-red-700 rounded-lg text-[11px] font-bold border border-red-100 flex items-center gap-1.5 w-max"><XCircle size={12} /> Ditolak</span>;
+      default: 
+        return <span className="px-2.5 py-1 bg-gray-50 text-gray-700 rounded-lg text-[11px] font-bold border border-gray-100 flex items-center gap-1.5 w-max">{status}</span>;
     }
   };
 
@@ -201,276 +206,366 @@ export default function ShiftSwapPage() {
   const myRequests = swaps.filter(s => s.requester_id === user?.id || (s.receiver_id === user?.id && s.status === 'pending_receiver'));
   const managerReview = swaps.filter(s => s.status === 'pending_manager');
 
+  const filteredMyRequests = myRequests.filter(s => 
+    s.requester.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.receiver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.reason.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredManagerReview = managerReview.filter(s => 
+    s.requester.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.receiver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.reason.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const activeList = activeTab === 'my_requests' ? filteredMyRequests : filteredManagerReview;
+
   return (
-    <div className="max-w-[1100px] mx-auto p-4 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-            <div className="p-2.5 bg-[#8B0000] rounded-2xl text-white shadow-xl shadow-red-900/20">
-              <ArrowLeftRight size={28} />
-            </div>
+      <div className="dash-page-header">
+        <div>
+          <h1 className="dash-page-title flex items-center gap-2">
+            <ArrowLeftRight size={24} className="text-[#8B0000]" />
             Tukar Shift
           </h1>
-          <p className="text-sm text-gray-500 font-medium">Ajukan pertukaran jadwal kerja dengan rekan tim Anda secara resmi.</p>
+          <p className="dash-page-desc">Ajukan pertukaran jadwal kerja dengan rekan tim Anda secara resmi.</p>
         </div>
-        {hasPermission('apply-shift-swaps') && (
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-[#8B0000] text-white font-bold rounded-2xl shadow-2xl shadow-red-900/30 hover:bg-[#A52A2A] transition-all active:scale-95 group"
-          >
-            <Plus size={22} className="group-hover:rotate-90 transition-transform duration-300" />
-            Ajukan Tukar Baru
-          </button>
-        )}
+        <div className="dash-page-actions">
+          {hasPermission('apply-shift-swaps') && (
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="dash-btn bg-[#8B0000] hover:bg-[#720000] text-white font-bold rounded-lg shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+            >
+              <Plus size={16} />
+              Ajukan Tukar Baru
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats/Quick Glance */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 bg-white border border-gray-100 rounded-3xl shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
-            <Clock size={24} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="p-5 bg-white border border-gray-100 rounded-xl shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+            <Clock size={22} />
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pending Me</p>
-            <p className="text-xl font-black text-gray-900">{swaps.filter(s => s.receiver_id === user?.id && s.status === 'pending_receiver').length}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Menunggu Saya (Pending Me)</p>
+            <p className="text-2xl font-extrabold text-gray-900 mt-0.5">
+              {swaps.filter(s => s.receiver_id === user?.id && s.status === 'pending_receiver').length}
+            </p>
           </div>
         </div>
-        <div className="p-5 bg-white border border-gray-100 rounded-3xl shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center">
-            <AlertCircle size={24} />
+        <div className="p-5 bg-white border border-gray-100 rounded-xl shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
+            <AlertCircle size={22} />
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Wait Manager</p>
-            <p className="text-xl font-black text-gray-900">{swaps.filter(s => s.requester_id === user?.id && s.status === 'pending_manager').length}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Menunggu Atasan (Wait Manager)</p>
+            <p className="text-2xl font-extrabold text-gray-900 mt-0.5">
+              {swaps.filter(s => s.requester_id === user?.id && s.status === 'pending_manager').length}
+            </p>
           </div>
         </div>
-        <div className="p-5 bg-white border border-gray-100 rounded-3xl shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
-            <CheckCircle2 size={24} />
+        <div className="p-5 bg-white border border-gray-100 rounded-xl shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+            <CheckCircle2 size={22} />
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Approved</p>
-            <p className="text-xl font-black text-gray-900">{swaps.filter(s => s.status === 'approved').length}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Disetujui (Approved)</p>
+            <p className="text-2xl font-extrabold text-gray-900 mt-0.5">
+              {swaps.filter(s => s.status === 'approved').length}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Main Content Tabs */}
-      <div className="space-y-6">
-        <div className="flex border-b border-gray-100 gap-8">
+      {/* Main Content Tabs & Filters */}
+      <div className="space-y-4">
+        <div className="flex border-b border-gray-200 gap-6">
            <button 
-            onClick={() => setActiveTab('my_requests')}
-            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'my_requests' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+            onClick={() => { setActiveTab('my_requests'); setSearchTerm(""); }}
+            className={`pb-3 text-sm font-semibold transition-all relative ${activeTab === 'my_requests' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
            >
              Permintaan Saya
-             {activeTab === 'my_requests' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#8B0000] rounded-t-full" />}
+             {activeTab === 'my_requests' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#8B0000]" />}
            </button>
            {hasPermission('approve-shift-swaps') && (
              <button 
-              onClick={() => setActiveTab('to_review')}
-              className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'to_review' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+              onClick={() => { setActiveTab('to_review'); setSearchTerm(""); }}
+              className={`pb-3 text-sm font-semibold transition-all relative ${activeTab === 'to_review' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
              >
                Approval Manager
-               {managerReview.length > 0 && <span className="ml-2 px-1.5 py-0.5 bg-red-600 text-[9px] text-white rounded-full align-top">{managerReview.length}</span>}
-               {activeTab === 'to_review' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#8B0000] rounded-t-full" />}
+               {managerReview.length > 0 && (
+                 <span className="ml-2 px-1.5 py-0.5 bg-red-600 text-[10px] text-white rounded-full align-middle font-bold">
+                   {managerReview.length}
+                 </span>
+               )}
+               {activeTab === 'to_review' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#8B0000]" />}
              </button>
            )}
         </div>
 
-        <div className="space-y-4">
-          {(activeTab === 'my_requests' ? myRequests : managerReview).length === 0 ? (
-            <div className="py-20 text-center bg-gray-50 rounded-[40px] border border-dashed border-gray-200">
-               <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 italic text-gray-300 shadow-sm">
-                  <ArrowLeftRight size={40} />
-               </div>
-               <h3 className="font-black text-gray-900 text-xl italic">No Swap Requests</h3>
-               <p className="text-sm text-gray-400 mt-2">Semua jadwal terasa aman dan stabil saat ini.</p>
-            </div>
-          ) : (
-            (activeTab === 'my_requests' ? myRequests : managerReview).map((swap) => (
-              <div key={swap.id} className="group bg-white border border-gray-100 p-6 rounded-[32px] shadow-sm hover:shadow-xl hover:border-red-100 transition-all duration-300 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4">
-                  {getStatusBadge(swap.status)}
-                </div>
-
-                <div className="flex flex-col md:flex-row gap-8 items-stretch">
-                   {/* Col 1: Requester */}
-                   <div className="flex-1 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-red-50 text-[#8B0000] flex items-center justify-center font-black italic shadow-sm">
-                          {swap.requester.name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">DARI</p>
-                          <p className="text-sm font-bold text-gray-900">{swap.requester.name} {swap.requester_id === user?.id && "(Anda)"}</p>
-                        </div>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-1">
-                         <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
-                            <Calendar size={14} className="text-[#8B0000]" /> {new Date(swap.requester_schedule.date).toLocaleDateString()}
-                         </div>
-                         <div className="flex items-center gap-2 text-[10px] font-medium text-gray-500">
-                            <Clock size={14} /> {swap.requester_schedule.shift.name} ({swap.requester_schedule.shift.start_time} - {swap.requester_schedule.shift.end_time})
-                         </div>
-                      </div>
-                   </div>
-
-                   {/* Center Arrow */}
-                   <div className="flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center shadow-lg rotate-90 md:rotate-0">
-                         <ChevronRight size={20} />
-                      </div>
-                   </div>
-
-                   {/* Col 2: Receiver */}
-                   <div className="flex-1 space-y-4 text-right md:text-left">
-                      <div className="flex items-center gap-3 justify-end md:justify-start">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-black italic shadow-sm order-last md:order-first">
-                          {swap.receiver.name.charAt(0)}
-                        </div>
-                        <div className="text-right md:text-left">
-                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">KEPADA / TUJUAN</p>
-                          <p className="text-sm font-bold text-gray-900">{swap.receiver.name} {swap.receiver_id === user?.id && "(Anda)"}</p>
-                        </div>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-1">
-                        <div className="flex items-center gap-2 text-xs font-bold text-gray-800 justify-end md:justify-start">
-                            <Calendar size={14} className="text-blue-600" /> {new Date(swap.receiver_schedule.date).toLocaleDateString()}
-                         </div>
-                         <div className="flex items-center gap-2 text-[10px] font-medium text-gray-500 justify-end md:justify-start">
-                            <Clock size={14} /> {swap.receiver_schedule.shift.name} ({swap.receiver_schedule.shift.start_time} - {swap.receiver_schedule.shift.end_time})
-                         </div>
-                      </div>
-                   </div>
-
-                   {/* Col 3: Details & Actions */}
-                   <div className="flex-[0.8] flex flex-col justify-between pt-4 md:pt-0 border-t md:border-t-0 md:border-l border-gray-100 md:pl-8">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ALASAN</p>
-                        <p className="text-xs text-gray-600 italic">"{swap.reason}"</p>
-                      </div>
-
-                      <div className="pt-4 flex gap-2">
-                        {/* Action for Receiver */}
-                        {swap.status === 'pending_receiver' && swap.receiver_id === user?.id && (
-                          <>
-                            <button onClick={() => handleRespond(swap.id, 'rejected')} className="flex-1 py-2 text-xs font-bold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition">Tolak</button>
-                            <button onClick={() => handleRespond(swap.id, 'approved_by_receiver')} className="flex-2 py-2 text-xs font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-900/20 transition">Terima</button>
-                          </>
-                        )}
-
-                        {/* Action for Manager */}
-                        {swap.status === 'pending_manager' && hasPermission('approve-shift-swaps') && (
-                           <>
-                            <button onClick={() => handleApprove(swap.id, 'rejected')} className="flex-1 py-2 text-xs font-bold text-red-600 bg-red-50 rounded-xl transition">Reject</button>
-                            <button onClick={() => handleApprove(swap.id, 'approved')} className="flex-2 py-2 text-xs font-bold text-white bg-emerald-600 rounded-xl shadow-lg shadow-emerald-900/20 transition">Approve Final</button>
-                          </>
-                        )}
-
-                        {swap.status === 'approved' && (
-                          <div className="w-full flex items-center justify-center gap-2 py-2 text-emerald-600 font-bold text-xs uppercase italic drop-shadow-sm">
-                             <Check size={18} /> Pertukaran Sukses
-                          </div>
-                        )}
-                        
-                        {(swap.status === 'pending_receiver' && swap.requester_id === user?.id) && (
-                           <p className="text-[10px] text-gray-400 font-bold italic w-full text-center">Menunggu respon dari {swap.receiver.name}...</p>
-                        )}
-                        {(swap.status === 'pending_manager' && swap.requester_id === user?.id) && (
-                           <p className="text-[10px] text-orange-400 font-bold italic w-full text-center">Menunggu approval akhir manager...</p>
-                        )}
-                      </div>
-                   </div>
-                </div>
-              </div>
-            ))
-          )}
+        {/* Search input */}
+        <div className="flex items-center justify-between bg-white p-3 border border-[#ebedf0] rounded-lg">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Cari pengajuan tukar shift..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-9 pl-9 pr-4 text-sm bg-gray-50/50 border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 transition-colors"
+            />
+          </div>
         </div>
+
+        {/* Swap Request List Table */}
+        {activeList.length === 0 ? (
+          <div className="py-20 text-center bg-white rounded-xl border border-gray-100 shadow-sm">
+             <div className="w-16 h-16 bg-red-50 text-[#8B0000] rounded-full flex items-center justify-center mx-auto mb-4">
+                <ArrowLeftRight size={28} />
+             </div>
+             <h3 className="font-bold text-gray-950 text-lg">Tidak Ada Permintaan</h3>
+             <p className="text-sm text-gray-500 mt-1">
+               {searchTerm ? "Tidak menemukan hasil pencarian yang cocok." : "Semua jadwal terasa aman dan stabil saat ini."}
+             </p>
+          </div>
+        ) : (
+          <div className="dash-table-container">
+            <div className="dash-table-wrapper">
+              <table className="dash-table">
+                <thead>
+                  <tr>
+                    <th>Waktu Pengajuan</th>
+                    <th>Pengaju</th>
+                    <th>Rekan Kerja</th>
+                    <th>Jadwal Pengaju (Dilepas)</th>
+                    <th>Jadwal Rekan (Diambil)</th>
+                    <th>Alasan</th>
+                    <th>Status</th>
+                    <th className="text-right">Tindakan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeList.map((swap) => (
+                    <tr key={swap.id}>
+                      <td className="whitespace-nowrap text-xs text-gray-500">
+                        {new Date(swap.created_at).toLocaleString('id-ID', { 
+                          day: '2-digit', 
+                          month: 'short', 
+                          year: 'numeric', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-red-50 text-[#8B0000] flex items-center justify-center font-bold text-xs shrink-0">
+                            {swap.requester.name.charAt(0)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-gray-900 text-xs">{swap.requester.name}</span>
+                            {swap.requester_id === user?.id && (
+                              <span className="text-[9px] text-[#8B0000] font-bold bg-red-50 px-1 py-0.5 rounded w-max mt-0.5">Anda</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                            {swap.receiver.name.charAt(0)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-gray-900 text-xs">{swap.receiver.name}</span>
+                            {swap.receiver_id === user?.id && (
+                              <span className="text-[9px] text-blue-600 font-bold bg-blue-50 px-1 py-0.5 rounded w-max mt-0.5">Anda</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-gray-800">
+                            {new Date(swap.requester_schedule.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                          <span className="text-[10px] text-gray-500 font-medium">
+                            {swap.requester_schedule.shift.name} ({swap.requester_schedule.shift.start_time} - {swap.requester_schedule.shift.end_time})
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-gray-800">
+                            {new Date(swap.receiver_schedule.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                          <span className="text-[10px] text-gray-500 font-medium">
+                            {swap.receiver_schedule.shift.name} ({swap.receiver_schedule.shift.start_time} - {swap.receiver_schedule.shift.end_time})
+                          </span>
+                        </div>
+                      </td>
+                      <td className="max-w-[200px] truncate" title={swap.reason}>
+                        <span className="text-xs text-gray-600 italic">"{swap.reason}"</span>
+                      </td>
+                      <td>{getStatusBadge(swap.status)}</td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Action for Receiver */}
+                          {swap.status === 'pending_receiver' && swap.receiver_id === user?.id && (
+                            <>
+                              <button 
+                                onClick={() => handleRespond(swap.id, 'rejected')} 
+                                className="px-2.5 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition"
+                                title="Tolak Pertukaran"
+                              >
+                                Tolak
+                              </button>
+                              <button 
+                                onClick={() => handleRespond(swap.id, 'approved_by_receiver')} 
+                                className="px-2.5 py-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition shadow-sm"
+                                title="Terima Pertukaran"
+                              >
+                                Terima
+                              </button>
+                            </>
+                          )}
+
+                          {/* Action for Manager */}
+                          {swap.status === 'pending_manager' && hasPermission('approve-shift-swaps') && (
+                            <>
+                              <button 
+                                onClick={() => handleApprove(swap.id, 'rejected')} 
+                                className="px-2.5 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition"
+                                title="Reject Pengajuan"
+                              >
+                                Reject
+                              </button>
+                              <button 
+                                onClick={() => handleApprove(swap.id, 'approved')} 
+                                className="px-2.5 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition shadow-sm"
+                                title="Approve Pengajuan"
+                              >
+                                Approve
+                              </button>
+                            </>
+                          )}
+
+                          {/* Status descriptions for Requester */}
+                          {swap.status === 'pending_receiver' && swap.requester_id === user?.id && (
+                            <span className="text-[11px] text-gray-400 font-medium italic">
+                              Menunggu respon rekan
+                            </span>
+                          )}
+                          {swap.status === 'pending_manager' && swap.requester_id === user?.id && (
+                            <span className="text-[11px] text-orange-500 font-medium italic">
+                              Menunggu approval atasan
+                            </span>
+                          )}
+                          {swap.status === 'approved' && (
+                            <span className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider flex items-center gap-1">
+                              <Check size={14} /> Sukses
+                            </span>
+                          )}
+                          {swap.status === 'rejected' && (
+                            <span className="text-[11px] text-red-600 font-bold uppercase tracking-wider flex items-center gap-1">
+                              <X size={14} /> Ditolak
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
         
-        <Pagination 
-          currentPage={currentPage}
-          lastPage={lastPage}
-          total={total}
-          onPageChange={(page) => setCurrentPage(page)}
-        />
+        {total > 0 && (
+          <Pagination 
+            currentPage={currentPage}
+            lastPage={lastPage}
+            total={total}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
+        )}
       </div>
 
       {/* CREATE MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-           <div className="bg-white rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300">
-              <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                <div className="flex items-center gap-4">
-                   <div className="p-3 bg-red-50 text-[#8B0000] rounded-2xl shadow-sm">
-                      <ArrowLeftRight size={24} />
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+           <div className="bg-white rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-300">
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div className="flex items-center gap-3">
+                   <div className="p-2.5 bg-red-50 text-[#8B0000] rounded-xl shadow-sm">
+                      <ArrowLeftRight size={20} />
                    </div>
                    <div>
-                    <h3 className="font-black text-gray-900 text-xl tracking-tight">Form Tukar Shift</h3>
-                    <p className="text-xs text-gray-500 font-medium italic">Pilih jadwal rekan yang ingin Anda tukar.</p>
+                    <h3 className="font-bold text-gray-950 text-lg tracking-tight">Form Tukar Shift</h3>
+                    <p className="text-xs text-gray-500 font-medium italic">Pilih rekan dan ajukan pertukaran jadwal secara resmi.</p>
                    </div>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors font-black">
-                  <X size={24} />
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-150 rounded-full transition-colors">
+                  <X size={20} className="text-gray-500" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* User Selection */}
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">1. PILIH REKAN KERJA</label>
-                       <div className="relative">
-                          <select 
-                            className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl px-4 text-sm font-bold text-gray-800 outline-none focus:ring-4 focus:ring-red-100 focus:border-[#8B0000] appearance-none transition-all"
-                            value={formData.receiver_id}
-                            onChange={(e) => {
-                              setFormData({...formData, receiver_id: e.target.value, receiver_schedule_id: ""});
-                              fetchReceiverSchedules(e.target.value);
-                            }}
-                            required
-                          >
-                             <option value="">Pilih Teman Kerja...</option>
-                             {users
-                              .filter((u) => {
-                                if (u.id === user?.id) return false;
-                                const roleName = u.role?.name?.toLowerCase() || "";
-                                return roleName.includes("karyawan") || roleName.includes("staff") || roleName.includes("noc");
-                              })
-                              .map((u) => {
-                                const roleDisplay = u.role?.name ? ` (${u.role.name})` : "";
-                                return (
-                                  <option key={u.id} value={u.id}>
-                                    {u.name}{roleDisplay}
-                                  </option>
-                                );
-                              })}
-                          </select>
-                       </div>
+                    <div className="space-y-1.5">
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">1. Pilih Rekan Kerja</label>
+                       <select 
+                         className="w-full h-11 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-red-150 focus:border-[#8B0000] transition-all"
+                         value={formData.receiver_id}
+                         onChange={(e) => {
+                           setFormData({...formData, receiver_id: e.target.value, receiver_schedule_id: ""});
+                           fetchReceiverSchedules(e.target.value);
+                         }}
+                         required
+                       >
+                          <option value="">Pilih Teman Kerja...</option>
+                          {users
+                           .filter((u) => {
+                             if (u.id === user?.id) return false;
+                             const roleName = u.role?.name?.toLowerCase() || "";
+                             return roleName.includes("karyawan") || roleName.includes("staff") || roleName.includes("noc");
+                           })
+                           .map((u) => {
+                             const roleDisplay = u.role?.name ? ` (${u.role.name})` : "";
+                             return (
+                               <option key={u.id} value={u.id}>
+                                 {u.name}{roleDisplay}
+                               </option>
+                             );
+                           })}
+                       </select>
                     </div>
 
                     {/* My Schedule */}
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">2. JADWAL ANDA (YANG AKAN DILEPAS)</label>
+                    <div className="space-y-1.5">
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">2. Jadwal Anda (Dilepas)</label>
                        <select 
-                          className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl px-4 text-sm font-bold text-gray-800 outline-none focus:ring-4 focus:ring-red-100 focus:border-[#8B0000] transition-all"
+                          className="w-full h-11 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-red-150 focus:border-[#8B0000] transition-all"
                           value={formData.requester_schedule_id}
                           onChange={(e) => setFormData({...formData, requester_schedule_id: e.target.value})}
                           required
                        >
                           <option value="">Pilih Jadwal Anda...</option>
                           {mySchedules.map(s => (
-                            <option key={s.id} value={s.id}>{new Date(s.date).toLocaleDateString()} - {s.shift.name} ({s.shift.start_time})</option>
+                            <option key={s.id} value={s.id}>{new Date(s.date).toLocaleDateString('id-ID')} - {s.shift.name} ({s.shift.start_time})</option>
                           ))}
                        </select>
                     </div>
 
                     {/* Receiver Schedule */}
-                    <div className={`space-y-2 transition-opacity ${!formData.receiver_id ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">3. JADWAL REKAN (YANG DIINGINKAN)</label>
+                    <div className={`space-y-1.5 transition-opacity ${!formData.receiver_id ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">3. Jadwal Rekan (Diambil)</label>
                        <select 
-                          className="w-full h-14 bg-gray-50 border border-gray-100 rounded-2xl px-4 text-sm font-bold text-gray-800 outline-none focus:ring-4 focus:ring-red-100 focus:border-[#8B0000] transition-all"
+                          className="w-full h-11 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-red-150 focus:border-[#8B0000] transition-all"
                           value={formData.receiver_schedule_id}
                           onChange={(e) => setFormData({...formData, receiver_schedule_id: e.target.value})}
                           required
@@ -478,17 +573,18 @@ export default function ShiftSwapPage() {
                        >
                           <option value="">Pilih Jadwal Teman...</option>
                           {receiverSchedules.map(s => (
-                            <option key={s.id} value={s.id}>{new Date(s.date).toLocaleDateString()} - {s.shift.name} ({s.shift.start_time})</option>
+                            <option key={s.id} value={s.id}>{new Date(s.date).toLocaleDateString('id-ID')} - {s.shift.name} ({s.shift.start_time})</option>
                           ))}
                        </select>
                     </div>
 
                     {/* Reason */}
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">4. ALASAN TUKAR</label>
-                        <textarea 
-                          className="w-full min-h-[56px] bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-medium text-gray-800 outline-none focus:ring-4 focus:ring-red-100 focus:border-[#8B0000] transition-all italic"
-                          placeholder="Contoh: Ada keperluan dinas luar / urusan keluarga..."
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">4. Alasan Tukar</label>
+                        <input 
+                          type="text"
+                          className="w-full h-11 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-medium text-gray-800 outline-none focus:ring-2 focus:ring-red-150 focus:border-[#8B0000] transition-all"
+                          placeholder="Contoh: Urusan keluarga mendesak..."
                           value={formData.reason}
                           onChange={(e) => setFormData({...formData, reason: e.target.value})}
                           required
@@ -496,28 +592,28 @@ export default function ShiftSwapPage() {
                     </div>
                  </div>
 
-                 <div className="p-6 bg-[#FAF9F6] border-2 border-dashed border-red-50 rounded-[32px] flex items-start gap-4">
-                    <div className="w-10 h-10 bg-white rounded-2xl shadow-sm flex items-center justify-center text-red-600 shrink-0">
-                       <AlertCircle size={20} />
+                 <div className="p-4 bg-gray-50 border border-gray-150 rounded-xl flex items-start gap-3">
+                    <div className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center text-[#8B0000] shrink-0 border border-gray-100">
+                       <AlertCircle size={16} />
                     </div>
-                    <div className="space-y-1">
-                       <p className="text-xs font-black text-gray-900 uppercase">Perhatian PENTING</p>
-                       <p className="text-[11px] text-gray-500 font-medium leading-relaxed italic">Permintaan ini akan valid SEGERA setelah rekan Anda menyetujui DAN Manager memberikan konfirmasi akhir. Pastikan sudah berdiskusi secara internal sebelum mengajukan.</p>
+                    <div className="space-y-0.5">
+                       <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">Perhatian Penting</p>
+                       <p className="text-[11px] text-gray-500 font-medium leading-relaxed italic">Permintaan ini akan otomatis diperbarui setelah rekan Anda menyetujui DAN mendapat persetujuan akhir dari Manager.</p>
                     </div>
                  </div>
 
-                 <div className="pt-4 flex gap-4">
+                 <div className="pt-2 flex gap-3">
                     <button 
                       type="button" 
                       onClick={() => setIsModalOpen(false)} 
-                      className="flex-1 py-4 text-sm font-black text-gray-500 bg-gray-100 rounded-2xl hover:bg-gray-200 transition active:scale-95"
+                      className="flex-1 h-11 text-sm font-semibold text-gray-600 bg-gray-150 hover:bg-gray-200 rounded-lg transition active:scale-95"
                     >
                       Batal
                     </button>
                     <button 
                       type="submit" 
                       disabled={isSubmitLoading}
-                      className="flex-2 py-4 text-sm font-black text-white bg-[#8B0000] rounded-2xl shadow-xl shadow-red-900/30 hover:bg-[#A52A2A] transition disabled:opacity-50 active:scale-95"
+                      className="flex-2 h-11 text-sm font-bold text-white bg-[#8B0000] hover:bg-[#720000] rounded-lg shadow-md transition disabled:opacity-50 active:scale-95"
                     >
                       {isSubmitLoading ? "Memproses..." : "Kirim Pengajuan"}
                     </button>
