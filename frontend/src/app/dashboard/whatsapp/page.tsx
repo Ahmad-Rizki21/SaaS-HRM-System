@@ -61,16 +61,14 @@ export default function WhatsAppSettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="dash-page-header mb-8">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="dash-page-header">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <div className="p-2 bg-green-100 text-green-600 rounded-xl">
-              <MessageSquare size={24} />
-            </div>
+          <h1 className="dash-page-title flex items-center gap-2">
+            <MessageSquare className="text-green-600" size={24} />
             WhatsApp Gateway Configuration
           </h1>
-          <p className="text-gray-500 mt-1">Kelola integrasi WatZap untuk notifikasi otomatis dan broadcast.</p>
+          <p className="dash-page-desc">Kelola integrasi WatZap untuk notifikasi otomatis dan broadcast.</p>
         </div>
         <div className="dash-page-actions">
           {canEdit && (

@@ -403,30 +403,32 @@ export default function ApprovalWorkflowPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="dash-page-header">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="dash-page-title flex items-center gap-2">
             <GitBranch className="text-[#8B0000]" size={24} />
             Approval Workflow
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Visualisasi & manajemen konfigurasi alur persetujuan modul karyawan.</p>
+          <p className="dash-page-desc">Visualisasi & manajemen konfigurasi alur persetujuan modul karyawan.</p>
         </div>
         
         {/* Toggle Mode Builder */}
         {isAuthorized && (
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all shadow-md ${
-              isEditing 
-                ? "bg-[#8B0000] text-white hover:bg-[#8B0000]/90" 
-                : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
-            }`}
-          >
-            <Sparkles size={16} />
-            {isEditing ? "Tutup Editor" : "Kustomisasi Alur (Admin)"}
-          </button>
+          <div className="dash-page-actions">
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all shadow-md ${
+                isEditing 
+                  ? "bg-[#8B0000] text-white hover:bg-[#720000]" 
+                  : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              <Sparkles size={16} />
+              {isEditing ? "Tutup Editor" : "Kustomisasi Alur (Admin)"}
+            </button>
+          </div>
         )}
       </div>
 
