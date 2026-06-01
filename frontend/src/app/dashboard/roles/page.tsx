@@ -134,26 +134,30 @@ export default function RolesPage() {
   const toggleGroupPermissions = (perms: Permission[]) => {
     const allSelected = perms.every(p => rolePermissions.includes(p.id));
     if (allSelected) {
-      setRolePermissions(prev => prev.filter(id => !perms.some(p => p.id === id)));
+      const permIds = new Set(perms.map(p => p.id));
+      setRolePermissions(prev => prev.filter(id => !permIds.has(id)));
     } else {
-      setRolePermissions(prev => [...new Set([...prev, ...perms.map(p => p.id)])]);
+      const permIds = perms.map(p => p.id);
+      setRolePermissions(prev => [...new Set([...prev, ...permIds])]);
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const executeDelete = async (id: number) => {
+    try {
+      await axiosInstance.delete(`/roles/${id}`);
+      toast.success("Jabatan berhasil dihapus.");
+      fetchRoles();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Gagal hapus role");
+    }
+  };
+
+  const handleDelete = (id: number) => {
     toast("Apakah Anda yakin ingin menghapus role ini?", {
       description: "Tindakan ini tidak dapat dibatalkan.",
       action: {
         label: "Hapus",
-        onClick: async () => {
-          try {
-            await axiosInstance.delete(`/roles/${id}`);
-            toast.success("Jabatan berhasil dihapus.");
-            fetchRoles();
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal hapus role");
-          }
-        }
+        onClick: () => executeDelete(id)
       }
     });
   };
@@ -296,8 +300,9 @@ export default function RolesPage() {
             </div>
             <form onSubmit={handleSubmitRole}>
               <div className="mb-5">
-                <label className="block text-sm font-medium text-[#5f6368] mb-1.5">Nama Jabatan</label>
+                <label htmlFor="role-name-input" className="block text-sm font-medium text-[#5f6368] mb-1.5">Nama Jabatan</label>
                 <input 
+                  id="role-name-input"
                   type="text" 
                   value={formData.name}
                   onChange={e => setFormData({ name: e.target.value })}

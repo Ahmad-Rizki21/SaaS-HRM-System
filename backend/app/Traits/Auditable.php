@@ -25,59 +25,84 @@ trait Auditable
         if (method_exists(static::class, 'created')) {
             call_user_func([static::class, 'created'], function ($model) {
                 /** @var \Illuminate\Database\Eloquent\Model|\App\Traits\Auditable $model */
-                $model->logAuditEvent('created', [], $model->getAuditableAttributes());
+                $model->handleAuditCreated();
             });
         }
 
         if (method_exists(static::class, 'updated')) {
             call_user_func([static::class, 'updated'], function ($model) {
                 /** @var \Illuminate\Database\Eloquent\Model|\App\Traits\Auditable $model */
-                $original = $model->getOriginal();
-                $changes = $model->getChanges();
-
-                // Remove timestamp fields from audit diff
-                unset($changes['updated_at'], $changes['created_at']);
-
-                if (empty($changes)) {
-                    return;
-                }
-
-                $oldValues = [];
-                $newValues = [];
-                $excluded = $model->getAuditExcluded();
-                $masked = $model->getAuditMasked();
-
-                foreach ($changes as $key => $newValue) {
-                    if (in_array($key, $excluded)) {
-                        continue;
-                    }
-
-                    $oldVal = $original[$key] ?? null;
-                    $newVal = $newValue;
-
-                    // Mask sensitive fields (show partial value only)
-                    if (in_array($key, $masked)) {
-                        $oldVal = $oldVal ? self::maskValue($oldVal) : null;
-                        $newVal = $newVal ? self::maskValue($newVal) : null;
-                    }
-
-                    $oldValues[$key] = $oldVal;
-                    $newValues[$key] = $newVal;
-                }
-
-                if (!empty($newValues)) {
-                    $model->logAuditEvent('updated', $oldValues, $newValues);
-                }
+                $model->handleAuditUpdated();
             });
         }
 
         if (method_exists(static::class, 'deleted')) {
             call_user_func([static::class, 'deleted'], function ($model) {
                 /** @var \Illuminate\Database\Eloquent\Model|\App\Traits\Auditable $model */
-                $model->logAuditEvent('deleted', $model->getAuditableAttributes(), []);
+                $model->handleAuditDeleted();
             });
         }
     }
+
+    /**
+     * Handle model created event for auditing.
+     */
+    protected function handleAuditCreated(): void
+    {
+        $this->logAuditEvent('created', [], $this->getAuditableAttributes());
+    }
+
+    /**
+     * Handle model deleted event for auditing.
+     */
+    protected function handleAuditDeleted(): void
+    {
+        $this->logAuditEvent('deleted', $this->getAuditableAttributes(), []);
+    }
+
+    /**
+     * Handle model updated event for auditing.
+     */
+    protected function handleAuditUpdated(): void
+    {
+        $original = $this->getOriginal();
+        $changes = $this->getChanges();
+
+        // Remove timestamp fields from audit diff
+        unset($changes['updated_at'], $changes['created_at']);
+
+        if (empty($changes)) {
+            return;
+        }
+
+        $oldValues = [];
+        $newValues = [];
+        $excluded = $this->getAuditExcluded();
+        $masked = $this->getAuditMasked();
+
+        foreach ($changes as $key => $newValue) {
+            if (in_array($key, $excluded)) {
+                continue;
+            }
+
+            $oldVal = $original[$key] ?? null;
+            $newVal = $newValue;
+
+            // Mask sensitive fields (show partial value only)
+            if (in_array($key, $masked)) {
+                $oldVal = $oldVal ? self::maskValue($oldVal) : null;
+                $newVal = $newVal ? self::maskValue($newVal) : null;
+            }
+
+            $oldValues[$key] = $oldVal;
+            $newValues[$key] = $newVal;
+        }
+
+        if (!empty($newValues)) {
+            $this->logAuditEvent('updated', $oldValues, $newValues);
+        }
+    }
+
 
     /**
      * Log the audit event to activity_logs table.

@@ -1,5 +1,11 @@
 pipeline {
-    agent any
+    agent {
+        label 'ontime-hrms'
+    }
+
+    tools {
+        sonarRunner 'SonarQubeScanner'
+    }
 
     environment {
         // Konfigurasi Registry GHCR
@@ -24,6 +30,24 @@ pipeline {
             steps {
                 // Menarik repositori otomatis dari Git SCM
                 checkout scm
+            }
+        }
+
+        stage('SonarQube Quality Check') {
+            steps {
+                script {
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'sonar-scanner'
+                    }
+                }
+            }
+        }
+
+        stage("Quality Gate Approval") {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
 

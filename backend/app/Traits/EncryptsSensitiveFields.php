@@ -29,15 +29,7 @@ trait EncryptsSensitiveFields
         if (method_exists(static::class, 'saving')) {
             call_user_func([static::class, 'saving'], function ($model) {
                 /** @var \Illuminate\Database\Eloquent\Model|\App\Traits\EncryptsSensitiveFields $model */
-                foreach ($model->getEncryptedFields() as $field) {
-                    if (isset($model->attributes[$field]) && $model->attributes[$field] !== null) {
-                        $value = $model->attributes[$field];
-                        // Don't double-encrypt: if the value is already encrypted, skip
-                        if (!self::isEncrypted($value)) {
-                            $model->attributes[$field] = Crypt::encryptString($value);
-                        }
-                    }
-                }
+                $model->encryptSensitiveFields();
             });
         }
 
@@ -45,16 +37,40 @@ trait EncryptsSensitiveFields
         if (method_exists(static::class, 'retrieved')) {
             call_user_func([static::class, 'retrieved'], function ($model) {
                 /** @var \Illuminate\Database\Eloquent\Model|\App\Traits\EncryptsSensitiveFields $model */
-                foreach ($model->getEncryptedFields() as $field) {
-                    if (isset($model->attributes[$field]) && $model->attributes[$field] !== null) {
-                        try {
-                            $model->attributes[$field] = Crypt::decryptString($model->attributes[$field]);
-                        } catch (DecryptException $e) {
-                            // Value is not encrypted (legacy data) — leave as-is
-                        }
-                    }
-                }
+                $model->decryptSensitiveFields();
             });
+        }
+    }
+
+    /**
+     * Encrypt sensitive fields before saving.
+     */
+    protected function encryptSensitiveFields(): void
+    {
+        foreach ($this->getEncryptedFields() as $field) {
+            if (isset($this->attributes[$field]) && $this->attributes[$field] !== null) {
+                $value = $this->attributes[$field];
+                // Don't double-encrypt: if the value is already encrypted, skip
+                if (!self::isEncrypted($value)) {
+                    $this->attributes[$field] = Crypt::encryptString($value);
+                }
+            }
+        }
+    }
+
+    /**
+     * Decrypt sensitive fields after retrieval.
+     */
+    protected function decryptSensitiveFields(): void
+    {
+        foreach ($this->getEncryptedFields() as $field) {
+            if (isset($this->attributes[$field]) && $this->attributes[$field] !== null) {
+                try {
+                    $this->attributes[$field] = Crypt::decryptString($this->attributes[$field]);
+                } catch (DecryptException $e) {
+                    // Value is not encrypted (legacy data) — leave as-is
+                }
+            }
         }
     }
 

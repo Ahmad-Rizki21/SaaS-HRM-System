@@ -9,14 +9,10 @@ import {
   CheckCircle2, 
   XCircle, 
   Clock, 
-  Calendar, 
-  User, 
-  ChevronRight,
   AlertCircle,
   Search,
   Check,
-  X,
-  MessageSquare
+  X
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ListPageSkeleton } from "@/components/Skeleton";
@@ -517,8 +513,8 @@ export default function ShiftSwapPage() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* User Selection */}
                     <div className="space-y-1.5">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">1. Pilih Rekan Kerja</label>
-                       <select 
+                       <label htmlFor="receiver-select" className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">1. Pilih Rekan Kerja</label>
+                       <select id="receiver-select" 
                          className="w-full h-11 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-red-150 focus:border-[#8B0000] transition-all"
                          value={formData.receiver_id}
                          onChange={(e) => {
@@ -547,9 +543,10 @@ export default function ShiftSwapPage() {
 
                     {/* My Schedule */}
                     <div className="space-y-1.5">
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">2. Jadwal Anda (Dilepas)</label>
+                       <label htmlFor="requester-schedule-select" className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">2. Jadwal Anda (Dilepas)</label>
                        <select 
                           className="w-full h-11 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-red-150 focus:border-[#8B0000] transition-all"
+                          id="requester-schedule-select"
                           value={formData.requester_schedule_id}
                           onChange={(e) => setFormData({...formData, requester_schedule_id: e.target.value})}
                           required
@@ -562,10 +559,11 @@ export default function ShiftSwapPage() {
                     </div>
 
                     {/* Receiver Schedule */}
-                    <div className={`space-y-1.5 transition-opacity ${!formData.receiver_id ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
-                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">3. Jadwal Rekan (Diambil)</label>
+                    <div className={`space-y-1.5 transition-opacity ${formData.receiver_id ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                       <label htmlFor="receiver-schedule-select" className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">3. Jadwal Rekan (Diambil)</label>
                        <select 
                           className="w-full h-11 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-red-150 focus:border-[#8B0000] transition-all"
+                          id="receiver-schedule-select"
                           value={formData.receiver_schedule_id}
                           onChange={(e) => setFormData({...formData, receiver_schedule_id: e.target.value})}
                           required
@@ -580,8 +578,9 @@ export default function ShiftSwapPage() {
 
                     {/* Reason */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">4. Alasan Tukar</label>
+                        <label htmlFor="reason-input" className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">4. Alasan Tukar</label>
                         <input 
+                          id="reason-input"
                           type="text"
                           className="w-full h-11 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-medium text-gray-800 outline-none focus:ring-2 focus:ring-red-150 focus:border-[#8B0000] transition-all"
                           placeholder="Contoh: Urusan keluarga mendesak..."

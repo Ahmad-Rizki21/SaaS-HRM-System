@@ -25,14 +25,60 @@ import {
   Save,
   X
 } from "lucide-react";
-import Pagination from "@/components/Pagination";
 import { ReportSkeleton } from "@/components/Skeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
+
+const getCheckInOutStrings = (record: any) => {
+  if (!record) return { checkInStr: "", checkOutStr: "" };
+  const checkInTime = new Date(record.check_in);
+  const checkInStr = checkInTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  const checkOutStr = record.check_out
+    ? new Date(record.check_out).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    : "Lupa";
+  return { checkInStr, checkOutStr };
+};
+
+const getCellStyle = (record: any, isWk: boolean) => {
+  if (!record) {
+    return isWk ? "bg-rose-50/10 text-rose-300 font-normal text-[9px]" : "text-gray-300 bg-white";
+  }
+  return record.status === 'late'
+    ? "bg-amber-50 text-amber-800 border border-amber-100/70 rounded-md shadow-[inset_0_0_0_1px_rgba(217,119,6,0.1)]"
+    : "bg-emerald-50 text-emerald-800 border border-emerald-100/70 rounded-md shadow-[inset_0_0_0_1px_rgba(16,185,129,0.1)]";
+};
 
 // Nested Components for each Tab
+const AttendanceCell = ({ record, isWk, onEdit }: { record: any, isWk: boolean, onEdit: (r: any) => void }) => {
+  const { checkInStr, checkOutStr } = getCheckInOutStrings(record);
+  const cellStyle = getCellStyle(record, isWk);
+
+  const clickHandler = record ? () => onEdit(record) : undefined;
+  const cursorStyle = record ? 'cursor-pointer hover:brightness-95 hover:scale-95' : '';
+  const isWeekendOff = isWk && !record;
+  const weekendStyle = isWeekendOff ? 'bg-gray-50/40' : '';
+
+  return (
+    <td 
+      onClick={clickHandler}
+      className={`px-1 py-1.5 text-center text-[10px] border-r border-[#ebedf0] align-middle select-none transition-all ${cursorStyle} ${weekendStyle}`}
+    >
+      {record ? (
+        <div className={`py-1 px-1 flex flex-col items-center justify-center font-bold font-mono tracking-tighter ${cellStyle}`}>
+          <span className="leading-tight">{checkInStr}</span>
+          <span className={`text-[8px] leading-tight ${record.check_out ? 'opacity-65' : 'text-rose-500 font-extrabold uppercase'}`}>
+            {checkOutStr}
+          </span>
+        </div>
+      ) : (
+        <span className="text-gray-300 font-normal">
+          {isWk ? <span className="text-[9px] text-gray-300">Off</span> : "-"}
+        </span>
+      )}
+    </td>
+  );
+};
+
 const LogView = ({ employees, startDate, endDate, selectedUser, onStartDateChange, onEndDateChange, onUserChange }: any) => {
-  const { hasPermission } = useAuth();
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [employeeSearch, setEmployeeSearch] = useState("");
@@ -134,6 +180,142 @@ const LogView = ({ employees, startDate, endDate, selectedUser, onStartDateChang
     return matchesSearch && matchesUser;
   });
 
+  const renderPivotContent = () => {
+    if (loading) {
+      return (
+        <div className="p-32 text-center flex flex-col items-center justify-center">
+          <div className="w-10 h-10 border-4 border-gray-100 border-t-[#8B0000] rounded-full animate-spin mb-4" />
+          <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Mempersiapkan Pivot Table...</p>
+        </div>
+      );
+    }
+
+    if (filteredEmployees.length === 0) {
+      return (
+        <div className="p-24 text-center flex flex-col items-center opacity-40">
+           <AlertCircle size={64} className="mb-4 text-[#8B0000]/20" />
+           <h3 className="font-bold text-gray-900 tracking-wider uppercase">Data Kosong</h3>
+           <p className="text-xs">Tidak ada karyawan yang cocok.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full overflow-x-auto relative scrollbar-thin">
+        <table className="text-left border-collapse table-fixed" style={{ width: `${220 + dateList.length * 85 + 215}px`, minWidth: '100%' }}>
+          <thead>
+            <tr className="bg-[#f9f9fb] border-b border-[#ebedf0]">
+              {/* Sticky left Employee header */}
+              <th className="sticky left-0 bg-[#f9f9fb] z-30 px-4 py-3 text-xs font-bold text-[#5f6368] uppercase tracking-wider min-w-[220px] max-w-[220px] w-[220px] border-r border-[#ebedf0] shadow-[2px_0_5px_rgba(0,0,0,0.04)]">
+                Karyawan
+              </th>
+              
+              {/* Date Column headers */}
+              {dateList.map((date) => {
+                const isWk = date.getDay() === 0 || date.getDay() === 6;
+                return (
+                  <th 
+                    key={date.toISOString()} 
+                    className={`px-2 py-2 text-center text-[10px] font-bold uppercase tracking-tighter min-w-[85px] max-w-[85px] w-[85px] border-r border-[#ebedf0] leading-tight ${isWk ? 'bg-rose-50/40 text-rose-600' : 'text-[#5f6368]'}`}
+                  >
+                    <div>{date.getDate()} {getIndoDayName(date)}</div>
+                    <div className="text-[8px] text-gray-400 font-normal mt-0.5">
+                      {date.toLocaleString('id-ID', { month: 'short' })}
+                    </div>
+                  </th>
+                );
+              })}
+
+              {/* Summary columns */}
+              <th className="px-3 py-3 text-center text-[10px] font-bold text-[#03543f] uppercase tracking-wider min-w-[70px] max-w-[70px] w-[70px] bg-[#def7ec]/30 border-r border-[#ebedf0]">
+                Hadir
+              </th>
+              <th className="px-3 py-3 text-center text-[10px] font-bold text-[#723b13] uppercase tracking-wider min-w-[70px] max-w-[70px] w-[70px] bg-[#fdf6b2]/30 border-r border-[#ebedf0]">
+                Telat
+              </th>
+              <th className="px-3 py-3 text-center text-[10px] font-bold text-[#9b1c1c] uppercase tracking-wider min-w-[75px] max-w-[75px] w-[75px] bg-[#fde8e8]/30">
+                Lupa Out
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#ebedf0]">
+            {filteredEmployees.map((emp: any, rowIdx: number) => {
+              // Pre-calculate totals for this employee
+              let totalPresent = 0;
+              let totalLate = 0;
+              let totalMissedOut = 0;
+
+              dateList.forEach((date) => {
+                const dateStr = getLocalDateKey(date);
+                const key = `${emp.id}_${dateStr}`;
+                const record = attendanceMap[key];
+                if (record) {
+                  totalPresent++;
+                  if (record.status === 'late') {
+                    totalLate++;
+                  }
+                  if (!record.check_out) {
+                    totalMissedOut++;
+                  }
+                }
+              });
+
+              return (
+                <tr key={emp.id} className="hover:bg-[#f9f9fb] transition-colors group">
+                  {/* Sticky left Employee body cell */}
+                  <td className="sticky left-0 bg-white group-hover:bg-[#f9f9fb] z-20 px-4 py-3 border-r border-[#ebedf0] shadow-[2px_0_5px_rgba(0,0,0,0.04)] transition-colors min-w-[220px] max-w-[220px] w-[220px]">
+                    <div className="flex items-center gap-2.5">
+                      <div 
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm"
+                        style={{ 
+                          background: `hsl(${(rowIdx * 53 + 20) % 360}, 50%, 45%)` 
+                        }}
+                      >
+                        {emp.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-xs text-[#1a1a2e] truncate">{emp.name}</span>
+                        <span className="text-[9px] text-[#8c8fa3] font-mono leading-none mt-0.5">NIK: {emp.nik || `EMP${emp.id}`}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Render Attendance matrix cells */}
+                  {dateList.map((date) => {
+                    const dateStr = getLocalDateKey(date);
+                    const key = `${emp.id}_${dateStr}`;
+                    const record = attendanceMap[key];
+                    const isWk = date.getDay() === 0 || date.getDay() === 6;
+
+                    return (
+                      <AttendanceCell 
+                        key={date.toISOString()} 
+                        record={record}
+                        isWk={isWk}
+                        onEdit={handleEditClick}
+                      />
+                    );
+                  })}
+
+                  {/* Dynamic Metrics summaries */}
+                  <td className="px-2 py-3 text-center text-xs font-bold text-[#03543f] bg-[#def7ec]/15 border-r border-[#ebedf0]">
+                    {totalPresent}
+                  </td>
+                  <td className="px-2 py-3 text-center text-xs font-bold text-[#723b13] bg-[#fdf6b2]/15 border-r border-[#ebedf0]">
+                    {totalLate}
+                  </td>
+                  <td className="px-2 py-3 text-center text-xs font-bold text-[#9b1c1c] bg-[#fde8e8]/15">
+                    {totalMissedOut}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
       {/* Filters & Toolbar */}
@@ -175,155 +357,7 @@ const LogView = ({ employees, startDate, endDate, selectedUser, onStartDateChang
 
       {/* Pivot Table spreadsheet container */}
       <div className="bg-white rounded-xl border border-[#ebedf0] overflow-hidden shadow-sm min-h-[400px]">
-        {loading ? (
-          <div className="p-32 text-center flex flex-col items-center justify-center">
-            <div className="w-10 h-10 border-4 border-gray-100 border-t-[#8B0000] rounded-full animate-spin mb-4" />
-            <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Mempersiapkan Pivot Table...</p>
-          </div>
-        ) : filteredEmployees.length === 0 ? (
-          <div className="p-24 text-center flex flex-col items-center opacity-40">
-             <AlertCircle size={64} className="mb-4 text-[#8B0000]/20" />
-             <h3 className="font-bold text-gray-900 tracking-wider uppercase">Data Kosong</h3>
-             <p className="text-xs">Tidak ada karyawan yang cocok.</p>
-          </div>
-        ) : (
-          <div className="w-full overflow-x-auto relative scrollbar-thin">
-            <table className="text-left border-collapse table-fixed" style={{ width: `${220 + dateList.length * 85 + 215}px`, minWidth: '100%' }}>
-              <thead>
-                <tr className="bg-[#f9f9fb] border-b border-[#ebedf0]">
-                  {/* Sticky left Employee header */}
-                  <th className="sticky left-0 bg-[#f9f9fb] z-30 px-4 py-3 text-xs font-bold text-[#5f6368] uppercase tracking-wider min-w-[220px] max-w-[220px] w-[220px] border-r border-[#ebedf0] shadow-[2px_0_5px_rgba(0,0,0,0.04)]">
-                    Karyawan
-                  </th>
-                  
-                  {/* Date Column headers */}
-                  {dateList.map((date, idx) => {
-                    const isWk = date.getDay() === 0 || date.getDay() === 6;
-                    return (
-                      <th 
-                        key={idx} 
-                        className={`px-2 py-2 text-center text-[10px] font-bold uppercase tracking-tighter min-w-[85px] max-w-[85px] w-[85px] border-r border-[#ebedf0] leading-tight ${isWk ? 'bg-rose-50/40 text-rose-600' : 'text-[#5f6368]'}`}
-                      >
-                        <div>{date.getDate()} {getIndoDayName(date)}</div>
-                        <div className="text-[8px] text-gray-400 font-normal mt-0.5">
-                          {date.toLocaleString('id-ID', { month: 'short' })}
-                        </div>
-                      </th>
-                    );
-                  })}
-
-                  {/* Summary columns */}
-                  <th className="px-3 py-3 text-center text-[10px] font-bold text-[#03543f] uppercase tracking-wider min-w-[70px] max-w-[70px] w-[70px] bg-[#def7ec]/30 border-r border-[#ebedf0]">
-                    Hadir
-                  </th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold text-[#723b13] uppercase tracking-wider min-w-[70px] max-w-[70px] w-[70px] bg-[#fdf6b2]/30 border-r border-[#ebedf0]">
-                    Telat
-                  </th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold text-[#9b1c1c] uppercase tracking-wider min-w-[75px] max-w-[75px] w-[75px] bg-[#fde8e8]/30">
-                    Lupa Out
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#ebedf0]">
-                {filteredEmployees.map((emp: any, rowIdx: number) => {
-                  let totalPresent = 0;
-                  let totalLate = 0;
-                  let totalMissedOut = 0;
-
-                  return (
-                    <tr key={emp.id} className="hover:bg-[#f9f9fb] transition-colors group">
-                      {/* Sticky left Employee body cell */}
-                      <td className="sticky left-0 bg-white group-hover:bg-[#f9f9fb] z-20 px-4 py-3 border-r border-[#ebedf0] shadow-[2px_0_5px_rgba(0,0,0,0.04)] transition-colors min-w-[220px] max-w-[220px] w-[220px]">
-                        <div className="flex items-center gap-2.5">
-                          <div 
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm"
-                            style={{ 
-                              background: `hsl(${(rowIdx * 53 + 20) % 360}, 50%, 45%)` 
-                            }}
-                          >
-                            {emp.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-semibold text-xs text-[#1a1a2e] truncate">{emp.name}</span>
-                            <span className="text-[9px] text-[#8c8fa3] font-mono leading-none mt-0.5">NIK: {emp.nik || `EMP${emp.id}`}</span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Render Attendance matrix cells */}
-                      {dateList.map((date, dateIdx) => {
-                        const dateStr = getLocalDateKey(date);
-                        const key = `${emp.id}_${dateStr}`;
-                        const record = attendanceMap[key];
-                        const isWk = date.getDay() === 0 || date.getDay() === 6;
-
-                        let checkInStr = "";
-                        let checkOutStr = "";
-                        let cellStyle = "text-gray-300 bg-white";
-
-                        if (record) {
-                          const checkInTime = new Date(record.check_in);
-                          checkInStr = checkInTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                          
-                          if (record.check_out) {
-                            const checkOutTime = new Date(record.check_out);
-                            checkOutStr = checkOutTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                          } else {
-                            checkOutStr = "Lupa";
-                            totalMissedOut++;
-                          }
-
-                          if (record.status === 'late') {
-                            totalLate++;
-                            totalPresent++;
-                            cellStyle = "bg-amber-50 text-amber-800 border border-amber-100/70 rounded-md shadow-[inset_0_0_0_1px_rgba(217,119,6,0.1)]";
-                          } else {
-                            totalPresent++;
-                            cellStyle = "bg-emerald-50 text-emerald-800 border border-emerald-100/70 rounded-md shadow-[inset_0_0_0_1px_rgba(16,185,129,0.1)]";
-                          }
-                        } else if (isWk) {
-                          cellStyle = "bg-rose-50/10 text-rose-300 font-normal text-[9px]";
-                        }
-
-                        return (
-                          <td 
-                            key={dateIdx} 
-                            onClick={() => record && handleEditClick(record)}
-                            className={`px-1 py-1.5 text-center text-[10px] border-r border-[#ebedf0] align-middle select-none transition-all ${record ? 'cursor-pointer hover:brightness-95 hover:scale-95' : ''} ${isWk && !record ? 'bg-gray-50/40' : ''}`}
-                          >
-                            {record ? (
-                              <div className={`py-1 px-1 flex flex-col items-center justify-center font-bold font-mono tracking-tighter ${cellStyle}`}>
-                                <span className="leading-tight">{checkInStr}</span>
-                                <span className={`text-[8px] leading-tight ${record.check_out ? 'opacity-65' : 'text-rose-500 font-extrabold uppercase'}`}>
-                                  {checkOutStr}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-300 font-normal">
-                                {isWk ? <span className="text-[9px] text-gray-300">Off</span> : "-"}
-                              </span>
-                            )}
-                          </td>
-                        );
-                      })}
-
-                      {/* Dynamic Metrics summaries */}
-                      <td className="px-2 py-3 text-center text-xs font-bold text-[#03543f] bg-[#def7ec]/15 border-r border-[#ebedf0]">
-                        {totalPresent}
-                      </td>
-                      <td className="px-2 py-3 text-center text-xs font-bold text-[#723b13] bg-[#fdf6b2]/15 border-r border-[#ebedf0]">
-                        {totalLate}
-                      </td>
-                      <td className="px-2 py-3 text-center text-xs font-bold text-[#9b1c1c] bg-[#fde8e8]/15">
-                        {totalMissedOut}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {renderPivotContent()}
       </div>
 
       {/* Correction Modal */}
