@@ -80,39 +80,78 @@ pipeline {
                         '''
                     }
                     
-                    // 2. Hubungkan SSH dan jalankan proses deployment di VM Aplikasi
-                    withCredentials([sshUserPrivateKey(credentialsId: "${SSH_CREDENTIAL_ID}", keyFileVariable: 'SSH_KEY')]) {
-                        // Transfer docker-compose.prod.yml dan .env.prod ke VM Aplikasi
-                        sh "scp -i \${SSH_KEY} -o StrictHostKeyChecking=no docker-compose.prod.yml ${TARGET_VM_USER}@${TARGET_VM_IP}:${TARGET_DIR}/docker-compose.prod.yml"
-                        sh "scp -i \${SSH_KEY} -o StrictHostKeyChecking=no .env.prod ${TARGET_VM_USER}@${TARGET_VM_IP}:${TARGET_DIR}/.env.prod"
+                    // Cek apakah agent berjalan secara lokal di target VM (memiliki target directory)
+                    def isLocal = sh(script: "[ -d '${TARGET_DIR}' ] && echo 'true' || echo 'false'", returnStdout: true).trim() == 'true'
+                    
+                    if (isLocal) {
+                        echo "Mendeteksi agent berjalan di VM target secara lokal. Menjalankan deployment lokal..."
                         
-                        // Verifikasi .env.prod terkirim dengan benar
-                        sh "ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no ${TARGET_VM_USER}@${TARGET_VM_IP} 'echo \"[VERIFY] .env.prod lines: \$(wc -l < ${TARGET_DIR}/.env.prod), DB_PASSWORD set: \$(grep -c DB_PASSWORD ${TARGET_DIR}/.env.prod)\"'"
+                        // Copy file secara lokal
+                        sh "cp docker-compose.prod.yml ${TARGET_DIR}/docker-compose.prod.yml"
+                        sh "cp .env.prod ${TARGET_DIR}/.env.prod"
                         
-                        // Eksekusi pull dan up di server target
+                        // Verifikasi .env.prod
+                        sh "echo \"[VERIFY] .env.prod lines: \$(wc -l < ${TARGET_DIR}/.env.prod), DB_PASSWORD set: \$(grep -c DB_PASSWORD ${TARGET_DIR}/.env.prod)\""
+                        
+                        // Eksekusi docker compose pull & up secara lokal
                         withCredentials([usernamePassword(credentialsId: "${GHCR_AUTH_ID}", usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
                             sh """
-                                ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no ${TARGET_VM_USER}@${TARGET_VM_IP} '
-                                    cd ${TARGET_DIR}
-                                    
-                                    # Login ke GHCR di VM Aplikasi agar diizinkan pull image
-                                    echo "\${GH_TOKEN}" | docker login ${REGISTRY} -u \${GH_USER} --password-stdin
-                                    
-                                    echo "Menarik Image Terbaru..."
-                                    docker compose -f docker-compose.prod.yml pull
-                                    
-                                    echo "Mengaktifkan Container Baru..."
-                                    docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --remove-orphans
-                                    
-                                    echo "Membersihkan Image Lama yang Gantung..."
-                                    docker image prune -f
-                                    
-                                    echo "Restart hrms-proxy..."
-                                    docker restart hrms-proxy
-                                    
-                                    echo "Deployment Sukses!"
-                                '
+                                cd ${TARGET_DIR}
+                                
+                                # Login ke GHCR
+                                echo "\${GH_TOKEN}" | docker login ${REGISTRY} -u \${GH_USER} --password-stdin
+                                
+                                echo "Menarik Image Terbaru..."
+                                docker compose -f docker-compose.prod.yml pull
+                                
+                                echo "Mengaktifkan Container Baru..."
+                                docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --remove-orphans
+                                
+                                echo "Membersihkan Image Lama yang Gantung..."
+                                docker image prune -f
+                                
+                                echo "Restart hrms-proxy..."
+                                docker restart hrms-proxy
+                                
+                                echo "Deployment Lokal Sukses!"
                             """
+                        }
+                    } else {
+                        echo "Menjalankan deployment remote via SSH/SCP..."
+                        // 2. Hubungkan SSH dan jalankan proses deployment di VM Aplikasi
+                        withCredentials([sshUserPrivateKey(credentialsId: "${SSH_CREDENTIAL_ID}", keyFileVariable: 'SSH_KEY')]) {
+                            // Transfer docker-compose.prod.yml dan .env.prod ke VM Aplikasi
+                            sh "scp -i \${SSH_KEY} -o StrictHostKeyChecking=no docker-compose.prod.yml ${TARGET_VM_USER}@${TARGET_VM_IP}:${TARGET_DIR}/docker-compose.prod.yml"
+                            sh "scp -i \${SSH_KEY} -o StrictHostKeyChecking=no .env.prod ${TARGET_VM_USER}@${TARGET_VM_IP}:${TARGET_DIR}/.env.prod"
+                            
+                            // Verifikasi .env.prod terkirim dengan benar
+                            sh "ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no ${TARGET_VM_USER}@${TARGET_VM_IP} 'echo \"[VERIFY] .env.prod lines: \$(wc -l < ${TARGET_DIR}/.env.prod), DB_PASSWORD set: \$(grep -c DB_PASSWORD ${TARGET_DIR}/.env.prod)\"'"
+                            
+                            // Eksekusi pull dan up di server target
+                            withCredentials([usernamePassword(credentialsId: "${GHCR_AUTH_ID}", usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
+                                sh """
+                                    ssh -i \${SSH_KEY} -o StrictHostKeyChecking=no ${TARGET_VM_USER}@${TARGET_VM_IP} '
+                                        cd ${TARGET_DIR}
+                                        
+                                        # Login ke GHCR di VM Aplikasi agar diizinkan pull image
+                                        echo "\${GH_TOKEN}" | docker login ${REGISTRY} -u \${GH_USER} --password-stdin
+                                        
+                                        echo "Menarik Image Terbaru..."
+                                        docker compose -f docker-compose.prod.yml pull
+                                        
+                                        echo "Mengaktifkan Container Baru..."
+                                        docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --remove-orphans
+                                        
+                                        echo "Membersihkan Image Lama yang Gantung..."
+                                        docker image prune -f
+                                        
+                                        echo "Restart hrms-proxy..."
+                                        docker restart hrms-proxy
+                                        
+                                        echo "Deployment Remote Sukses!"
+                                    '
+                                """
+                            }
                         }
                     }
                 }
