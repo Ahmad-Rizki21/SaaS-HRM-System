@@ -86,9 +86,18 @@ export default function ApiTokensPage() {
   // Generated Token state
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [apiUrl, setApiUrl] = useState("http://localhost:8000/api");
 
   useEffect(() => {
     fetchTokens();
+    if (typeof window !== "undefined") {
+      const envUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (envUrl) {
+        setApiUrl(envUrl);
+      } else {
+        setApiUrl(`${window.location.origin}/api`);
+      }
+    }
   }, []);
 
   const fetchTokens = async () => {
@@ -343,7 +352,7 @@ export default function ApiTokensPage() {
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Contoh Request HTTP cURL</span>
               <button 
                 onClick={() => {
-                  navigator.clipboard.writeText(`curl -X GET \\\n  https://saas-hrms.narwasthugroup.com/api/v1/directory \\\n  -H "Authorization: Bearer <your_api_token>" \\\n  -H "Accept: application/json"`);
+                  navigator.clipboard.writeText(`curl -X GET \\\n  ${apiUrl}/directory \\\n  -H "Authorization: Bearer <your_api_token>" \\\n  -H "Accept: application/json"`);
                   toast.success("cURL snippet berhasil disalin!");
                 }}
                 className="text-gray-400 hover:text-white flex items-center gap-1.5 text-xs transition-colors"
@@ -355,7 +364,7 @@ export default function ApiTokensPage() {
             <div className="p-5 overflow-x-auto">
               <pre className="text-xs text-gray-300 font-mono leading-relaxed">
 {`curl -X GET \\
-  https://saas-hrms.narwasthugroup.com/api/v1/directory \\
+  ${apiUrl}/directory \\
   -H "Authorization: Bearer <your_api_token>" \\
   -H "Accept: application/json"`}
               </pre>
@@ -367,7 +376,7 @@ export default function ApiTokensPage() {
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider font-mono">Integrasi NodeJS / React Fetch</span>
               <button 
                 onClick={() => {
-                  navigator.clipboard.writeText(`fetch('https://saas-hrms.narwasthugroup.com/api/v1/directory', {\n  method: 'GET',\n  headers: {\n    'Authorization': 'Bearer <your_api_token>',\n    'Accept': 'application/json'\n  }\n})\n.then(response => response.json())\n.then(data => console.log(data));`);
+                  navigator.clipboard.writeText(`fetch('${apiUrl}/directory', {\n  method: 'GET',\n  headers: {\n    'Authorization': 'Bearer <your_api_token>',\n    'Accept': 'application/json'\n  }\n})\n.then(response => response.json())\n.then(data => console.log(data));`);
                   toast.success("JavaScript snippet berhasil disalin!");
                 }}
                 className="text-gray-400 hover:text-white flex items-center gap-1.5 text-xs transition-colors"
@@ -378,7 +387,7 @@ export default function ApiTokensPage() {
             </div>
             <div className="p-5 overflow-x-auto">
               <pre className="text-xs text-gray-300 font-mono leading-relaxed">
-{`fetch('https://saas-hrms.narwasthugroup.com/api/v1/directory', {
+{`fetch('${apiUrl}/directory', {
   method: 'GET',
   headers: {
     'Authorization': 'Bearer <your_api_token>',
