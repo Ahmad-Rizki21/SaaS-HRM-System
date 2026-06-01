@@ -1,0 +1,5963 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HRMS SaaS Narwasthu Group API",
+    "description": "Dokumentasi Lengkap API HRMS SaaS Narwasthu Group - Di-generate otomatis dari Route Laravel.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://ontime.jelantik.com",
+      "description": "Production Server"
+    },
+    {
+      "url": "http://localhost:8000",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/api/activity-logs": {
+      "get": {
+        "tags": [
+          "ActivityLog"
+        ],
+        "summary": "Daftar ActivityLog",
+        "description": "Endpoint untuk daftar activitylog (Action: App\\Http\\Controllers\\ActivityLogController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/activity-logs/export": {
+      "get": {
+        "tags": [
+          "ActivityLog"
+        ],
+        "summary": "Ekspor ActivityLog",
+        "description": "Endpoint untuk ekspor activitylog (Action: App\\Http\\Controllers\\ActivityLogController@export)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/activity-logs/filters": {
+      "get": {
+        "tags": [
+          "ActivityLog"
+        ],
+        "summary": "Filters ActivityLog",
+        "description": "Endpoint untuk filters activitylog (Action: App\\Http\\Controllers\\ActivityLogController@filters)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/announcements": {
+      "get": {
+        "tags": [
+          "Announcement"
+        ],
+        "summary": "Daftar Announcement",
+        "description": "Endpoint untuk daftar announcement (Action: App\\Http\\Controllers\\AnnouncementController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Announcement"
+        ],
+        "summary": "Buat Announcement Baru",
+        "description": "Endpoint untuk buat announcement baru (Action: App\\Http\\Controllers\\AnnouncementController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcements/{id}": {
+      "put": {
+        "tags": [
+          "Announcement"
+        ],
+        "summary": "Perbarui Announcement",
+        "description": "Endpoint untuk perbarui announcement (Action: App\\Http\\Controllers\\AnnouncementController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Announcement"
+        ],
+        "summary": "Hapus Announcement",
+        "description": "Endpoint untuk hapus announcement (Action: App\\Http\\Controllers\\AnnouncementController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/approval-workflows": {
+      "get": {
+        "tags": [
+          "ApprovalWorkflow"
+        ],
+        "summary": "Daftar ApprovalWorkflow",
+        "description": "Endpoint untuk daftar approvalworkflow (Action: App\\Http\\Controllers\\ApprovalWorkflowController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ApprovalWorkflow"
+        ],
+        "summary": "Buat ApprovalWorkflow Baru",
+        "description": "Endpoint untuk buat approvalworkflow baru (Action: App\\Http\\Controllers\\ApprovalWorkflowController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/approval-workflows/modules": {
+      "get": {
+        "tags": [
+          "ApprovalWorkflow"
+        ],
+        "summary": "Getmodulekeys ApprovalWorkflow",
+        "description": "Endpoint untuk getmodulekeys approvalworkflow (Action: App\\Http\\Controllers\\ApprovalWorkflowController@getModuleKeys)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/approval-workflows/roles": {
+      "get": {
+        "tags": [
+          "ApprovalWorkflow"
+        ],
+        "summary": "Getroles ApprovalWorkflow",
+        "description": "Endpoint untuk getroles approvalworkflow (Action: App\\Http\\Controllers\\ApprovalWorkflowController@getRoles)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/approval-workflows/users": {
+      "get": {
+        "tags": [
+          "ApprovalWorkflow"
+        ],
+        "summary": "Getusers ApprovalWorkflow",
+        "description": "Endpoint untuk getusers approvalworkflow (Action: App\\Http\\Controllers\\ApprovalWorkflowController@getUsers)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/approval-workflows/{moduleKey}": {
+      "get": {
+        "tags": [
+          "ApprovalWorkflow"
+        ],
+        "summary": "Detail ApprovalWorkflow",
+        "description": "Endpoint untuk detail approvalworkflow (Action: App\\Http\\Controllers\\ApprovalWorkflowController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "moduleKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/attendance-corrections": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Daftar AttendanceCorrection",
+        "description": "Endpoint untuk daftar attendancecorrection (Action: App\\Http\\Controllers\\AttendanceCorrectionController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Buat AttendanceCorrection Baru",
+        "description": "Endpoint untuk buat attendancecorrection baru (Action: App\\Http\\Controllers\\AttendanceCorrectionController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/attendance-corrections/export": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Ekspor AttendanceCorrection",
+        "description": "Endpoint untuk ekspor attendancecorrection (Action: App\\Http\\Controllers\\AttendanceCorrectionController@export)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/attendance-corrections/{id}/approve": {
+      "post": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Setujui AttendanceCorrection",
+        "description": "Endpoint untuk setujui attendancecorrection (Action: App\\Http\\Controllers\\AttendanceCorrectionController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/attendance-corrections/{id}/reject": {
+      "post": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Tolak AttendanceCorrection",
+        "description": "Endpoint untuk tolak attendancecorrection (Action: App\\Http\\Controllers\\AttendanceCorrectionController@reject)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/attendance/check-in": {
+      "post": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Checkin Attendance",
+        "description": "Endpoint untuk checkin attendance (Action: App\\Http\\Controllers\\AttendanceController@checkIn)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "latitude",
+                  "longitude"
+                ],
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                    "format": "float",
+                    "example": -6.2
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "format": "float",
+                    "example": 106.816666
+                  },
+                  "device_id": {
+                    "type": "string",
+                    "example": "device_xyz_123"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/attendance/check-out": {
+      "post": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Checkout Attendance",
+        "description": "Endpoint untuk checkout attendance (Action: App\\Http\\Controllers\\AttendanceController@checkOut)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/attendance/export": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Ekspor Attendance",
+        "description": "Endpoint untuk ekspor attendance (Action: App\\Http\\Controllers\\AttendanceController@export)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/attendance/heatmap": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Heatmap Attendance",
+        "description": "Endpoint untuk heatmap attendance (Action: App\\Http\\Controllers\\AttendanceController@heatmap)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/attendance/history": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "History Attendance",
+        "description": "Endpoint untuk history attendance (Action: App\\Http\\Controllers\\AttendanceController@history)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/attendance/summary": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Summaryrecords Attendance",
+        "description": "Endpoint untuk summaryrecords attendance (Action: App\\Http\\Controllers\\AttendanceController@summaryRecords)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/attendance/suspicious": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Suspiciousrecords Attendance",
+        "description": "Endpoint untuk suspiciousrecords attendance (Action: App\\Http\\Controllers\\AttendanceController@suspiciousRecords)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/attendance/today": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Today Attendance",
+        "description": "Endpoint untuk today attendance (Action: App\\Http\\Controllers\\AttendanceController@today)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/attendance/{id}": {
+      "put": {
+        "tags": [
+          "Attendance"
+        ],
+        "summary": "Perbarui Attendance",
+        "description": "Endpoint untuk perbarui attendance (Action: App\\Http\\Controllers\\AttendanceController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/broadcasting/auth": {
+      "get": {
+        "tags": [
+          "Broadcast"
+        ],
+        "summary": "Authenticate Broadcast",
+        "description": "Endpoint untuk authenticate broadcast (Action: Illuminate\\Broadcasting\\BroadcastController@authenticate)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Broadcast"
+        ],
+        "summary": "Authenticate Broadcast",
+        "description": "Endpoint untuk authenticate broadcast (Action: Illuminate\\Broadcasting\\BroadcastController@authenticate)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/companies/search": {
+      "get": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Searchcompanies Auth",
+        "description": "Endpoint untuk searchcompanies auth (Action: App\\Http\\Controllers\\AuthController@searchCompanies)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/company": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Detail Company",
+        "description": "Endpoint untuk detail company (Action: App\\Http\\Controllers\\CompanyController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/company/update": {
+      "post": {
+        "tags": [
+          "Company"
+        ],
+        "summary": "Perbarui Company",
+        "description": "Endpoint untuk perbarui company (Action: App\\Http\\Controllers\\CompanyController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/leaderboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Leaderboard Dashboard",
+        "description": "Endpoint untuk leaderboard dashboard (Action: App\\Http\\Controllers\\DashboardController@leaderboard)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/dashboard/summary": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Daftar Dashboard",
+        "description": "Endpoint untuk daftar dashboard (Action: App\\Http\\Controllers\\DashboardController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/directory": {
+      "get": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Directory Employee",
+        "description": "Endpoint untuk directory employee (Action: App\\Http\\Controllers\\EmployeeController@directory)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/documents": {
+      "get": {
+        "tags": [
+          "CompanyDocument"
+        ],
+        "summary": "Daftar CompanyDocument",
+        "description": "Endpoint untuk daftar companydocument (Action: App\\Http\\Controllers\\CompanyDocumentController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "CompanyDocument"
+        ],
+        "summary": "Buat CompanyDocument Baru",
+        "description": "Endpoint untuk buat companydocument baru (Action: App\\Http\\Controllers\\CompanyDocumentController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/{id}": {
+      "get": {
+        "tags": [
+          "CompanyDocument"
+        ],
+        "summary": "Detail CompanyDocument",
+        "description": "Endpoint untuk detail companydocument (Action: App\\Http\\Controllers\\CompanyDocumentController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "CompanyDocument"
+        ],
+        "summary": "Perbarui CompanyDocument",
+        "description": "Endpoint untuk perbarui companydocument (Action: App\\Http\\Controllers\\CompanyDocumentController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CompanyDocument"
+        ],
+        "summary": "Hapus CompanyDocument",
+        "description": "Endpoint untuk hapus companydocument (Action: App\\Http\\Controllers\\CompanyDocumentController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/documents/{id}/preview": {
+      "get": {
+        "tags": [
+          "CompanyDocument"
+        ],
+        "summary": "Preview CompanyDocument",
+        "description": "Endpoint untuk preview companydocument (Action: App\\Http\\Controllers\\CompanyDocumentController@preview)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/employees": {
+      "get": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Daftar Employee",
+        "description": "Endpoint untuk daftar employee (Action: App\\Http\\Controllers\\EmployeeController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Buat Employee Baru",
+        "description": "Endpoint untuk buat employee baru (Action: App\\Http\\Controllers\\EmployeeController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/employees/bulk-delete": {
+      "post": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Bulkdestroy Employee",
+        "description": "Endpoint untuk bulkdestroy employee (Action: App\\Http\\Controllers\\EmployeeController@bulkDestroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/employees/bulk-resend-verification": {
+      "post": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Bulkresendverification Employee",
+        "description": "Endpoint untuk bulkresendverification employee (Action: App\\Http\\Controllers\\EmployeeController@bulkResendVerification)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/employees/bulk-wfh": {
+      "post": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Bulkwfh Employee",
+        "description": "Endpoint untuk bulkwfh employee (Action: App\\Http\\Controllers\\EmployeeController@bulkWfh)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/employees/datatables": {
+      "get": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Datatables Employee",
+        "description": "Endpoint untuk datatables employee (Action: App\\Http\\Controllers\\EmployeeController@datatables)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/employees/import": {
+      "post": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Impor Employee",
+        "description": "Endpoint untuk impor employee (Action: App\\Http\\Controllers\\EmployeeController@import)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/employees/potential-supervisors": {
+      "get": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Potentialsupervisors Employee",
+        "description": "Endpoint untuk potentialsupervisors employee (Action: App\\Http\\Controllers\\EmployeeController@potentialSupervisors)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/employees/{id}": {
+      "get": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Detail Employee",
+        "description": "Endpoint untuk detail employee (Action: App\\Http\\Controllers\\EmployeeController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Perbarui Employee",
+        "description": "Endpoint untuk perbarui employee (Action: App\\Http\\Controllers\\EmployeeController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Hapus Employee",
+        "description": "Endpoint untuk hapus employee (Action: App\\Http\\Controllers\\EmployeeController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/employees/{id}/resend-verification": {
+      "post": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Resendverification Employee",
+        "description": "Endpoint untuk resendverification employee (Action: App\\Http\\Controllers\\EmployeeController@resendVerification)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/employees/{id}/reset-device": {
+      "post": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Resetdeviceid Employee",
+        "description": "Endpoint untuk resetdeviceid employee (Action: App\\Http\\Controllers\\EmployeeController@resetDeviceId)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/employees/{id}/toggle-wfh": {
+      "post": {
+        "tags": [
+          "Employee Directory"
+        ],
+        "summary": "Togglewfh Employee",
+        "description": "Endpoint untuk togglewfh employee (Action: App\\Http\\Controllers\\EmployeeController@toggleWfh)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/export/kpi/{id}": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "summary": "Kpipdf Export",
+        "description": "Endpoint untuk kpipdf export (Action: App\\Http\\Controllers\\ExportController@kpiPdf)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/export/leave/{id}": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "summary": "Leavepdf Export",
+        "description": "Endpoint untuk leavepdf export (Action: App\\Http\\Controllers\\ExportController@leavePdf)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/export/overtime/{id}": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "summary": "Overtimepdf Export",
+        "description": "Endpoint untuk overtimepdf export (Action: App\\Http\\Controllers\\ExportController@overtimePdf)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/export/permit/{id}": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "summary": "Permitpdf Export",
+        "description": "Endpoint untuk permitpdf export (Action: App\\Http\\Controllers\\ExportController@permitPdf)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/export/reimbursement/{id}": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "summary": "Reimbursementpdf Export",
+        "description": "Endpoint untuk reimbursementpdf export (Action: App\\Http\\Controllers\\ExportController@reimbursementPdf)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/forgot-password": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Forgotpassword Auth",
+        "description": "Endpoint untuk forgotpassword auth (Action: App\\Http\\Controllers\\AuthController@forgotPassword)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fund-requests": {
+      "get": {
+        "tags": [
+          "FundRequest"
+        ],
+        "summary": "Daftar FundRequest",
+        "description": "Endpoint untuk daftar fundrequest (Action: App\\Http\\Controllers\\FundRequestController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "FundRequest"
+        ],
+        "summary": "Buat FundRequest Baru",
+        "description": "Endpoint untuk buat fundrequest baru (Action: App\\Http\\Controllers\\FundRequestController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fund-requests/{id}": {
+      "get": {
+        "tags": [
+          "FundRequest"
+        ],
+        "summary": "Detail FundRequest",
+        "description": "Endpoint untuk detail fundrequest (Action: App\\Http\\Controllers\\FundRequestController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "FundRequest"
+        ],
+        "summary": "Hapus FundRequest",
+        "description": "Endpoint untuk hapus fundrequest (Action: App\\Http\\Controllers\\FundRequestController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/fund-requests/{id}/approve": {
+      "post": {
+        "tags": [
+          "FundRequest"
+        ],
+        "summary": "Setujui FundRequest",
+        "description": "Endpoint untuk setujui fundrequest (Action: App\\Http\\Controllers\\FundRequestController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fund-requests/{id}/reject": {
+      "post": {
+        "tags": [
+          "FundRequest"
+        ],
+        "summary": "Tolak FundRequest",
+        "description": "Endpoint untuk tolak fundrequest (Action: App\\Http\\Controllers\\FundRequestController@reject)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "General"
+        ],
+        "summary": "Closure General",
+        "description": "Endpoint untuk closure general (Action: Closure)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/holidays": {
+      "get": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Daftar Holiday",
+        "description": "Endpoint untuk daftar holiday (Action: App\\Http\\Controllers\\HolidayController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Buat Holiday Baru",
+        "description": "Endpoint untuk buat holiday baru (Action: App\\Http\\Controllers\\HolidayController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/holidays/{id}": {
+      "put": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Perbarui Holiday",
+        "description": "Endpoint untuk perbarui holiday (Action: App\\Http\\Controllers\\HolidayController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Hapus Holiday",
+        "description": "Endpoint untuk hapus holiday (Action: App\\Http\\Controllers\\HolidayController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/kpi-reviews": {
+      "get": {
+        "tags": [
+          "PerformanceReview"
+        ],
+        "summary": "Daftar PerformanceReview",
+        "description": "Endpoint untuk daftar performancereview (Action: App\\Http\\Controllers\\PerformanceReviewController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "PerformanceReview"
+        ],
+        "summary": "Buat PerformanceReview Baru",
+        "description": "Endpoint untuk buat performancereview baru (Action: App\\Http\\Controllers\\PerformanceReviewController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kpi-reviews/{id}": {
+      "get": {
+        "tags": [
+          "PerformanceReview"
+        ],
+        "summary": "Detail PerformanceReview",
+        "description": "Endpoint untuk detail performancereview (Action: App\\Http\\Controllers\\PerformanceReviewController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "PerformanceReview"
+        ],
+        "summary": "Perbarui PerformanceReview",
+        "description": "Endpoint untuk perbarui performancereview (Action: App\\Http\\Controllers\\PerformanceReviewController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "PerformanceReview"
+        ],
+        "summary": "Hapus PerformanceReview",
+        "description": "Endpoint untuk hapus performancereview (Action: App\\Http\\Controllers\\PerformanceReviewController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/leave": {
+      "get": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Daftar Leave",
+        "description": "Endpoint untuk daftar leave (Action: App\\Http\\Controllers\\LeaveController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Buat Leave Baru",
+        "description": "Endpoint untuk buat leave baru (Action: App\\Http\\Controllers\\LeaveController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/leave/calendar": {
+      "get": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Calendar Leave",
+        "description": "Endpoint untuk calendar leave (Action: App\\Http\\Controllers\\LeaveController@calendar)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/leave/{id}": {
+      "delete": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Hapus Leave",
+        "description": "Endpoint untuk hapus leave (Action: App\\Http\\Controllers\\LeaveController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/leave/{id}/approve": {
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Setujui Leave",
+        "description": "Endpoint untuk setujui leave (Action: App\\Http\\Controllers\\LeaveController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/leave/{id}/reject": {
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Tolak Leave",
+        "description": "Endpoint untuk tolak leave (Action: App\\Http\\Controllers\\LeaveController@reject)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Login Auth",
+        "description": "Endpoint untuk login auth (Action: App\\Http\\Controllers\\AuthController@login)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@company.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/login-google": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Loginwithgoogle Auth",
+        "description": "Endpoint untuk loginwithgoogle auth (Action: App\\Http\\Controllers\\AuthController@loginWithGoogle)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/logout": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Logout Auth",
+        "description": "Endpoint untuk logout auth (Action: App\\Http\\Controllers\\AuthController@logout)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/manager/pending-count": {
+      "get": {
+        "tags": [
+          "Manager"
+        ],
+        "summary": "Getpendingcount Manager",
+        "description": "Endpoint untuk getpendingcount manager (Action: App\\Http\\Controllers\\ManagerController@getPendingCount)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/manager/pending-requests": {
+      "get": {
+        "tags": [
+          "Manager"
+        ],
+        "summary": "Getpendingrequests Manager",
+        "description": "Endpoint untuk getpendingrequests manager (Action: App\\Http\\Controllers\\ManagerController@getPendingRequests)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/manager/team-attendance": {
+      "get": {
+        "tags": [
+          "Manager"
+        ],
+        "summary": "Getteamattendance Manager",
+        "description": "Endpoint untuk getteamattendance manager (Action: App\\Http\\Controllers\\ManagerController@getTeamAttendance)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/manager/update-status": {
+      "post": {
+        "tags": [
+          "Manager"
+        ],
+        "summary": "Updaterequeststatus Manager",
+        "description": "Endpoint untuk updaterequeststatus manager (Action: App\\Http\\Controllers\\ManagerController@updateRequestStatus)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mass-leave": {
+      "get": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Daftar MassLeave",
+        "description": "Endpoint untuk daftar massleave (Action: App\\Http\\Controllers\\MassLeaveController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Buat MassLeave Baru",
+        "description": "Endpoint untuk buat massleave baru (Action: App\\Http\\Controllers\\MassLeaveController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mass-leave/{id}/approve": {
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Setujui MassLeave",
+        "description": "Endpoint untuk setujui massleave (Action: App\\Http\\Controllers\\MassLeaveController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mass-leave/{id}/reject": {
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Tolak MassLeave",
+        "description": "Endpoint untuk tolak massleave (Action: App\\Http\\Controllers\\MassLeaveController@reject)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/attendance/check-in": {
+      "post": {
+        "tags": [
+          "Mobile App Client"
+        ],
+        "summary": "Checkin MobileAttendance",
+        "description": "Endpoint untuk checkin mobileattendance (Action: App\\Http\\Controllers\\Api\\Mobile\\MobileAttendanceController@checkIn)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/attendance/check-out": {
+      "post": {
+        "tags": [
+          "Mobile App Client"
+        ],
+        "summary": "Checkout MobileAttendance",
+        "description": "Endpoint untuk checkout mobileattendance (Action: App\\Http\\Controllers\\Api\\Mobile\\MobileAttendanceController@checkOut)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/attendance/history": {
+      "get": {
+        "tags": [
+          "Mobile App Client"
+        ],
+        "summary": "History MobileAttendance",
+        "description": "Endpoint untuk history mobileattendance (Action: App\\Http\\Controllers\\Api\\Mobile\\MobileAttendanceController@history)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/mobile/attendance/today": {
+      "get": {
+        "tags": [
+          "Mobile App Client"
+        ],
+        "summary": "Today MobileAttendance",
+        "description": "Endpoint untuk today mobileattendance (Action: App\\Http\\Controllers\\Api\\Mobile\\MobileAttendanceController@today)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/mobile/dashboard": {
+      "get": {
+        "tags": [
+          "Mobile App Client"
+        ],
+        "summary": "Daftar MobileDashboard",
+        "description": "Endpoint untuk daftar mobiledashboard (Action: App\\Http\\Controllers\\Api\\Mobile\\MobileDashboardController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/mobile/tasks": {
+      "get": {
+        "tags": [
+          "Mobile App Client"
+        ],
+        "summary": "Daftar MobileTask",
+        "description": "Endpoint untuk daftar mobiletask (Action: App\\Http\\Controllers\\Api\\Mobile\\MobileTaskController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/mobile/tasks/{id}": {
+      "get": {
+        "tags": [
+          "Mobile App Client"
+        ],
+        "summary": "Detail MobileTask",
+        "description": "Endpoint untuk detail mobiletask (Action: App\\Http\\Controllers\\Api\\Mobile\\MobileTaskController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "Daftar Notification",
+        "description": "Endpoint untuk daftar notification (Action: App\\Http\\Controllers\\Api\\NotificationController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/notifications-clear": {
+      "post": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "Destroyall Notification",
+        "description": "Endpoint untuk destroyall notification (Action: App\\Http\\Controllers\\Api\\NotificationController@destroyAll)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/fcm-token": {
+      "post": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "Updatefcmtoken Notification",
+        "description": "Endpoint untuk updatefcmtoken notification (Action: App\\Http\\Controllers\\Api\\NotificationController@updateFCMToken)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/read-all": {
+      "post": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "Markallasread Notification",
+        "description": "Endpoint untuk markallasread notification (Action: App\\Http\\Controllers\\Api\\NotificationController@markAllAsRead)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "put": {
+        "tags": [
+          "Notification"
+        ],
+        "summary": "Markasread Notification",
+        "description": "Endpoint untuk markasread notification (Action: App\\Http\\Controllers\\Api\\NotificationController@markAsRead)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/offices": {
+      "get": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Daftar Office",
+        "description": "Endpoint untuk daftar office (Action: App\\Http\\Controllers\\OfficeController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Buat Office Baru",
+        "description": "Endpoint untuk buat office baru (Action: App\\Http\\Controllers\\OfficeController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/offices/{id}": {
+      "get": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Detail Office",
+        "description": "Endpoint untuk detail office (Action: App\\Http\\Controllers\\OfficeController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Perbarui Office",
+        "description": "Endpoint untuk perbarui office (Action: App\\Http\\Controllers\\OfficeController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Hapus Office",
+        "description": "Endpoint untuk hapus office (Action: App\\Http\\Controllers\\OfficeController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/offices/{id}/assign-employees": {
+      "post": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Assignemployees Office",
+        "description": "Endpoint untuk assignemployees office (Action: App\\Http\\Controllers\\OfficeController@assignEmployees)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/organization-chart": {
+      "get": {
+        "tags": [
+          "Organization"
+        ],
+        "summary": "Getchart Organization",
+        "description": "Endpoint untuk getchart organization (Action: App\\Http\\Controllers\\OrganizationController@getChart)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/overtimes": {
+      "get": {
+        "tags": [
+          "Overtime"
+        ],
+        "summary": "Daftar Overtime",
+        "description": "Endpoint untuk daftar overtime (Action: App\\Http\\Controllers\\OvertimeController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Overtime"
+        ],
+        "summary": "Buat Overtime Baru",
+        "description": "Endpoint untuk buat overtime baru (Action: App\\Http\\Controllers\\OvertimeController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/overtimes/export": {
+      "get": {
+        "tags": [
+          "Overtime"
+        ],
+        "summary": "Ekspor Overtime",
+        "description": "Endpoint untuk ekspor overtime (Action: App\\Http\\Controllers\\OvertimeController@export)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/overtimes/{id}": {
+      "delete": {
+        "tags": [
+          "Overtime"
+        ],
+        "summary": "Hapus Overtime",
+        "description": "Endpoint untuk hapus overtime (Action: App\\Http\\Controllers\\OvertimeController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/overtimes/{id}/approve": {
+      "post": {
+        "tags": [
+          "Overtime"
+        ],
+        "summary": "Setujui Overtime",
+        "description": "Endpoint untuk setujui overtime (Action: App\\Http\\Controllers\\OvertimeController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/overtimes/{id}/reject": {
+      "post": {
+        "tags": [
+          "Overtime"
+        ],
+        "summary": "Tolak Overtime",
+        "description": "Endpoint untuk tolak overtime (Action: App\\Http\\Controllers\\OvertimeController@reject)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payroll/batches": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Getbatches Payroll",
+        "description": "Endpoint untuk getbatches payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@getBatches)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/payroll/batches/{id}": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Getbatchdetail Payroll",
+        "description": "Endpoint untuk getbatchdetail payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@getBatchDetail)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Destroybatch Payroll",
+        "description": "Endpoint untuk destroybatch payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@destroyBatch)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/payroll/batches/{id}/approve": {
+      "post": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Approvebatch Payroll",
+        "description": "Endpoint untuk approvebatch payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@approveBatch)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payroll/batches/{id}/export-rekap": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Exportrekap Payroll",
+        "description": "Endpoint untuk exportrekap payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@exportRekap)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/payroll/batches/{id}/paid": {
+      "post": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Markaspaid Payroll",
+        "description": "Endpoint untuk markaspaid payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@markAsPaid)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payroll/batches/{id}/reject": {
+      "post": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Rejectbatch Payroll",
+        "description": "Endpoint untuk rejectbatch payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@rejectBatch)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payroll/batches/{id}/submit": {
+      "post": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Submitforapproval Payroll",
+        "description": "Endpoint untuk submitforapproval payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@submitForApproval)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payroll/download-slip/{id}": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Downloadslip Payroll",
+        "description": "Endpoint untuk downloadslip payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@downloadSlip)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/payroll/export": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Ekspor Payroll",
+        "description": "Endpoint untuk ekspor payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@export)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/payroll/generate": {
+      "post": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Generate Payroll",
+        "description": "Endpoint untuk generate payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@generate)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payroll/history": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Daftar Payroll",
+        "description": "Endpoint untuk daftar payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/payroll/import-data": {
+      "post": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Importpayrolldata Payroll",
+        "description": "Endpoint untuk importpayrolldata payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@importPayrollData)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payroll/my-history": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Mypayroll Payroll",
+        "description": "Endpoint untuk mypayroll payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@myPayroll)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/payroll/preview-slip/{id}": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Previewslip Payroll",
+        "description": "Endpoint untuk previewslip payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@previewSlip)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/payroll/salaries/{id}": {
+      "put": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Updatesalary Payroll",
+        "description": "Endpoint untuk updatesalary payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@updateSalary)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payroll/settings": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Getsettings Payroll",
+        "description": "Endpoint untuk getsettings payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@getSettings)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Updatesettings Payroll",
+        "description": "Endpoint untuk updatesettings payroll (Action: App\\Http\\Controllers\\Api\\PayrollController@updateSettings)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/permissions": {
+      "get": {
+        "tags": [
+          "Role"
+        ],
+        "summary": "Permissions Role",
+        "description": "Endpoint untuk permissions role (Action: App\\Http\\Controllers\\Api\\RoleController@permissions)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/permits": {
+      "get": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Daftar Permit",
+        "description": "Endpoint untuk daftar permit (Action: App\\Http\\Controllers\\PermitController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Buat Permit Baru",
+        "description": "Endpoint untuk buat permit baru (Action: App\\Http\\Controllers\\PermitController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/permits/{id}": {
+      "delete": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Hapus Permit",
+        "description": "Endpoint untuk hapus permit (Action: App\\Http\\Controllers\\PermitController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/permits/{id}/approve": {
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Setujui Permit",
+        "description": "Endpoint untuk setujui permit (Action: App\\Http\\Controllers\\PermitController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/permits/{id}/reject": {
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Tolak Permit",
+        "description": "Endpoint untuk tolak permit (Action: App\\Http\\Controllers\\PermitController@reject)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile-requests": {
+      "get": {
+        "tags": [
+          "ProfileRequest"
+        ],
+        "summary": "Daftar ProfileRequest",
+        "description": "Endpoint untuk daftar profilerequest (Action: App\\Http\\Controllers\\Api\\ProfileRequestController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ProfileRequest"
+        ],
+        "summary": "Buat ProfileRequest Baru",
+        "description": "Endpoint untuk buat profilerequest baru (Action: App\\Http\\Controllers\\Api\\ProfileRequestController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile-requests/{id}/approve": {
+      "post": {
+        "tags": [
+          "ProfileRequest"
+        ],
+        "summary": "Setujui ProfileRequest",
+        "description": "Endpoint untuk setujui profilerequest (Action: App\\Http\\Controllers\\Api\\ProfileRequestController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile-requests/{id}/reject": {
+      "post": {
+        "tags": [
+          "ProfileRequest"
+        ],
+        "summary": "Tolak ProfileRequest",
+        "description": "Endpoint untuk tolak profilerequest (Action: App\\Http\\Controllers\\Api\\ProfileRequestController@reject)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile/update": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Perbarui Profile",
+        "description": "Endpoint untuk perbarui profile (Action: App\\Http\\Controllers\\ProfileController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile/upload-photo": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Uploadphoto Profile",
+        "description": "Endpoint untuk uploadphoto profile (Action: App\\Http\\Controllers\\ProfileController@uploadPhoto)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Daftar Project",
+        "description": "Endpoint untuk daftar project (Action: App\\Http\\Controllers\\ProjectController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Buat Project Baru",
+        "description": "Endpoint untuk buat project baru (Action: App\\Http\\Controllers\\ProjectController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/dashboard": {
+      "get": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Dashboard Project",
+        "description": "Endpoint untuk dashboard project (Action: App\\Http\\Controllers\\ProjectController@dashboard)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/projects/{id}": {
+      "get": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Detail Project",
+        "description": "Endpoint untuk detail project (Action: App\\Http\\Controllers\\ProjectController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Perbarui Project",
+        "description": "Endpoint untuk perbarui project (Action: App\\Http\\Controllers\\ProjectController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Hapus Project",
+        "description": "Endpoint untuk hapus project (Action: App\\Http\\Controllers\\ProjectController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/projects/{projectId}/budgets": {
+      "post": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Storebudget Project",
+        "description": "Endpoint untuk storebudget project (Action: App\\Http\\Controllers\\ProjectController@storeBudget)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/budgets/{budgetId}": {
+      "put": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Updatebudget Project",
+        "description": "Endpoint untuk updatebudget project (Action: App\\Http\\Controllers\\ProjectController@updateBudget)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "budgetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Destroybudget Project",
+        "description": "Endpoint untuk destroybudget project (Action: App\\Http\\Controllers\\ProjectController@destroyBudget)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "budgetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/projects/{projectId}/cash-flows": {
+      "post": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Storecashflow Project",
+        "description": "Endpoint untuk storecashflow project (Action: App\\Http\\Controllers\\ProjectController@storeCashFlow)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/cash-flows/{cashFlowId}": {
+      "delete": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Destroycashflow Project",
+        "description": "Endpoint untuk destroycashflow project (Action: App\\Http\\Controllers\\ProjectController@destroyCashFlow)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cashFlowId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/projects/{projectId}/contracts": {
+      "post": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Storecontract Project",
+        "description": "Endpoint untuk storecontract project (Action: App\\Http\\Controllers\\ProjectController@storeContract)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/contracts/{contractId}": {
+      "put": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Updatecontract Project",
+        "description": "Endpoint untuk updatecontract project (Action: App\\Http\\Controllers\\ProjectController@updateContract)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contractId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Destroycontract Project",
+        "description": "Endpoint untuk destroycontract project (Action: App\\Http\\Controllers\\ProjectController@destroyContract)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contractId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/projects/{projectId}/costs": {
+      "post": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Storecost Project",
+        "description": "Endpoint untuk storecost project (Action: App\\Http\\Controllers\\ProjectController@storeCost)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/costs/{costId}/approve": {
+      "post": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Approvecost Project",
+        "description": "Endpoint untuk approvecost project (Action: App\\Http\\Controllers\\ProjectController@approveCost)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "costId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/costs/{costId}/reject": {
+      "post": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Rejectcost Project",
+        "description": "Endpoint untuk rejectcost project (Action: App\\Http\\Controllers\\ProjectController@rejectCost)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "costId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/schedules": {
+      "post": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Storeschedule Project",
+        "description": "Endpoint untuk storeschedule project (Action: App\\Http\\Controllers\\ProjectController@storeSchedule)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/schedules/{scheduleId}": {
+      "put": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Updateschedule Project",
+        "description": "Endpoint untuk updateschedule project (Action: App\\Http\\Controllers\\ProjectController@updateSchedule)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scheduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Project Management"
+        ],
+        "summary": "Destroyschedule Project",
+        "description": "Endpoint untuk destroyschedule project (Action: App\\Http\\Controllers\\ProjectController@destroySchedule)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scheduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/refresh-token": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Refreshtoken Auth",
+        "description": "Endpoint untuk refreshtoken auth (Action: App\\Http\\Controllers\\AuthController@refreshToken)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reimbursements": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Daftar Reimbursement",
+        "description": "Endpoint untuk daftar reimbursement (Action: App\\Http\\Controllers\\ReimbursementController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Buat Reimbursement Baru",
+        "description": "Endpoint untuk buat reimbursement baru (Action: App\\Http\\Controllers\\ReimbursementController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reimbursements/{id}": {
+      "delete": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Hapus Reimbursement",
+        "description": "Endpoint untuk hapus reimbursement (Action: App\\Http\\Controllers\\ReimbursementController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/reimbursements/{id}/approve": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Setujui Reimbursement",
+        "description": "Endpoint untuk setujui reimbursement (Action: App\\Http\\Controllers\\ReimbursementController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reimbursements/{id}/reject": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Tolak Reimbursement",
+        "description": "Endpoint untuk tolak reimbursement (Action: App\\Http\\Controllers\\ReimbursementController@reject)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reset-password": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Resetpassword Auth",
+        "description": "Endpoint untuk resetpassword auth (Action: App\\Http\\Controllers\\AuthController@resetPassword)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/roles": {
+      "get": {
+        "tags": [
+          "Role"
+        ],
+        "summary": "Daftar Role",
+        "description": "Endpoint untuk daftar role (Action: App\\Http\\Controllers\\Api\\RoleController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Role"
+        ],
+        "summary": "Buat Role Baru",
+        "description": "Endpoint untuk buat role baru (Action: App\\Http\\Controllers\\Api\\RoleController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/roles/{id}": {
+      "get": {
+        "tags": [
+          "Role"
+        ],
+        "summary": "Detail Role",
+        "description": "Endpoint untuk detail role (Action: App\\Http\\Controllers\\Api\\RoleController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Role"
+        ],
+        "summary": "Perbarui Role",
+        "description": "Endpoint untuk perbarui role (Action: App\\Http\\Controllers\\Api\\RoleController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Role"
+        ],
+        "summary": "Hapus Role",
+        "description": "Endpoint untuk hapus role (Action: App\\Http\\Controllers\\Api\\RoleController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/roles/{id}/permissions": {
+      "post": {
+        "tags": [
+          "Role"
+        ],
+        "summary": "Syncpermissions Role",
+        "description": "Endpoint untuk syncpermissions role (Action: App\\Http\\Controllers\\Api\\RoleController@syncPermissions)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/salary": {
+      "get": {
+        "tags": [
+          "Payroll & Salary"
+        ],
+        "summary": "Daftar Salary",
+        "description": "Endpoint untuk daftar salary (Action: App\\Http\\Controllers\\SalaryController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/schedules": {
+      "get": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Daftar Schedule",
+        "description": "Endpoint untuk daftar schedule (Action: App\\Http\\Controllers\\ScheduleController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Buat Schedule Baru",
+        "description": "Endpoint untuk buat schedule baru (Action: App\\Http\\Controllers\\ScheduleController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schedules/export": {
+      "get": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Ekspor Schedule",
+        "description": "Endpoint untuk ekspor schedule (Action: App\\Http\\Controllers\\ScheduleController@export)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/schedules/generate": {
+      "post": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Generate Schedule",
+        "description": "Endpoint untuk generate schedule (Action: App\\Http\\Controllers\\ScheduleController@generate)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schedules/{id}": {
+      "delete": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Hapus Schedule",
+        "description": "Endpoint untuk hapus schedule (Action: App\\Http\\Controllers\\ScheduleController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/send-otp": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Sendotp Auth",
+        "description": "Endpoint untuk sendotp auth (Action: App\\Http\\Controllers\\AuthController@sendOtp)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shift-swap": {
+      "get": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Daftar ShiftSwap",
+        "description": "Endpoint untuk daftar shiftswap (Action: App\\Http\\Controllers\\ShiftSwapController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Buat ShiftSwap Baru",
+        "description": "Endpoint untuk buat shiftswap baru (Action: App\\Http\\Controllers\\ShiftSwapController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shift-swap/export": {
+      "get": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Ekspor ShiftSwap",
+        "description": "Endpoint untuk ekspor shiftswap (Action: App\\Http\\Controllers\\ShiftSwapController@export)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/shift-swap/report": {
+      "get": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Report ShiftSwap",
+        "description": "Endpoint untuk report shiftswap (Action: App\\Http\\Controllers\\ShiftSwapController@report)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/shift-swap/{id}/approve": {
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Setujui ShiftSwap",
+        "description": "Endpoint untuk setujui shiftswap (Action: App\\Http\\Controllers\\ShiftSwapController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shift-swap/{id}/respond": {
+      "post": {
+        "tags": [
+          "Leave & Scheduling"
+        ],
+        "summary": "Respond ShiftSwap",
+        "description": "Endpoint untuk respond shiftswap (Action: App\\Http\\Controllers\\ShiftSwapController@respond)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shifts": {
+      "get": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Daftar Shift",
+        "description": "Endpoint untuk daftar shift (Action: App\\Http\\Controllers\\ShiftController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Buat Shift Baru",
+        "description": "Endpoint untuk buat shift baru (Action: App\\Http\\Controllers\\ShiftController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shifts/{id}": {
+      "put": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Perbarui Shift",
+        "description": "Endpoint untuk perbarui shift (Action: App\\Http\\Controllers\\ShiftController@update)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Operational Settings"
+        ],
+        "summary": "Hapus Shift",
+        "description": "Endpoint untuk hapus shift (Action: App\\Http\\Controllers\\ShiftController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Daftar Task",
+        "description": "Endpoint untuk daftar task (Action: App\\Http\\Controllers\\TaskController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Buat Task Baru",
+        "description": "Endpoint untuk buat task baru (Action: App\\Http\\Controllers\\TaskController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/activities/{id}": {
+      "get": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Detail TaskActivity",
+        "description": "Endpoint untuk detail taskactivity (Action: App\\Http\\Controllers\\TaskActivityController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Hapus TaskActivity",
+        "description": "Endpoint untuk hapus taskactivity (Action: App\\Http\\Controllers\\TaskActivityController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/tasks/activities/{id}/evidence": {
+      "post": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Uploadevidence TaskActivity",
+        "description": "Endpoint untuk uploadevidence taskactivity (Action: App\\Http\\Controllers\\TaskActivityController@uploadEvidence)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/activities/{id}/status": {
+      "put": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Updatestatus TaskActivity",
+        "description": "Endpoint untuk updatestatus taskactivity (Action: App\\Http\\Controllers\\TaskActivityController@updateStatus)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{id}": {
+      "get": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Detail Task",
+        "description": "Endpoint untuk detail task (Action: App\\Http\\Controllers\\TaskController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Hapus Task",
+        "description": "Endpoint untuk hapus task (Action: App\\Http\\Controllers\\TaskController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/tasks/{id}/activities": {
+      "get": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Daftar TaskActivity",
+        "description": "Endpoint untuk daftar taskactivity (Action: App\\Http\\Controllers\\TaskActivityController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Storeactivities TaskActivity",
+        "description": "Endpoint untuk storeactivities taskactivity (Action: App\\Http\\Controllers\\TaskActivityController@storeActivities)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{id}/status": {
+      "post": {
+        "tags": [
+          "Task Management"
+        ],
+        "summary": "Updatestatus Task",
+        "description": "Endpoint untuk updatestatus task (Action: App\\Http\\Controllers\\TaskController@updateStatus)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tracking/history/{userId}": {
+      "get": {
+        "tags": [
+          "Tracking"
+        ],
+        "summary": "History Tracking",
+        "description": "Endpoint untuk history tracking (Action: App\\Http\\Controllers\\TrackingController@history)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/tracking/live": {
+      "get": {
+        "tags": [
+          "Tracking"
+        ],
+        "summary": "Live Tracking",
+        "description": "Endpoint untuk live tracking (Action: App\\Http\\Controllers\\TrackingController@live)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/tracking/update": {
+      "post": {
+        "tags": [
+          "Tracking"
+        ],
+        "summary": "Buat Tracking Baru",
+        "description": "Endpoint untuk buat tracking baru (Action: App\\Http\\Controllers\\TrackingController@store)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user": {
+      "get": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Me Profile",
+        "description": "Endpoint untuk me profile (Action: App\\Http\\Controllers\\ProfileController@me)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/user/change-password": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Changepassword Auth",
+        "description": "Endpoint untuk changepassword auth (Action: App\\Http\\Controllers\\AuthController@changePassword)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vehicle-logs": {
+      "get": {
+        "tags": [
+          "Logistics (Vehicle Logs)"
+        ],
+        "summary": "Daftar VehicleLog",
+        "description": "Endpoint untuk daftar vehiclelog (Action: App\\Http\\Controllers\\VehicleLogController@index)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/vehicle-logs/departure": {
+      "post": {
+        "tags": [
+          "Logistics (Vehicle Logs)"
+        ],
+        "summary": "Storedeparture VehicleLog",
+        "description": "Endpoint untuk storedeparture vehiclelog (Action: App\\Http\\Controllers\\VehicleLogController@storeDeparture)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vehicle-logs/report": {
+      "get": {
+        "tags": [
+          "Logistics (Vehicle Logs)"
+        ],
+        "summary": "Report VehicleLog",
+        "description": "Endpoint untuk report vehiclelog (Action: App\\Http\\Controllers\\VehicleLogController@report)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/vehicle-logs/vehicles": {
+      "get": {
+        "tags": [
+          "Logistics (Vehicle Logs)"
+        ],
+        "summary": "Vehicles VehicleLog",
+        "description": "Endpoint untuk vehicles vehiclelog (Action: App\\Http\\Controllers\\VehicleLogController@vehicles)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        }
+      }
+    },
+    "/api/vehicle-logs/{id}": {
+      "get": {
+        "tags": [
+          "Logistics (Vehicle Logs)"
+        ],
+        "summary": "Detail VehicleLog",
+        "description": "Endpoint untuk detail vehiclelog (Action: App\\Http\\Controllers\\VehicleLogController@show)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Logistics (Vehicle Logs)"
+        ],
+        "summary": "Hapus VehicleLog",
+        "description": "Endpoint untuk hapus vehiclelog (Action: App\\Http\\Controllers\\VehicleLogController@destroy)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/vehicle-logs/{id}/approve": {
+      "post": {
+        "tags": [
+          "Logistics (Vehicle Logs)"
+        ],
+        "summary": "Setujui VehicleLog",
+        "description": "Endpoint untuk setujui vehiclelog (Action: App\\Http\\Controllers\\VehicleLogController@approve)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vehicle-logs/{id}/reject": {
+      "post": {
+        "tags": [
+          "Logistics (Vehicle Logs)"
+        ],
+        "summary": "Tolak VehicleLog",
+        "description": "Endpoint untuk tolak vehiclelog (Action: App\\Http\\Controllers\\VehicleLogController@reject)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vehicle-logs/{id}/return": {
+      "post": {
+        "tags": [
+          "Logistics (Vehicle Logs)"
+        ],
+        "summary": "Storereturn VehicleLog",
+        "description": "Endpoint untuk storereturn vehiclelog (Action: App\\Http\\Controllers\\VehicleLogController@storeReturn)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/verify-email/{token}": {
+      "get": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Verifyemail Auth",
+        "description": "Endpoint untuk verifyemail auth (Action: App\\Http\\Controllers\\AuthController@verifyEmail)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/verify-otp": {
+      "post": {
+        "tags": [
+          "Authentication & Profile"
+        ],
+        "summary": "Verifyotp Auth",
+        "description": "Endpoint untuk verifyotp auth (Action: App\\Http\\Controllers\\AuthController@verifyOtp)",
+        "responses": {
+          "200": {
+            "description": "Operasi Berhasil"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "example_field": {
+                    "type": "string",
+                    "example": "value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
