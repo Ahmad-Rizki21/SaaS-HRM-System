@@ -136,28 +136,9 @@ export default function RequestsPage() {
                     </td>
                     <td>{getStatusBadge(leave.status)}</td>
                     <td className="text-right">
-                      {leave.status === 'pending' ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <button 
-                            className="dash-action-btn edit" 
-                            title="Setujui"
-                            onClick={() => handleApprove(leave.id)}
-                          >
-                            <Check size={16} />
-                          </button>
-                          <button 
-                            className="dash-action-btn delete" 
-                            title="Tolak"
-                            onClick={() => handleReject(leave.id)}
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-end">
-                          <button className="dash-action-btn" title="Lihat Detail"><Eye size={16} /></button>
-                        </div>
-                      )}
+                      <div className="flex items-center justify-end">
+                        <button className="dash-action-btn view" title="Lihat Detail"><Eye size={16} /></button>
+                      </div>
                     </td>
                   </tr>
                 ))}

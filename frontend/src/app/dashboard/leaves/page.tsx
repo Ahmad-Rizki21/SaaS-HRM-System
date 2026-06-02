@@ -226,24 +226,7 @@ export default function LeavesPage() {
                           >
                             <Eye size={16} />
                           </button>
-                          {['pending', 'pending_supervisor', 'pending_hr'].includes(leave.status) && (hasPermission('approve-leaves') || user?.is_manager) && (
-                            <>
-                              <button 
-                                className="dash-action-btn edit" 
-                                title="Setujui"
-                                onClick={() => handleApprove(leave.id)}
-                              >
-                                <Check size={16} />
-                              </button>
-                              <button 
-                                className="dash-action-btn delete" 
-                                title="Tolak"
-                                onClick={() => handleReject(leave.id)}
-                              >
-                                <X size={16} />
-                              </button>
-                            </>
-                          )}
+
                         </div>
                       </td>
                     </tr>

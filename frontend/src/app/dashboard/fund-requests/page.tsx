@@ -214,25 +214,7 @@ export default function FundRequestsPage() {
                     <td>{getStatusBadge(item.status)}</td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {((item.status === 'pending' && item.user?.supervisor_id === user?.id) || 
-                          (item.status === 'approved_by_supervisor' && hasPermission('approve-fund-requests'))) && (
-                          <>
-                            <button 
-                              className="dash-action-btn edit" 
-                              title="Setujui"
-                              onClick={() => handleApprove(item.id)}
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button 
-                              className="dash-action-btn delete" 
-                              title="Tolak"
-                              onClick={() => handleReject(item.id)}
-                            >
-                              <X size={16} />
-                            </button>
-                          </>
-                        )}
+
                         <button 
                           className="dash-action-btn view" 
                           title="Lihat Detail"

@@ -224,24 +224,7 @@ export default function PermitsPage() {
                           >
                             <Eye size={16} />
                           </button>
-                          {permit.status === 'pending' && hasPermission('approve-permits') && (
-                            <>
-                              <button 
-                                className="dash-action-btn edit" 
-                                title="Setujui"
-                                onClick={() => handleApprove(permit.id)}
-                              >
-                                <Check size={16} />
-                              </button>
-                              <button 
-                                className="dash-action-btn delete" 
-                                title="Tolak"
-                                onClick={() => handleReject(permit.id)}
-                              >
-                                <X size={16} />
-                              </button>
-                            </>
-                          )}
+
                         </div>
                       </td>
                     </tr>

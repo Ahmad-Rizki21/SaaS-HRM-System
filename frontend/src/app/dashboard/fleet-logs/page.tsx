@@ -393,16 +393,7 @@ function FleetLogsContent() {
                             <ArrowRight size={16} />
                           </button>
                         )}
-                        {item.status === "completed" && hasPermission("approve-vehicle-logs") && (
-                          <>
-                            <button className="dash-action-btn edit" title="Validasi" onClick={() => handleApprove(item.id)}>
-                              <Check size={16} />
-                            </button>
-                            <button className="dash-action-btn delete" title="Tolak" onClick={() => handleReject(item.id)}>
-                              <X size={16} />
-                            </button>
-                          </>
-                        )}
+
                         <button className="dash-action-btn view" title="Detail" onClick={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}>
                           <Eye size={16} />
                         </button>
