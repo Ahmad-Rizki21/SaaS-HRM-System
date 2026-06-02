@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Eye } from "lucide-react";
 import { TableSkeleton } from "@/components/Skeleton";
-import { toast } from "sonner";
-
 export default function RequestsPage() {
   const [leaves, setLeaves] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
