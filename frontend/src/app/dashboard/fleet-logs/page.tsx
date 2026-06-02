@@ -209,41 +209,7 @@ function FleetLogsContent() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    toast("Validasi log kendaraan ini?", {
-      description: "Berikan catatan validasi (opsional).",
-      action: {
-        label: "Validasi",
-        onClick: async () => {
-          const remark = window.prompt("Catatan validasi (opsional):");
-          if (remark === null) return;
-          try {
-            await axiosInstance.post(`/vehicle-logs/${id}/approve`, { remark });
-            toast.success("Log kendaraan divalidasi!");
-            fetchLogs(page);
-          } catch (e) { toast.error("Gagal memvalidasi."); }
-        }
-      }
-    });
-  };
 
-  const handleReject = async (id: number) => {
-    toast("Tolak log kendaraan ini?", {
-      description: "Alasan penolakan wajib diisi.",
-      action: {
-        label: "Tolak",
-        onClick: async () => {
-          const remark = window.prompt("Alasan penolakan (WAJIB):");
-          if (!remark) { if (remark === "") toast.warning("Alasan wajib diisi!"); return; }
-          try {
-            await axiosInstance.post(`/vehicle-logs/${id}/reject`, { remark });
-            toast.success("Log kendaraan ditolak.");
-            fetchLogs(page);
-          } catch (e) { toast.error("Gagal menolak."); }
-        }
-      }
-    });
-  };
 
   const handleDelete = async (id: number) => {
     toast("Hapus log kendaraan ini?", {

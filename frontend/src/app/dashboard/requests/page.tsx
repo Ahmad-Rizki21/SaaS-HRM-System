@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Check, X, Eye } from "lucide-react";
+import { Plus, Search, Eye } from "lucide-react";
 import { TableSkeleton } from "@/components/Skeleton";
 import { toast } from "sonner";
 
@@ -35,41 +35,7 @@ export default function RequestsPage() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    toast("Setujui pengajuan cuti?", {
-      description: "Tindakan ini akan memotong saldo cuti karyawan jika disetujui.",
-      action: {
-        label: "Setujui",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/leave/${id}/approve`, { remark: "Approved via Dashboard" });
-            toast.success("Pengajuan cuti disetujui.");
-            fetchLeaves();
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal menyetujui cuti.");
-          }
-        }
-      }
-    });
-  };
 
-  const handleReject = async (id: number) => {
-    toast("Tolak pengajuan cuti?", {
-      description: "Anda yakin ingin menolak pengajuan ini?",
-      action: {
-        label: "Tolak",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/leave/${id}/reject`, { remark: "Rejected via Dashboard" });
-            toast.success("Pengajuan cuti ditolak.");
-            fetchLeaves();
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal menolak cuti.");
-          }
-        }
-      }
-    });
-  };
 
   return (
     <div>

@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Check, X, Eye, ReceiptCent, Upload, AlertCircle, XCircle, Wallet } from "lucide-react";
+import { Plus, Search, X, Eye, ReceiptCent, Upload, AlertCircle, XCircle, Wallet } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
 import { toast } from "sonner";
 
 export default function FundRequestsPage() {
-  const { hasPermission, user } = useAuth();
+  const { hasPermission } = useAuth();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -59,40 +59,7 @@ export default function FundRequestsPage() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    toast("Setujui pengajuan dana ini?", {
-      action: {
-        label: "Setujui",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/fund-requests/${id}/approve`);
-            toast.success("Pengajuan disetujui!");
-            fetchRequests(page);
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal memproses pengajuan.");
-          }
-        }
-      }
-    });
-  };
 
-  const handleReject = async (id: number) => {
-    toast("Tolak pengajuan dana ini?", {
-      description: "Anda yakin ingin menolak pengajuan ini?",
-      action: {
-        label: "Tolak",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/fund-requests/${id}/reject`, { reject_reason: "Ditolak oleh atasan/sistem" });
-            toast.success("Pengajuan ditolak.");
-            fetchRequests(page);
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal memproses penolakan.");
-          }
-        },
-      },
-    });
-  };
 
   const handleViewDetail = (item: any) => {
     setSelectedItem(item);

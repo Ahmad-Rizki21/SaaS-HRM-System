@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Check, X, Eye, Plane, Printer, ClipboardList } from "lucide-react";
+import { Plus, Search, Eye, Plane, Printer, ClipboardList, X } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import SignaturePad from "@/components/SignaturePad";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,41 +78,7 @@ export default function PermitsPage() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    toast("Setujui izin ini?", {
-      description: "Konfirmasi persetujuan pengajuan izin.",
-      action: {
-        label: "Setujui",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/permits/${id}/approve`, { remark: "Disetujui" });
-            toast.success("Izin disetujui!");
-            fetchpermits(page);
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal memproses persetujuan.");
-          }
-        },
-      },
-    });
-  };
 
-  const handleReject = async (id: number) => {
-    toast("Tolak izin ini?", {
-      description: "Anda yakin ingin menolak pengajuan ini?",
-      action: {
-        label: "Tolak",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/permits/${id}/reject`, { remark: "Ditolak oleh atasan/sistem" });
-            toast.success("Izin ditolak.");
-            fetchpermits(page);
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal memproses penolakan.");
-          }
-        },
-      },
-    });
-  };
 
   const handleViewDetail = (item: any) => {
     setSelectedItem(item);

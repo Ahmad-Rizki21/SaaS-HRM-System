@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { toast } from "sonner";
-import { Plus, Search, Check, X, Eye, Plane, Printer } from "lucide-react";
+import { Plus, Search, X, Eye, Plane, Printer } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import SignaturePad from "@/components/SignaturePad";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,41 +78,7 @@ export default function LeavesPage() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    toast("Setujui cuti ini?", {
-      description: "Berikan catatan persetujuan jika diperlukan.",
-      action: {
-        label: "Setujui",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/leave/${id}/approve`, { remark: "" });
-            toast.success("Cuti disetujui!");
-            fetchLeaves(page);
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal memproses persetujuan.");
-          }
-        },
-      },
-    });
-  };
 
-  const handleReject = async (id: number) => {
-    toast("Tolak cuti ini?", {
-      description: "Anda yakin ingin menolak pengajuan cuti ini?",
-      action: {
-        label: "Tolak",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/leave/${id}/reject`, { remark: "Ditolak oleh sistem/atasan" });
-            toast.success("Cuti ditolak.");
-            fetchLeaves(page);
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal memproses penolakan.");
-          }
-        },
-      },
-    });
-  };
 
   const handleViewDetail = (item: any) => {
     setSelectedItem(item);

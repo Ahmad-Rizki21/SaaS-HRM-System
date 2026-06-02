@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Check, X, Eye, ReceiptCent, Upload, AlertCircle, XCircle } from "lucide-react";
+import { Plus, Search, X, Eye, ReceiptCent, Upload, AlertCircle, XCircle } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
@@ -61,41 +61,7 @@ export default function ReimbursementsPage() {
     }
   };
 
-  const handleApprove = async (id: number) => {
-    toast("Setujui klaim ini?", {
-      description: "Konfirmasi persetujuan klaim reimbursement.",
-      action: {
-        label: "Setujui",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/reimbursements/${id}/approve`, { remark: "Disetujui oleh admin" });
-            toast.success("Klaim disetujui!");
-            fetchReimbursements(page);
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal memproses klaim.");
-          }
-        },
-      },
-    });
-  };
 
-  const handleReject = async (id: number) => {
-    toast("Tolak klaim ini?", {
-      description: "Anda yakin ingin menolak pengajuan reimbursement ini?",
-      action: {
-        label: "Tolak",
-        onClick: async () => {
-          try {
-            await axiosInstance.post(`/reimbursements/${id}/reject`, { remark: "Ditolak karena alasan administratif/tidak valid" });
-            toast.success("Klaim ditolak.");
-            fetchReimbursements(page);
-          } catch (e: any) {
-            toast.error(e.response?.data?.message || "Gagal memproses klaim.");
-          }
-        },
-      },
-    });
-  };
 
   const handleViewDetail = (item: any) => {
     setSelectedItem(item);
