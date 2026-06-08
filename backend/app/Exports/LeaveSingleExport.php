@@ -28,9 +28,10 @@ class LeaveSingleExport implements FromView, WithColumnWidths, WithEvents
     {
         return [
             'A' => 3,
-            'B' => 25,   // Label/Field
+            'B' => 30,   // Label/Field
             'C' => 3,    // Separator / Colon
-            'D' => 45,   // Value
+            'D' => 32,   // Value Part 1
+            'E' => 32,   // Value Part 2 / Signature Block
         ];
     }
 
@@ -39,7 +40,7 @@ class LeaveSingleExport implements FromView, WithColumnWidths, WithEvents
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $sheet->setShowGridlines(true);
+                $sheet->setShowGridlines(false);
             },
         ];
     }
