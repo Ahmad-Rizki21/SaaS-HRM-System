@@ -6,7 +6,7 @@ interface StatusBadgeProps {
   status: string;
 }
 
-export default function StatusBadge({ status }: StatusBadgeProps) {
+export default function StatusBadge({ status }: Readonly<StatusBadgeProps>) {
   const s = status.toLowerCase();
   
   if (s === 'approved' || s === 'success' || s === 'active') {
@@ -18,7 +18,12 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
   }
   
   if (s === 'pending' || s === 'waiting' || s.startsWith('pending_')) {
-    const label = s === 'pending_supervisor' ? 'Menunggu Atasan' : (s === 'pending_hr' ? 'Menunggu HRD' : 'Menunggu');
+    let label = 'Menunggu';
+    if (s === 'pending_supervisor') {
+      label = 'Menunggu Atasan';
+    } else if (s === 'pending_hr') {
+      label = 'Menunggu HRD';
+    }
     return <span className="dash-badge dash-badge-warning">{label}</span>;
   }
 

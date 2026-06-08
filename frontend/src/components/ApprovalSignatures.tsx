@@ -14,7 +14,7 @@ export default function ApprovalSignatures({
   signature,
   userName,
   managerName = "Manager"
-}: ApprovalSignaturesProps) {
+}: Readonly<ApprovalSignaturesProps>) {
   return (
     <div className="mt-8 grid grid-cols-2 gap-8 text-center">
       <div className="space-y-2">

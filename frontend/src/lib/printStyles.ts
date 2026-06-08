@@ -13,7 +13,7 @@ export const commonPrintStyles = `
     }
     /* Hide sidebar, header, navigation, and everything not related to print */
     aside, .dash-sidebar, .dash-desktop-header, .dash-mobile-header, .dash-overlay,
-    .print\:hidden, .no-print, header, nav, footer, .dash-page-header, .dash-page-actions {
+    .print\\:hidden, .no-print, header, nav, footer, .dash-page-header, .dash-page-actions {
       display: none !important;
     }
     /* Reset dashboard layout wrapper to display: block on print */
