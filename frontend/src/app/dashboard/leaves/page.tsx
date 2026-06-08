@@ -23,7 +23,6 @@ export default function LeavesPage() {
   const [viewMode, setViewMode] = useState<"list" | "create" | "detail">("list");
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
 
   const [formData, setFormData] = useState({
     start_date: "",
@@ -94,10 +93,8 @@ export default function LeavesPage() {
 
   const handlePrint = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsPrinting(true);
     setTimeout(() => {
-      window.print();
-      setIsPrinting(false);
+      globalThis.print();
     }, 500);
   };
 
@@ -106,14 +103,15 @@ export default function LeavesPage() {
       const response = await axiosInstance.get(`/export/leave/${recordId}`, {
         responseType: 'blob'
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Cuti_${userName.replace(/\s+/g, '_')}.pdf`);
+      link.setAttribute('download', `Cuti_${userName.replaceAll(/\s+/g, '_')}.pdf`);
       document.body.appendChild(link);
       link.click();
-      link.parentNode?.removeChild(link);
+      link.remove();
     } catch (err) {
+      console.error(err);
       toast.error("Gagal mendownload PDF.");
     }
   };
@@ -123,14 +121,15 @@ export default function LeavesPage() {
       const response = await axiosInstance.get(`/export/leave/${recordId}/excel`, {
         responseType: 'blob'
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Cuti_${userName.replace(/\s+/g, '_')}.xlsx`);
+      link.setAttribute('download', `Cuti_${userName.replaceAll(/\s+/g, '_')}.xlsx`);
       document.body.appendChild(link);
       link.click();
-      link.parentNode?.removeChild(link);
+      link.remove();
     } catch (err) {
+      console.error(err);
       toast.error("Gagal mendownload Excel.");
     }
   };
@@ -148,7 +147,7 @@ export default function LeavesPage() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{ __html: String.raw`
         @page {
           size: portrait;
           margin: 8mm 10mm !important;
@@ -163,7 +162,7 @@ export default function LeavesPage() {
           }
           /* Hide sidebar, header, navigation, and everything not related to print */
           aside, .dash-sidebar, .dash-desktop-header, .dash-mobile-header, .dash-overlay,
-          .print\\:hidden, .no-print, header, nav, footer, .dash-page-header, .dash-page-actions {
+          .print\:hidden, .no-print, header, nav, footer, .dash-page-header, .dash-page-actions {
             display: none !important;
           }
           /* Reset dashboard layout wrapper to display: block on print */
@@ -198,7 +197,7 @@ export default function LeavesPage() {
           .print-container .text-xs {
             font-size: 10px !important;
           }
-          .print-container .text-\\[10px\\] {
+          .print-container .text-\[10px\] {
             font-size: 8px !important;
           }
           
@@ -692,7 +691,7 @@ export default function LeavesPage() {
               <img src="/artacom.png" alt="Logo" className="h-12 object-contain" />
               <div className="text-right">
                 <h1 className="text-xl font-bold uppercase tracking-wider text-gray-900">Leave Application Form</h1>
-                <p className="text-xs font-mono text-gray-500 mt-1">NO. : HRD-{selectedItem.id.toString().padStart(3,'0')}/LF/{new Date(selectedItem.created_at).getMonth()+1}/{new Date(selectedItem.created_at).getFullYear().toString().slice(-2)}</p>
+                <p className="text-xs font-mono text-gray-500 mt-1">NO. : HRD-{String(selectedItem.id).padStart(3,'0')}/LF/{new Date(selectedItem.created_at).getMonth()+1}/{new Date(selectedItem.created_at).getFullYear().toString().slice(-2)}</p>
               </div>
             </div>
 
