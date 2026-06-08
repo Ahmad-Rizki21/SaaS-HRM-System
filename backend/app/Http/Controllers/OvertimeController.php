@@ -246,28 +246,34 @@ class OvertimeController extends Controller
     private function handleOvertimeWorkflowApproval(Request $request, Overtime $overtime, $user): \Illuminate\Http\JsonResponse
     {
         $res = ApprovalService::processApproval('overtime', $overtime->company_id, $user, $overtime->user, $overtime->current_approval_step, 'approve');
+        $response = null;
+
         if (!$res) {
-            return $this->errorResponse('Workflow tidak ditemukan.', 400);
-        }
-        if (isset($res['error'])) {
-            return $this->errorResponse($res['error'], 403);
-        }
-
-        $upd = ['status' => $res['status'], 'current_approval_step' => $res['current_approval_step']];
-        if ($res['is_final'] && $res['status'] === 'approved') {
-            $upd['approved_by'] = $user->id;
-            $upd['remark'] = $request->remark;
-        }
-        $overtime->update($upd);
-        $this->logOvertimeActivity($overtime, $user, 'OVERTIME_APPROVAL', "Menyetujui lembur {$overtime->user->name}");
-
-        if ($res['is_final'] && $res['status'] === 'approved') {
-            $this->notify($overtime->user, 'LEMBUR DISETUJUI', "Permohonan lembur Anda telah DISETUJUI.", 'success');
-            return $this->successResponse($overtime, 'Permohonan lembur disetujui.');
+            $response = $this->errorResponse('Workflow tidak ditemukan.', 400);
+        } elseif (isset($res['error'])) {
+            $response = $this->errorResponse($res['error'], 403);
         }
 
-        $this->notifyNextOvertimeApprovers($overtime, $res);
-        return $this->successResponse($overtime, "Di-approve. Menunggu: {$res['step_label']}.");
+        if (!$response) {
+            $upd = ['status' => $res['status'], 'current_approval_step' => $res['current_approval_step']];
+            $isApproved = $res['is_final'] && $res['status'] === 'approved';
+            if ($isApproved) {
+                $upd['approved_by'] = $user->id;
+                $upd['remark'] = $request->remark;
+            }
+            $overtime->update($upd);
+            $this->logOvertimeActivity($overtime, $user, 'OVERTIME_APPROVAL', "Menyetujui lembur {$overtime->user->name}");
+
+            if ($isApproved) {
+                $this->notify($overtime->user, 'LEMBUR DISETUJUI', "Permohonan lembur Anda telah DISETUJUI.", 'success');
+                $response = $this->successResponse($overtime, 'Permohonan lembur disetujui.');
+            } else {
+                $this->notifyNextOvertimeApprovers($overtime, $res);
+                $response = $this->successResponse($overtime, "Di-approve.");
+            }
+        }
+
+        return $response;
     }
 
     private function handleOvertimeFallbackApproval(Request $request, Overtime $overtime, $user): \Illuminate\Http\JsonResponse
