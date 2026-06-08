@@ -280,6 +280,34 @@ export default function ReimbursementsPage() {
     return [{ spesifikasi: record.title || "Klaim", unit: "Lbr", qty: 1, estimasi_harga: record.amount || 0, keterangan: record.description || "" }];
   };
 
+  const renderTableContent = () => {
+    if (loading) {
+      return <div className="p-6"><TableSkeleton rows={6} cols={6} /></div>;
+    }
+    if (reimbursements.length === 0) {
+      return <div className="p-8 text-center text-gray-500 text-sm">Tidak ada data pengajuan.</div>;
+    }
+    return (
+      <div className="dash-table-wrapper">
+        <table className="dash-table">
+          <thead><tr><th>Info Pengaju</th><th>Judul / Keperluan</th><th>Total Dana</th><th>Tanggal</th><th>Status</th><th className="text-right">Aksi</th></tr></thead>
+          <tbody>
+            {reimbursements.map((r) => (
+              <tr key={r.id}>
+                <td><div className="flex flex-col"><span className="font-semibold text-gray-900">{r.employee_name || r.user?.name}</span><span className="text-[10px] text-gray-500 uppercase font-bold">{r.divisi}</span></div></td>
+                <td><span className="text-sm font-medium text-gray-700">{r.title}</span></td>
+                <td><span className="text-sm font-bold text-gray-900">{formatCurrency(r.amount)}</span></td>
+                <td><span className="text-xs text-gray-500">{new Date(r.created_at || '').toLocaleDateString('id-ID')}</span></td>
+                <td>{getStatusBadge(r.status)}</td>
+                <td className="text-right"><div className="flex items-center justify-end gap-1"><button className="dash-action-btn view" title="Detail" onClick={() => handleViewDetail(r)}><Eye size={16} /></button>{(r.status === 'pending' || r.status === 'draft') && r.user_id === user?.id && <button className="dash-action-btn delete" title="Hapus" onClick={() => handleDelete(r.id)}><Trash2 size={16} /></button>}</div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: String.raw`
@@ -304,25 +332,7 @@ export default function ReimbursementsPage() {
             <div className="flex items-center justify-between mb-4 bg-white p-3 border rounded-lg">
               <div className="relative w-full max-w-sm"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} /><input type="text" placeholder="Cari pengajuan..." value={searchQuery} onChange={handleSearch} className="w-full h-9 pl-9 pr-4 text-sm bg-gray-50 border rounded-md focus:outline-none" /></div>
             </div>
-            {loading ? <div className="p-6"><TableSkeleton rows={6} cols={6} /></div> : reimbursements.length === 0 ? <div className="p-8 text-center text-gray-500 text-sm">Tidak ada data pengajuan.</div> : (
-              <div className="dash-table-wrapper">
-                <table className="dash-table">
-                  <thead><tr><th>Info Pengaju</th><th>Judul / Keperluan</th><th>Total Dana</th><th>Tanggal</th><th>Status</th><th className="text-right">Aksi</th></tr></thead>
-                  <tbody>
-                    {reimbursements.map((r) => (
-                      <tr key={r.id}>
-                        <td><div className="flex flex-col"><span className="font-semibold text-gray-900">{r.employee_name || r.user?.name}</span><span className="text-[10px] text-gray-500 uppercase font-bold">{r.divisi}</span></div></td>
-                        <td><span className="text-sm font-medium text-gray-700">{r.title}</span></td>
-                        <td><span className="text-sm font-bold text-gray-900">{formatCurrency(r.amount)}</span></td>
-                        <td><span className="text-xs text-gray-500">{new Date(r.created_at || '').toLocaleDateString('id-ID')}</span></td>
-                        <td>{getStatusBadge(r.status)}</td>
-                        <td className="text-right"><div className="flex items-center justify-end gap-1"><button className="dash-action-btn view" title="Detail" onClick={() => handleViewDetail(r)}><Eye size={16} /></button>{(r.status === 'pending' || r.status === 'draft') && r.user_id === user?.id && <button className="dash-action-btn delete" title="Hapus" onClick={() => handleDelete(r.id)}><Trash2 size={16} /></button>}</div></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {renderTableContent()}
             {pagination.last_page > 1 && <Pagination currentPage={pagination.current_page} lastPage={pagination.last_page} total={pagination.total} onPageChange={setPage} />}
           </div>
         </div>

@@ -248,42 +248,39 @@ class LeaveController extends Controller
     {
         $isSupervisor = $leave->user->supervisor_id === $user->id;
         $isHR = $user->hasPermission('approve-leaves') || $user->role_id === 1;
+        $response = null;
 
         if ($leave->status === 'pending_supervisor') {
             if (!$isSupervisor && !$isHR) {
-                return $this->errorResponse('Anda tidak berhak.', 403);
-            }
-
-            if ($isSupervisor) {
+                $response = $this->errorResponse('Anda tidak berhak.', 403);
+            } elseif ($isSupervisor) {
                 $leave->update([
-                    'status' => 'pending_hr',
-                    'supervisor_approved_by' => $user->id,
-                    'supervisor_approved_at' => now(),
-                    'supervisor_remark' => $request->remark,
+                    'status' => 'pending_hr', 'supervisor_approved_by' => $user->id,
+                    'supervisor_approved_at' => now(), 'supervisor_remark' => $request->remark,
                 ]);
                 $this->notify($leave->user, 'CUTI DI-APPROVE ATASAN', 'Menunggu HRD.', 'info');
-                return $this->successResponse(null, 'Di-approve oleh atasan. Menunggu proses HRD.');
+                $response = $this->successResponse(null, 'Di-approve oleh atasan. Menunggu proses HRD.');
+            } else {
+                $leave->update(['status' => 'approved', 'approved_by' => $user->id, 'remark' => $request->remark, 'supervisor_approved_by' => $user->id, 'supervisor_approved_at' => now()]);
             }
-
-            $leave->update([
-                'status' => 'approved',
-                'approved_by' => $user->id,
-                'remark' => $request->remark,
-                'supervisor_approved_by' => $user->id,
-                'supervisor_approved_at' => now(),
-            ]);
         } elseif (in_array($leave->status, ['pending_hr', 'pending'])) {
             if (!$isHR) {
-                return $this->errorResponse('Hanya HRD.', 403);
+                $response = $this->errorResponse('Hanya HRD.', 403);
+            } else {
+                $leave->update(['status' => 'approved', 'approved_by' => $user->id, 'remark' => $request->remark]);
             }
-            $leave->update(['status' => 'approved', 'approved_by' => $user->id, 'remark' => $request->remark]);
         } else {
-            return $this->errorResponse('Status tidak valid.', 400);
+            $response = $this->errorResponse('Status tidak valid.', 400);
         }
 
-        $this->applyLeaveApprovalSideEffects($leave, true);
-        return $this->successResponse(null, 'Permohonan cuti disetujui.');
+        if (!$response) {
+            $this->applyLeaveApprovalSideEffects($leave, true);
+            $response = $this->successResponse(null, 'Permohonan cuti disetujui.');
+        }
+
+        return $response;
     }
+
 
     private function applyLeaveApprovalSideEffects(Leave $leave, bool $isFallback = false): void
     {

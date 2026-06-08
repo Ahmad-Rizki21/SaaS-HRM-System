@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\OvertimeExport;
 use App\Models\ActivityLog;
 use App\Models\Overtime;
 use App\Models\OvertimeItem;
 use App\Models\User;
 use App\Services\ApprovalService;
 use App\Traits\Notifiable;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\OvertimeExport;
 
 class OvertimeController extends Controller
 {
@@ -29,17 +29,14 @@ class OvertimeController extends Controller
         $query = Overtime::with(['user', 'approver', 'items']);
 
         $user = $request->user();
-
-        if ($user->is_manager) {
-            if ($user->company_id && ! $user->canAccessAllCompanies()) {
-                $query->where('company_id', $user->company_id);
+        if ($user->role_id !== 1) {
+            $query->where('company_id', $user->company_id);
+            if (!$user->hasPermission('view-all-overtimes')) {
+                $query->where('user_id', $user->id);
             }
-        } else {
-            $query->where('user_id', $user->id);
         }
 
-        // Optionally filter by status
-        if ($request->filled('status')) {
+        if ($request->status) {
             $query->where('status', $request->status);
         }
 
@@ -54,20 +51,19 @@ class OvertimeController extends Controller
     public function show(Request $request, $id)
     {
         $user = $request->user();
-        $overtime = Overtime::with(['user', 'user.role', 'user.office', 'user.company', 'approver', 'items'])->findOrFail($id);
+        $overtime = Overtime::with(['user.role', 'user.office', 'user.company', 'user.supervisor', 'approver', 'items'])->findOrFail($id);
 
-        // Security: only owner or manager can view
-        if (! $user->is_manager && $overtime->user_id !== $user->id) {
+        if ($user->role_id !== 1 && $overtime->company_id !== $user->company_id) {
             return $this->errorResponse(self::MSG_FORBIDDEN, 403);
         }
 
-        return $this->successResponse($overtime, 'Detail lembur.');
+        return $this->successResponse($overtime, 'Detail lembur berhasil diambil.');
     }
 
     /**
-     * Store overtime — supports both draft and direct submit.
+     * Store a new overtime request.
      * If 'status' is 'draft', save without triggering approval.
-     * If 'status' is 'pending' (or absent), trigger approval workflow.
+     * If 'status' is 'pending' (default), trigger approval workflow.
      */
     public function store(Request $request)
     {
@@ -83,10 +79,10 @@ class OvertimeController extends Controller
             $this->createOvertimeItems($overtime, $request->items);
             $overtime->load('items');
 
-            $this->logOvertimeActivity($overtime, $user, $companyId, $isDraft);
+            $this->logOvertimeActivity($overtime, $user, $isDraft ? 'OVERTIME_DRAFT' : 'OVERTIME_SUBMISSION');
 
             if (!$isDraft) {
-                $this->handleOvertimeSubmissionNotifications($overtime, $user, $companyId);
+                $this->notifyOvertimeApprovers($user, $companyId);
                 return $this->successResponse($overtime, 'Permohonan lembur berhasil diajukan.', 201);
             }
 
@@ -179,7 +175,7 @@ class OvertimeController extends Controller
         ]);
     }
 
-    private function notifyOvertimeApprovers(Overtime $overtime, User $user, $companyId): void
+    private function notifyOvertimeApprovers(User $user, $companyId): void
     {
         $wf = ApprovalService::initApproval('overtime', $companyId, $user);
 
@@ -231,7 +227,7 @@ class OvertimeController extends Controller
 
             $this->logOvertimeActivity($overtime, $user, $isSub ? 'OVERTIME_SUBMISSION' : 'OVERTIME_DRAFT_UPDATE');
             if ($isSub) {
-                $this->notifyOvertimeApprovers($overtime, $user, $user->company_id);
+                $this->notifyOvertimeApprovers($user, $user->company_id);
                 return $this->successResponse($overtime, 'Lembur berhasil diajukan.');
             }
             return $this->successResponse($overtime, 'Draf lembur berhasil diperbarui.');
@@ -242,16 +238,20 @@ class OvertimeController extends Controller
     {
         $user = $request->user();
         $overtime = Overtime::findOrFail($id);
-        return ($overtime->current_approval_step !== null) 
-            ? $this->handleOvertimeWorkflowApproval($request, $overtime, $user) 
+        return ($overtime->current_approval_step !== null)
+            ? $this->handleOvertimeWorkflowApproval($request, $overtime, $user)
             : $this->handleOvertimeFallbackApproval($request, $overtime, $user);
     }
 
     private function handleOvertimeWorkflowApproval(Request $request, Overtime $overtime, $user): \Illuminate\Http\JsonResponse
     {
         $res = ApprovalService::processApproval('overtime', $overtime->company_id, $user, $overtime->user, $overtime->current_approval_step, 'approve');
-        if (!$res) return $this->errorResponse('Workflow tidak ditemukan.', 400);
-        if (isset($res['error'])) return $this->errorResponse($res['error'], 403);
+        if (!$res) {
+            return $this->errorResponse('Workflow tidak ditemukan.', 400);
+        }
+        if (isset($res['error'])) {
+            return $this->errorResponse($res['error'], 403);
+        }
 
         $upd = ['status' => $res['status'], 'current_approval_step' => $res['current_approval_step']];
         if ($res['is_final'] && $res['status'] === 'approved') {
@@ -283,16 +283,20 @@ class OvertimeController extends Controller
     {
         $user = $request->user();
         $overtime = Overtime::findOrFail($id);
-        return ($overtime->current_approval_step !== null) 
-            ? $this->handleOvertimeWorkflowRejection($request, $overtime, $user) 
+        return ($overtime->current_approval_step !== null)
+            ? $this->handleOvertimeWorkflowRejection($request, $overtime, $user)
             : $this->handleOvertimeFallbackRejection($request, $overtime, $user);
     }
 
     private function handleOvertimeWorkflowRejection(Request $request, Overtime $overtime, $user): \Illuminate\Http\JsonResponse
     {
         $res = ApprovalService::processApproval('overtime', $overtime->company_id, $user, $overtime->user, $overtime->current_approval_step, 'reject');
-        if (!$res) return $this->errorResponse('Workflow tidak ditemukan.', 400);
-        if (isset($res['error'])) return $this->errorResponse($res['error'], 403);
+        if (!$res) {
+            return $this->errorResponse('Workflow tidak ditemukan.', 400);
+        }
+        if (isset($res['error'])) {
+            return $this->errorResponse($res['error'], 403);
+        }
 
         $overtime->update(['status' => 'rejected', 'current_approval_step' => null, 'approved_by' => $user->id, 'remark' => $request->remark]);
         $this->logOvertimeActivity($overtime, $user, 'OVERTIME_REJECTION', "Menolak lembur {$overtime->user->name}");
@@ -329,70 +333,40 @@ class OvertimeController extends Controller
         $isOwner = $overtime->user_id === $user->id;
         $isManager = $user->hasPermission('delete-overtimes');
 
-        if (! $isOwner && ! $isManager) {
+        if (!$isOwner && !$isManager) {
             return $this->errorResponse(self::MSG_FORBIDDEN, 403);
         }
 
-        if (! in_array($overtime->status, ['pending', 'draft'])) {
+        if (!in_array($overtime->status, ['pending', 'draft'])) {
             return $this->errorResponse('Lembur yang sudah diproses tidak bisa dihapus.', 403);
         }
 
         // Log Activity (Before delete)
-        ActivityLog::create([
-            'user_id' => $user->id,
-            'company_id' => $user->company_id,
-            'action' => 'OVERTIME_DELETION',
-            'description' => "Menghapus pengajuan lembur: " . ($overtime->title ?? '-'),
-            'model_type' => self::MODEL_OVERTIME,
-            'model_id' => $overtime->id,
-        ]);
+        $this->logOvertimeActivity($overtime, $user, 'OVERTIME_DELETION', "Menghapus pengajuan lembur: " . ($overtime->title ?? '-'));
 
         $overtime->delete();
 
-        return $this->successResponse(null, 'Permohonan lembur berhasil dihapus.');
+        return $this->successResponse(null, 'Pengajuan lembur berhasil dihapus.');
     }
 
     public function export(Request $request)
     {
-        $query = Overtime::with(['user', 'approver', 'items']);
         $user = $request->user();
+        $query = Overtime::with(['user.office', 'approver', 'items']);
 
-        // Isolation logic (same as index)
-        if ($user->is_manager) {
-            if ($user->company_id && ! $user->canAccessAllCompanies()) {
-                $query->where('company_id', $user->company_id);
+        if ($user->role_id !== 1) {
+            $query->where('company_id', $user->company_id);
+            if (!$user->hasPermission('view-all-overtimes')) {
+                $query->where('user_id', $user->id);
             }
-        } else {
-            $query->where('user_id', $user->id);
         }
 
-        // Filtering
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereHas('items', function ($q) use ($request) {
-                $q->whereBetween('date', [$request->start_date, $request->end_date]);
-            });
-        }
-
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
-
-        // Default to approved if not specified, usually reports are for approved items
-        if ($request->status === 'approved') {
-            $query->where('status', 'approved');
-        }
-
-        $overtimes = $query->orderBy('id', 'asc')->get();
-
-        if ($overtimes->isEmpty()) {
-            return response()->json(['message' => 'Tidak ada data lembur untuk diekspor.'], 404);
-        }
+        $overtimes = $query->orderBy('id', 'desc')->get();
 
         $meta = [
-            'date_range' => $request->filled('date_range') ? $request->date_range : date('F Y'),
-            'office_name' => $user->company?->offices()->first()->name ?? 'KP Cakung',
             'company_name' => $user->company->name ?? 'PT. Narwastu Group',
-            'hr_ga' => User::where('company_id', $user->company_id)
+            'period' => $request->start_date ? $request->start_date . ' s/d ' . $request->end_date : 'Semua Periode',
+            'manager_name' => User::where('company_id', $user->company_id)
                 ->whereHas('role', function ($q) {
                     $q->where('name', 'LIKE', '%HR%');
                 })->first()->name ?? 'Nazirin Nawawi',
