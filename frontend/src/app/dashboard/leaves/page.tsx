@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { toast } from "sonner";
-import { Plus, Search, X, Eye, Plane, Printer, Check, ArrowLeft, FileDown } from "lucide-react";
+import { Plus, Search, Eye, Plane, Printer, ArrowLeft, FileDown } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import SignaturePad from "@/components/SignaturePad";
+import StatusBadge from "@/components/StatusBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
+import { downloadFile } from "@/lib/download";
+import { commonPrintStyles } from "@/lib/printStyles";
 
 export default function LeavesPage() {
   const { hasPermission, user } = useAuth();
@@ -99,176 +102,16 @@ export default function LeavesPage() {
   };
 
   const handleDownloadPdf = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/leave/${recordId}`, {
-        responseType: 'blob'
-      });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Cuti_${userName.replaceAll(/\s+/g, '_')}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload PDF.");
-    }
+    await downloadFile(`/export/leave/${recordId}`, `Cuti_${userName.replaceAll(/\s+/g, '_')}`, 'pdf');
   };
 
   const handleDownloadExcel = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/leave/${recordId}/excel`, {
-        responseType: 'blob'
-      });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Cuti_${userName.replaceAll(/\s+/g, '_')}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload Excel.");
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending': 
-      case 'pending_supervisor': return <span className="dash-badge dash-badge-warning">Menunggu Atasan</span>;
-      case 'pending_hr': return <span className="dash-badge dash-badge-warning">Menunggu HRD</span>;
-      case 'approved': return <span className="dash-badge dash-badge-success">Disetujui</span>;
-      case 'rejected': return <span className="dash-badge dash-badge-danger">Ditolak</span>;
-      default: return <span className="dash-badge dash-badge-neutral">{status}</span>;
-    }
+    await downloadFile(`/export/leave/${recordId}/excel`, `Cuti_${userName.replaceAll(/\s+/g, '_')}`, 'excel');
   };
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: String.raw`
-        @page {
-          size: portrait;
-          margin: 8mm 10mm !important;
-        }
-        @media print {
-          body, html {
-            background-color: white !important;
-            color: black !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-          }
-          /* Hide sidebar, header, navigation, and everything not related to print */
-          aside, .dash-sidebar, .dash-desktop-header, .dash-mobile-header, .dash-overlay,
-          .print\:hidden, .no-print, header, nav, footer, .dash-page-header, .dash-page-actions {
-            display: none !important;
-          }
-          /* Reset dashboard layout wrapper to display: block on print */
-          .dash-layout, .dash-main {
-            display: block !important;
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-          }
-          .print-container {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            padding: 2px 6px !important; /* Add small padding to prevent edge border clipping */
-            box-shadow: none !important;
-            border: none !important;
-            background: white !important;
-            font-size: 11px !important;
-          }
-          
-          /* Scale down headers and text on print to fit 1 page */
-          .print-container h1 {
-            font-size: 16px !important;
-          }
-          .print-container p {
-            font-size: 9px !important;
-          }
-          .print-container img {
-            height: 32px !important;
-          }
-          .print-container .text-xs {
-            font-size: 10px !important;
-          }
-          .print-container .text-\[10px\] {
-            font-size: 8px !important;
-          }
-          
-          /* Tighten spacing */
-          .print-container .p-4 {
-            padding: 6px 10px !important;
-          }
-          .print-container [class*="space-y-"] > :not([hidden]) ~ :not([hidden]) {
-            margin-top: 2px !important;
-          }
-          .print-container .gap-y-2 {
-            row-gap: 2px !important;
-          }
-          .print-container .mb-4 {
-            margin-bottom: 2px !important;
-          }
-          .print-container .mb-2 {
-            margin-bottom: 1px !important;
-          }
-          /* Shrink the large 40px signature bottom margin */
-          .print-container .mb-10 {
-            margin-bottom: 4px !important;
-          }
-          .print-container .mt-4 {
-            margin-top: 2px !important;
-          }
-          .print-container .mt-3 {
-            margin-top: 2px !important;
-          }
-          .print-container .mt-8 {
-            margin-top: 8px !important;
-          }
-          .print-container .bg-gray-100 {
-            padding-top: 2px !important;
-            padding-bottom: 2px !important;
-          }
-          .print-container .pb-3 {
-            padding-bottom: 2px !important;
-          }
-          
-          /* Allow more height for physical signature */
-          .print-container .signature-space {
-            height: 40px !important;
-            margin-top: 8px !important;
-            margin-bottom: 2px !important;
-          }
-          .print-container [class*="min-w-[150px]"] {
-            min-width: 120px !important;
-          }
-          .print-container .w-10 {
-            width: 32px !important;
-            height: 32px !important;
-          }
-          .print-container .h-10 {
-            width: 32px !important;
-            height: 32px !important;
-          }
-          .print-container svg {
-            width: 18px !important;
-            height: 18px !important;
-          }
-          
-          .border-dotted-print {
-            border-bottom: 1.5px dotted #374151 !important;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-      `}} />
+      <style dangerouslySetInnerHTML={{ __html: commonPrintStyles }} />
 
       {/* ================= LIST VIEW ================= */}
       {viewMode === "list" && (
@@ -356,7 +199,7 @@ export default function LeavesPage() {
                             {leave.reason || "-"}
                           </span>
                         </td>
-                        <td>{getStatusBadge(leave.status)}</td>
+                        <td><StatusBadge status={leave.status} /></td>
                         <td className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button 

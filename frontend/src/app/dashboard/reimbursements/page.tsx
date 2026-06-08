@@ -7,10 +7,13 @@ import {
   ArrowLeft, Printer, Trash2, Send, FileDown 
 } from "lucide-react";
 import Pagination from "@/components/Pagination";
+import StatusBadge from "@/components/StatusBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
 import { toast } from "sonner";
 import SignaturePad from "@/components/SignaturePad";
+import { downloadFile } from "@/lib/download";
+import { commonPrintStyles } from "@/lib/printStyles";
 
 interface ReimbursementItem {
   spesifikasi: string;
@@ -198,16 +201,6 @@ export default function ReimbursementsPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    let classes = 'dash-badge-neutral';
-    let label = status;
-    if (status === 'pending') { classes = 'dash-badge-warning'; label = 'Menunggu'; }
-    else if (status === 'approved') { classes = 'dash-badge-success'; label = 'Disetujui'; }
-    else if (status === 'rejected') { classes = 'dash-badge-danger'; label = 'Ditolak'; }
-    
-    return <span className={`dash-badge ${classes} font-semibold`}>{label}</span>;
-  };
-
   const formatCurrency = (amount: number | string) => {
     const num = typeof amount === 'string' ? Number.parseFloat(amount) : amount;
     return new Intl.NumberFormat("id-ID", {
@@ -217,58 +210,14 @@ export default function ReimbursementsPage() {
     }).format(num || 0);
   };
 
-  const terbilang = (nominal: number): string => {
-    if (nominal === 0) return "Nol Rupiah";
-    const angka = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
-    const konversi = (n: number): string => {
-      if (n < 12) return angka[n];
-      if (n < 20) return konversi(n - 10) + " Belas";
-      if (n < 100) return konversi(Math.floor(n / 10)) + " Puluh " + konversi(n % 10);
-      if (n < 200) return "Seratus " + konversi(n - 100);
-      if (n < 1000) return konversi(Math.floor(n / 100)) + " Ratus " + konversi(n % 100);
-      if (n < 2000) return "Seribu " + konversi(n - 1000);
-      if (n < 1000000) return konversi(Math.floor(n / 1000)) + " Ribu " + konversi(n % 1000);
-      if (n < 1000000000) return konversi(Math.floor(n / 1000000)) + " Juta " + konversi(n % 1000000);
-      if (n < 1000000000000) return konversi(Math.floor(n / 1000000000)) + " Milyar " + konversi(n % 1000000000);
-      return "";
-    };
-    let hasil = konversi(Math.floor(nominal)).replaceAll(/\s+/g, ' ').trim();
-    hasil = hasil.replace("Satu Ratus", "Seratus").replace("Satu Puluh", "Sepuluh").replace("Satu Ribu", "Seribu");
-    return hasil + " Rupiah";
-  };
-
   const handlePrint = () => globalThis.print();
 
   const handleDownloadPdf = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/reimbursement/${recordId}`, { responseType: 'blob' });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Reimbursement_${userName.replaceAll(/\s+/g, '_')}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload PDF.");
-    }
+    await downloadFile(`/export/reimbursement/${recordId}`, `Reimbursement_${userName.replaceAll(/\s+/g, '_')}`, 'pdf');
   };
 
   const handleDownloadExcel = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/reimbursement/${recordId}/excel`, { responseType: 'blob' });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Reimbursement_${userName.replaceAll(/\s+/g, '_')}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload Excel.");
-    }
+    await downloadFile(`/export/reimbursement/${recordId}/excel`, `Reimbursement_${userName.replaceAll(/\s+/g, '_')}`, 'excel');
   };
 
   const getRecordItems = (record: ReimbursementRecord | null) => {
@@ -298,7 +247,7 @@ export default function ReimbursementsPage() {
                 <td><span className="text-sm font-medium text-gray-700">{r.title}</span></td>
                 <td><span className="text-sm font-bold text-gray-900">{formatCurrency(r.amount)}</span></td>
                 <td><span className="text-xs text-gray-500">{new Date(r.created_at || '').toLocaleDateString('id-ID')}</span></td>
-                <td>{getStatusBadge(r.status)}</td>
+                <td><StatusBadge status={r.status} /></td>
                 <td className="text-right"><div className="flex items-center justify-end gap-1"><button className="dash-action-btn view" title="Detail" onClick={() => handleViewDetail(r)}><Eye size={16} /></button>{(r.status === 'pending' || r.status === 'draft') && r.user_id === user?.id && <button className="dash-action-btn delete" title="Hapus" onClick={() => handleDelete(r.id)}><Trash2 size={16} /></button>}</div></td>
               </tr>
             ))}
@@ -310,17 +259,7 @@ export default function ReimbursementsPage() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: String.raw`
-        .excel-table { border-collapse: collapse !important; border: 1.5px solid #000000 !important; }
-        .excel-table th, .excel-table td { border: 1.5px solid #000000 !important; padding: 4px 8px !important; }
-        .bg-\[#D9E1F2\] { background-color: #D9E1F2 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        @media print {
-          aside, header, nav, footer, .no-print, .dash-sidebar, .dash-desktop-header, .dash-mobile-header { display: none !important; }
-          body { background: white !important; margin: 0 !important; padding: 0 !important; }
-          .dash-main { display: block !important; padding: 0 !important; border: none !important; }
-          .print-container { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; font-size: 11px !important; }
-        }
-      `}} />
+      <style dangerouslySetInnerHTML={{ __html: commonPrintStyles }} />
 
       {viewMode === "list" && (
         <div className="print:hidden">

@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Eye, Clock, FileDown, Trash2, Save, Send, Printer, ArrowLeft } from "lucide-react";
 import Pagination from "@/components/Pagination";
+import StatusBadge from "@/components/StatusBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
 import { toast } from "sonner";
 import SignaturePad from "@/components/SignaturePad";
+import { downloadFile } from "@/lib/download";
+import { commonPrintStyles } from "@/lib/printStyles";
 
 interface OvertimeItem {
   id?: number;
@@ -171,48 +174,11 @@ export default function OvertimesPage() {
   };
 
   const handleDownloadPdf = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/overtime/${recordId}`, {
-        responseType: 'blob'
-      });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Lembur_${userName.replaceAll(/\s+/g, '_')}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload PDF.");
-    }
+    await downloadFile(`/export/overtime/${recordId}`, `Lembur_${userName.replaceAll(/\s+/g, '_')}`, 'pdf');
   };
 
   const handleDownloadExcel = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/overtime/${recordId}/excel`, {
-        responseType: 'blob'
-      });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Lembur_${userName.replaceAll(/\s+/g, '_')}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload Excel.");
-    }
-  };
-
-  const getStatusBadge = (s: string) => {
-    switch(s) {
-      case 'approved': return <span className="dash-badge dash-badge-success">Disetujui</span>;
-      case 'rejected': return <span className="dash-badge dash-badge-danger">Ditolak</span>;
-      case 'draft': return <span className="dash-badge dash-badge-neutral">Draft</span>;
-      default: return <span className="dash-badge dash-badge-warning">Menunggu</span>;
-    }
+    await downloadFile(`/export/overtime/${recordId}/excel`, `Lembur_${userName.replaceAll(/\s+/g, '_')}`, 'excel');
   };
 
   const getRecordItems = (ot: OvertimeRecord): OvertimeItem[] => {
@@ -245,20 +211,7 @@ export default function OvertimesPage() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: String.raw`
-        @page { size: portrait; margin: 10mm 12mm !important; }
-        @media print {
-          aside, header, nav, footer, .no-print, .dash-sidebar, .dash-desktop-header, .dash-mobile-header { display: none !important; }
-          body { background: white !important; margin: 0 !important; padding: 0 !important; }
-          .dash-main { display: block !important; padding: 0 !important; margin: 0 !important; border: none !important; }
-          .print-container { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; font-size: 11px !important; }
-          .print\:hidden { display: none !important; }
-          .excel-table { border: 1.5px solid #000 !important; }
-          .excel-table th, .excel-table td { border: 1px solid #000 !important; padding: 4px 8px !important; }
-          .bg-\[\#D9E1F2\] { background-color: #D9E1F2 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-          .underline { text-decoration: underline !important; }
-        }
-      `}} />
+      <style dangerouslySetInnerHTML={{ __html: commonPrintStyles }} />
 
       {viewMode === "list" && (
         <div className="print:hidden">
@@ -303,7 +256,7 @@ export default function OvertimesPage() {
                         <td><span className="font-semibold">{ot.user?.name || "Karyawan"}</span></td>
                         <td><span className="text-sm">{ot.title || getOvertimePeriod(ot)}</span></td>
                         <td><span className="text-xs text-gray-500">{getRecordItems(ot).length} item</span></td>
-                        <td>{getStatusBadge(ot.status)}</td>
+                        <td><StatusBadge status={ot.status} /></td>
                         <td className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button className="dash-action-btn view" title="Detail" onClick={() => { setSelectedItem(ot); setViewMode("detail"); }}>

@@ -5,9 +5,13 @@ import axiosInstance from "@/lib/axios";
 import { Plus, Search, Eye, Printer, ClipboardList, X, FileDown } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import SignaturePad from "@/components/SignaturePad";
+import StatusBadge from "@/components/StatusBadge";
+import ApprovalSignatures from "@/components/ApprovalSignatures";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
 import { toast } from "sonner";
+import { downloadFile } from "@/lib/download";
+import { commonPrintStyles } from "@/lib/printStyles";
 
 export default function PermitsPage() {
   const { hasPermission, user } = useAuth();
@@ -95,56 +99,16 @@ export default function PermitsPage() {
   };
 
   const handleDownloadPdf = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/permit/${recordId}`, {
-        responseType: 'blob'
-      });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Izin_${userName.replaceAll(/\s+/g, '_')}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload PDF.");
-    }
+    await downloadFile(`/export/permit/${recordId}`, `Izin_${userName.replaceAll(/\s+/g, '_')}`, 'pdf');
   };
 
   const handleDownloadExcel = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/permit/${recordId}/excel`, {
-        responseType: 'blob'
-      });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Izin_${userName.replaceAll(/\s+/g, '_')}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload Excel.");
-    }
-  };
-
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending': return <span className="dash-badge dash-badge-warning">Menunggu</span>;
-      case 'approved': return <span className="dash-badge dash-badge-success">Disetujui</span>;
-      case 'rejected': return <span className="dash-badge dash-badge-danger">Ditolak</span>;
-      default: return <span className="dash-badge dash-badge-neutral">{status}</span>;
-    }
+    await downloadFile(`/export/permit/${recordId}/excel`, `Izin_${userName.replaceAll(/\s+/g, '_')}`, 'excel');
   };
 
   return (
     <>
-      {/* Container utama (Sembunyikan saat print jika isPrinting true, 
-          atau kita manfaatkan CSS media print yang kita buat khusus) */}
-      <div className="print:hidden">
+      <style dangerouslySetInnerHTML={{ __html: commonPrintStyles }} />
         <div className="dash-page-header">
           <div>
             <h1 className="dash-page-title">Izin Karyawan</h1>
@@ -214,7 +178,7 @@ export default function PermitsPage() {
                           {permit.reason || "-"}
                         </span>
                       </td>
-                      <td>{getStatusBadge(permit.status)}</td>
+                      <td><StatusBadge status={permit.status} /></td>
                       <td className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button 
