@@ -9,6 +9,10 @@ import { TableSkeleton } from "@/components/Skeleton";
 import { toast } from "sonner";
 import SignaturePad from "@/components/SignaturePad";
 
+const generateUniqueId = (): string => {
+  return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + '-' + String(Date.now() % 1000));
+};
+
 interface OvertimeItem {
   id?: number;
   tempId?: string;
@@ -44,7 +48,7 @@ interface OvertimeRecord {
 }
 
 const emptyItem = (): OvertimeItem => ({
-  tempId: Math.random().toString(36).substring(2, 9),
+  tempId: generateUniqueId(),
   date: "",
   start_time: "",
   end_time: "",
@@ -100,7 +104,7 @@ export default function OvertimesPage() {
     setFormSignature(ot.signature || "");
     if (ot.items && ot.items.length > 0) {
       setFormItems(ot.items.map(i => ({
-        tempId: Math.random().toString(36).substring(2, 9),
+        tempId: generateUniqueId(),
         date: i.date,
         start_time: i.start_time?.substring(0,5) || "",
         end_time: i.end_time?.substring(0,5) || "",
@@ -108,7 +112,7 @@ export default function OvertimesPage() {
       })));
     } else if (ot.date) {
       setFormItems([{
-        tempId: Math.random().toString(36).substring(2, 9),
+        tempId: generateUniqueId(),
         date: ot.date,
         start_time: ot.start_time?.substring(0,5) || "",
         end_time: ot.end_time?.substring(0,5) || "",

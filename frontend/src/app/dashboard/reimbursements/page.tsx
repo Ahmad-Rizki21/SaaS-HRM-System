@@ -160,426 +160,266 @@ const calculateTotal = (items: ReimbursementItem[]): number => {
   }, 0);
 };
 
-interface LiveExcelPreviewProps {
-  formData: ReimbursementFormData;
-  calculatedTotal: number;
-  user: { name?: string | null } | null;
-}
-
-const LiveExcelPreview = ({ formData, calculatedTotal, user }: LiveExcelPreviewProps) => {
-  return (
-    <div className="hidden lg:block lg:w-[52%] xl:w-[55%] sticky top-6 bg-white rounded-xl border border-gray-200 shadow-sm p-6 max-h-[85vh] overflow-y-auto">
-      <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
-        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Live Preview (Tampilan Excel / Cetak)</span>
-        <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold">Auto Update</span>
-      </div>
-      
-      <div 
-        className="bg-white border border-gray-300 rounded-lg p-6 shadow-inner max-w-full overflow-x-auto" 
-        style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
-      >
-        {/* ===== HEADER: Logo left + Date/No right ===== */}
-        <div className="flex items-start justify-between mb-2">
-          <div>
-            <img src="/artacom.png" alt="Artacom Logo" className="h-12 mb-1" />
-            <div className="text-[10px] font-black text-black tracking-wide">PT ARTACOMINDO JEJARING NUSA</div>
-          </div>
-          <div className="text-right text-[9px] flex flex-col gap-1 w-[150px]">
-            <div className="flex justify-between items-end">
-              <span className="font-bold pr-1">Date :</span>
-              <span className="border-b border-black pl-1 pb-0.5 flex-1 text-left">
-                {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-              </span>
-            </div>
-            <div className="flex justify-between items-end pt-1">
-              <span className="font-bold pr-1">No :</span>
-              <span className="border-b border-black pl-1 pb-0.5 flex-1 text-left text-gray-400">
-                REIM/{new Date().toISOString().substring(0,10).replaceAll('-', '')}/DRAFT
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* ===== TITLE ===== */}
-        <div className="text-center my-3">
-          <h1 className="text-[14px] font-black text-black tracking-[1px]">PENGAJUAN UANG MUKA / PERMINTAAN DANA</h1>
-        </div>
-
-        {/* ===== PRIORITY CHECKBOXES (right-aligned) ===== */}
-        <div className="flex justify-end mb-2 text-[8px]">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1.5 font-bold">
-              <span className="inline-flex items-center justify-center w-[10px] h-[10px] border border-black text-[7px] font-black">
-                {(formData.priority || 'Normal').toLowerCase() === 'normal' ? '✓' : ''}
-              </span> NORMAL
-            </div>
-            <div className="flex items-center gap-1.5 font-bold">
-              <span className="inline-flex items-center justify-center w-[10px] h-[10px] border border-black text-[7px] font-black">
-                {(formData.priority || '').toLowerCase() === 'urgent' ? '✓' : ''}
-              </span> URGENT
-            </div>
-            <div className="flex items-center gap-1.5 font-bold">
-              <span className="inline-flex items-center justify-center w-[10px] h-[10px] border border-black text-[7px] font-black">
-                {['top urgent', 'top_urgent'].includes((formData.priority || '').toLowerCase()) ? '✓' : ''}
-              </span> TOP URGENT
-            </div>
-          </div>
-        </div>
-
-        {/* ===== INFO FIELDS: Nama / Tujuan / Div + Pengadaan options ===== */}
-        <div className="flex justify-between items-start text-[9px] mb-3 gap-4">
-          <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2 w-full">
-            {/* Row 1, Col 1: Nama */}
-            <div className="flex items-center">
-              <span className="font-bold w-[45px] py-1 text-black shrink-0">Nama</span>
-              <span className="w-[6px] py-1 text-black shrink-0">:</span>
-              <span className="border-b border-dotted border-gray-500 py-1 text-black font-semibold flex-1 ml-1 truncate">
-                {formData.employee_name || '—'}
-              </span>
-            </div>
-            {/* Row 1, Col 2: Tujuan */}
-            <div className="flex items-center">
-              <span className="font-bold w-[45px] py-1 text-black shrink-0">Tujuan</span>
-              <span className="w-[6px] py-1 text-black shrink-0">:</span>
-              <span className="border-b border-dotted border-gray-500 py-1 text-black font-semibold flex-1 ml-1 truncate">
-                {formData.title || '—'}
-              </span>
-            </div>
-            {/* Row 2, Col 1: Div */}
-            <div className="flex items-center">
-              <span className="font-bold w-[45px] py-1 text-black shrink-0">Div.</span>
-              <span className="w-[6px] py-1 text-black shrink-0">:</span>
-              <span className="border-b border-dotted border-gray-500 py-1 text-black font-semibold flex-1 ml-1 truncate">
-                {formData.divisi || '—'}
-              </span>
-            </div>
-            {/* Row 2, Col 2: Empty spacer */}
-            <div></div>
-          </div>
-          <div className="text-[8px] space-y-0.5 flex-shrink-0">
-            <div className="flex items-center gap-1 text-black font-semibold">
-              <span className={`inline-block w-[9px] h-[9px] border border-black text-[6px] text-center leading-[9px] ${formData.tujuan === 'Pengadaan Baru' ? 'bg-black text-white' : ''}`}>
-                {formData.tujuan === 'Pengadaan Baru' ? '✓' : ''}
-              </span> Pengadaan Baru
-            </div>
-            <div className="flex items-center gap-1 text-black font-semibold">
-              <span className={`inline-block w-[9px] h-[9px] border border-black text-[6px] text-center leading-[9px] ${formData.tujuan === 'Dari Gudang' ? 'bg-black text-white' : ''}`}>
-                {formData.tujuan === 'Dari Gudang' ? '✓' : ''}
-              </span> Dari Gudang
-            </div>
-          </div>
-        </div>
-
-        {/* ===== ITEMS TABLE (Yellow header like Excel) ===== */}
-        <div className="mb-3">
-          <table className="w-full border-collapse text-[9px] excel-table" style={{ border: '1.5px solid #000' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#FFFFCC' }} className="h-7">
-                <th className="border border-black px-1.5 py-0.5 font-bold text-black w-7">No.</th>
-                <th className="border border-black px-1.5 py-0.5 font-bold text-black text-left pl-2">Spesifikasi Barang / Jasa</th>
-                <th className="border border-black px-1.5 py-0.5 font-bold text-black w-12">Unit</th>
-                <th className="border border-black px-1.5 py-0.5 font-bold text-black w-14">Quantity</th>
-                <th className="border border-black px-1.5 py-0.5 font-bold text-black text-right pr-2 w-28">Estimasi Harga</th>
-                <th className="border border-black px-1.5 py-0.5 font-bold text-black text-left pl-2 w-28">Tanggal/Keterangan</th>
-              </tr>
-            </thead>
-            <tbody>
-              {formData.items.map((it: ReimbursementItem, idx: number) => {
-                const price = Number(it.estimasi_harga) || 0;
-                const qty = Number(it.qty) || 0;
-                return (
-                  <tr key={it.tempId || idx} className="h-6">
-                    <td className="border border-black px-1.5 py-0.5 text-center text-black">{idx + 1}</td>
-                    <td className="border border-black px-1.5 py-0.5 text-left pl-2 text-black truncate max-w-[120px]">{it.spesifikasi || '—'}</td>
-                    <td className="border border-black px-1.5 py-0.5 text-center text-black">{it.unit || '—'}</td>
-                    <td className="border border-black px-1.5 py-0.5 text-center text-black">{qty}</td>
-                    <td className="border border-black px-1.5 py-0.5 text-right pr-2 text-black">{formatCurrency(price)}</td>
-                    <td className="border border-black px-1.5 py-0.5 text-left pl-2 text-black truncate max-w-[120px]">{it.keterangan || ''}</td>
-                  </tr>
-                );
-              })}
-              {/* Pad to 8 rows */}
-              {Array.from({ length: Math.max(0, 8 - formData.items.length) }).map((_, i) => {
-                const idx = formData.items.length + i;
-                return (
-                  <tr key={`pad-${idx}`} className="h-6">
-                    <td className="border border-black px-1.5 py-0.5 text-center text-gray-400">{idx + 1}</td>
-                    <td className="border border-black px-1.5 py-0.5"></td>
-                    <td className="border border-black px-1.5 py-0.5"></td>
-                    <td className="border border-black px-1.5 py-0.5"></td>
-                    <td className="border border-black px-1.5 py-0.5"></td>
-                    <td className="border border-black px-1.5 py-0.5"></td>
-                  </tr>
-                );
-              })}
-              {/* TOTAL row */}
-              <tr className="h-7 font-bold">
-                <td colSpan={4} className="border border-black px-1.5 py-0.5 text-right pr-2 text-black font-black" style={{ letterSpacing: '2px' }}>T O T A L</td>
-                <td className="border border-black px-1.5 py-0.5 text-right pr-2 text-black font-black" style={{ backgroundColor: '#FFFFCC' }}>
-                  {formatCurrency(calculatedTotal)}
-                </td>
-                <td className="border border-black px-1.5 py-0.5"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* ===== TERBILANG BOX ===== */}
-        <div className="mb-3">
-          <div className="text-[8px] font-bold italic mb-0.5">Terbilang</div>
-          <div className="border border-black min-h-[24px] px-2 py-1 text-[8px] font-bold text-black bg-gray-50/50" style={{ border: '1.5px solid #000' }}>
-            {terbilang(calculatedTotal)}
-          </div>
-        </div>
-
-        {/* ===== SIGNATURE GRID (4 columns matching Excel) ===== */}
-        <table className="w-full border-collapse text-[8px] signature-table" style={{ border: '1.5px solid #000' }}>
-          <thead>
-            <tr>
-              <th className="border border-black text-center font-bold py-1 w-1/4">DIRUT</th>
-              <th className="border border-black text-center font-bold py-1 w-1/4">FINANCE</th>
-              <th className="border border-black text-center font-bold py-1 w-1/4">UNIT HEAD</th>
-              <th className="border border-black text-center font-bold py-1 w-1/4">REQUESTER</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Signature spaces */}
-            <tr>
-              <td className="border border-black text-center align-middle sig-space text-gray-400 italic text-[7px]">— Belum Disetujui —</td>
-              <td className="border border-black text-center align-middle sig-space text-gray-400 italic text-[7px]">— Belum Diverifikasi —</td>
-              <td className="border border-black text-center align-middle sig-space text-gray-400 italic text-[7px]">— Belum Diverifikasi —</td>
-              <td className="border border-black text-center align-middle sig-space">
-                {formData.signature ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={formData.signature} alt="TTD" className="h-10 mx-auto object-contain" />
-                ) : (
-                  <span className="text-gray-400 text-[7px]">— Belum TTD —</span>
-                )}
-                <div className="text-[7px] font-bold mt-0.5">{formData.employee_name || user?.name || '—'}</div>
-              </td>
-            </tr>
-            {/* Extra row: Posting Accounting & Procurement */}
-            <tr>
-              <td colSpan={2} className="no-border" style={{ border: 'none' }}></td>
-              <td className="border border-black text-center font-bold py-1 text-[7px]">Posting<br/>Accounting</td>
-              <td className="border border-black text-center font-bold py-1 text-[7px]">PROCUREMENT</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+const generateUniqueId = (): string => {
+  return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + '-' + String(Date.now() % 1000));
 };
 
-interface PrintableSheetProps {
-  selectedItem: ReimbursementRecord;
+interface ReimbursementSheetInnerProps {
+  title: string | null;
+  employee_name: string;
+  divisi: string;
+  tujuan: string;
+  priority: string;
+  items: ReimbursementItem[];
+  signature: string | null;
+  totalAmount: number;
+  dateStr: string;
+  noStr: string;
+  status?: string;
+  isDetailView?: boolean;
 }
 
-const PrintableSheet = ({ selectedItem }: PrintableSheetProps) => {
+const ReimbursementSheetInner = ({
+  title,
+  employee_name,
+  divisi,
+  tujuan,
+  priority,
+  items,
+  signature,
+  totalAmount,
+  dateStr,
+  noStr,
+  status,
+  isDetailView = false
+}: ReimbursementSheetInnerProps) => {
+  const sizeText = isDetailView ? "text-[10px]" : "text-[9px]";
+  const sizeHeading = isDetailView ? "text-[16px]" : "text-[14px]";
+  const sizeLogo = isDetailView ? "h-14" : "h-12";
+  const sizeLogoText = isDetailView ? "text-[11px]" : "text-[10px]";
+  const sizeHeaderNo = isDetailView ? "text-[10px] w-[180px]" : "text-[9px] w-[150px]";
+  const sizePriority = isDetailView ? "text-[9px]" : "text-[8px]";
+  const sizePriorityBox = isDetailView ? "w-[11px] h-[11px] text-[8px]" : "w-[10px] h-[10px] text-[7px]";
+  const sizeTujuanBox = isDetailView ? "w-[10px] h-[10px] text-[7px] leading-[10px]" : "w-[9px] h-[9px] text-[6px] leading-[9px]";
+  const sizeTujuanText = isDetailView ? "text-[9px]" : "text-[8px]";
+  const sizeTable = isDetailView ? "text-[10px]" : "text-[9px]";
+  const sizeRowHeader = isDetailView ? "h-8" : "h-7";
+  const sizeRowBody = isDetailView ? "h-7" : "h-6";
+  const sizeRowTotal = isDetailView ? "h-8" : "h-7";
+  const sizeTerbilangLabel = isDetailView ? "text-[10px] mb-1" : "text-[8px] mb-0.5";
+  const sizeTerbilangBox = isDetailView ? "text-[10px] min-h-[28px] px-3 py-1.5" : "text-[8px] min-h-[24px] px-2 py-1 bg-gray-50/50";
+  const sizeSigText = isDetailView ? "text-[9px]" : "text-[8px]";
+  const sizeSigName = isDetailView ? "text-[8px]" : "text-[7px]";
+  const sizeSigImg = isDetailView ? "h-12" : "h-10";
+
   return (
     <div 
-      className="printable-sheet bg-white shadow-xl border border-gray-300 rounded-xl p-10 max-w-4xl mx-auto my-4 transition-all" 
+      className={`bg-white ${isDetailView ? '' : 'p-6 shadow-inner max-w-full overflow-x-auto'}`}
       style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
     >
       {/* ===== HEADER: Logo left + Date/No right ===== */}
       <div className="flex items-start justify-between mb-2">
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/artacom.png" alt="Artacom Logo" className="h-14 mb-1" />
-          <div className="text-[11px] font-black text-black tracking-wide">PT ARTACOMINDO JEJARING NUSA</div>
+          <img src="/artacom.png" alt="Artacom Logo" className={`${sizeLogo} mb-1`} />
+          <div className={`${sizeLogoText} font-black text-black tracking-wide`}>PT ARTACOMINDO JEJARING NUSA</div>
         </div>
-        <div className="text-right text-[10px] flex flex-col gap-1 w-[180px]">
+        <div className={`text-right ${sizeHeaderNo} flex flex-col gap-1`}>
           <div className="flex justify-between items-end">
             <span className="font-bold pr-1">Date :</span>
             <span className="border-b border-black pl-1 pb-0.5 flex-1 text-left">
-              {new Date(selectedItem.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              {dateStr}
             </span>
           </div>
           <div className="flex justify-between items-end pt-1">
             <span className="font-bold pr-1">No :</span>
-            <span className="border-b border-black pl-1 pb-0.5 flex-1 text-left">
-              REIM/{new Date(selectedItem.created_at).toISOString().substring(0,10).replaceAll('-', '')}/{String(selectedItem.id).padStart(5,'0')}
+            <span className={`border-b border-black pl-1 pb-0.5 flex-1 text-left ${!isDetailView ? 'text-gray-400' : ''}`}>
+              {noStr}
             </span>
           </div>
         </div>
       </div>
 
       {/* ===== TITLE ===== */}
-      <div className="text-center my-4">
-        <h1 className="text-[16px] font-black text-black tracking-[1px]">PENGAJUAN UANG MUKA / PERMINTAAN DANA</h1>
+      <div className="text-center my-3">
+        <h1 className={`${sizeHeading} font-black text-black tracking-[1px]`}>PENGAJUAN UANG MUKA / PERMINTAAN DANA</h1>
       </div>
 
       {/* ===== PRIORITY CHECKBOXES (right-aligned) ===== */}
-      <div className="flex justify-end mb-2 text-[9px]">
+      <div className={`flex justify-end mb-2 ${sizePriority}`}>
         <div className="space-y-0.5">
           <div className="flex items-center gap-1.5 font-bold">
-            <span className="inline-flex items-center justify-center w-[11px] h-[11px] border border-black text-[8px] font-black">
-              {(selectedItem.priority || 'Normal').toLowerCase() === 'normal' ? '✓' : ''}
+            <span className={`inline-flex items-center justify-center border border-black font-black ${sizePriorityBox}`}>
+              {(priority || 'Normal').toLowerCase() === 'normal' ? '✓' : ''}
             </span> NORMAL
           </div>
           <div className="flex items-center gap-1.5 font-bold">
-            <span className="inline-flex items-center justify-center w-[11px] h-[11px] border border-black text-[8px] font-black">
-              {(selectedItem.priority || '').toLowerCase() === 'urgent' ? '✓' : ''}
+            <span className={`inline-flex items-center justify-center border border-black font-black ${sizePriorityBox}`}>
+              {(priority || '').toLowerCase() === 'urgent' ? '✓' : ''}
             </span> URGENT
           </div>
           <div className="flex items-center gap-1.5 font-bold">
-            <span className="inline-flex items-center justify-center w-[11px] h-[11px] border border-black text-[8px] font-black">
-              {['top urgent', 'top_urgent'].includes((selectedItem.priority || '').toLowerCase()) ? '✓' : ''}
+            <span className={`inline-flex items-center justify-center border border-black font-black ${sizePriorityBox}`}>
+              {['top urgent', 'top_urgent'].includes((priority || '').toLowerCase()) ? '✓' : ''}
             </span> TOP URGENT
           </div>
         </div>
       </div>
 
       {/* ===== INFO FIELDS: Nama / Tujuan / Div + Pengadaan options ===== */}
-      <div className="flex justify-between items-start text-[10px] mb-3 gap-4">
+      <div className={`flex justify-between items-start ${sizeText} mb-3 gap-4`}>
         <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2">
           {/* Row 1, Col 1: Nama */}
           <div className="flex items-center">
-            <span className="font-bold w-[50px] py-1 shrink-0">Nama</span>
-            <span className="w-[8px] py-1 shrink-0">:</span>
-            <span className="border-b border-dotted border-gray-500 py-1 flex-1 ml-1 truncate">
-              {selectedItem.employee_name || selectedItem.user?.name || '—'}
+            <span className="font-bold w-[50px] py-1 text-black shrink-0">Nama</span>
+            <span className="w-[8px] py-1 text-black shrink-0">:</span>
+            <span className="border-b border-dotted border-gray-500 py-1 text-black font-semibold flex-1 ml-1 truncate">
+              {employee_name || '—'}
             </span>
           </div>
           {/* Row 1, Col 2: Tujuan */}
           <div className="flex items-center">
-            <span className="font-bold w-[50px] py-1 shrink-0">Tujuan</span>
-            <span className="w-[8px] py-1 shrink-0">:</span>
-            <span className="border-b border-dotted border-gray-500 py-1 flex-1 ml-1 truncate">
-              {selectedItem.title || '—'}
+            <span className="font-bold w-[50px] py-1 text-black shrink-0">Tujuan</span>
+            <span className="w-[8px] py-1 text-black shrink-0">:</span>
+            <span className="border-b border-dotted border-gray-500 py-1 text-black font-semibold flex-1 ml-1 truncate">
+              {title || '—'}
             </span>
           </div>
           {/* Row 2, Col 1: Div */}
           <div className="flex items-center">
-            <span className="font-bold w-[50px] py-1 shrink-0">Div.</span>
-            <span className="w-[8px] py-1 shrink-0">:</span>
-            <span className="border-b border-dotted border-gray-500 py-1 flex-1 ml-1 truncate">
-              {selectedItem.divisi || '—'}
+            <span className="font-bold w-[50px] py-1 text-black shrink-0">Div.</span>
+            <span className="w-[8px] py-1 text-black shrink-0">:</span>
+            <span className="border-b border-dotted border-gray-500 py-1 text-black font-semibold flex-1 ml-1 truncate">
+              {divisi || '—'}
             </span>
           </div>
           {/* Row 2, Col 2: Empty spacer */}
           <div></div>
         </div>
-        <div className="text-[9px] space-y-0.5 flex-shrink-0">
-          <div className="flex items-center gap-1">
-            <span className={`inline-block w-[10px] h-[10px] border border-black text-[7px] text-center leading-[10px] ${(selectedItem.tujuan || '').toLowerCase().includes('pengadaan') ? 'bg-black text-white' : ''}`}>
-              {(selectedItem.tujuan || '').toLowerCase().includes('pengadaan') ? '✓' : ''}
+        <div className={`${sizeTujuanText} space-y-0.5 flex-shrink-0`}>
+          <div className="flex items-center gap-1 text-black font-semibold">
+            <span className={`inline-block border border-black text-center ${sizeTujuanBox} ${tujuan.toLowerCase().includes('pengadaan') ? 'bg-black text-white' : ''}`}>
+              {tujuan.toLowerCase().includes('pengadaan') ? '✓' : ''}
             </span> Pengadaan Baru
           </div>
-          <div className="flex items-center gap-1">
-            <span className={`inline-block w-[10px] h-[10px] border border-black text-[7px] text-center leading-[10px] ${(selectedItem.tujuan || '').toLowerCase().includes('gudang') ? 'bg-black text-white' : ''}`}>
-              {(selectedItem.tujuan || '').toLowerCase().includes('gudang') ? '✓' : ''}
+          <div className="flex items-center gap-1 text-black font-semibold">
+            <span className={`inline-block border border-black text-center ${sizeTujuanBox} ${tujuan.toLowerCase().includes('gudang') ? 'bg-black text-white' : ''}`}>
+              {tujuan.toLowerCase().includes('gudang') ? '✓' : ''}
             </span> Dari Gudang
           </div>
         </div>
       </div>
 
       {/* ===== ITEMS TABLE (Yellow header like Excel) ===== */}
-      <div className="mb-4">
-        <table className="w-full border-collapse text-[10px] excel-table" style={{ border: '1.5px solid #000' }}>
+      <div className="mb-3">
+        <table className={`w-full border-collapse ${sizeTable} excel-table`} style={{ border: '1.5px solid #000' }}>
           <thead>
-            <tr style={{ backgroundColor: '#FFFFCC' }} className="h-8">
-              <th className="border border-black px-2 py-1 font-bold text-black w-8">No.</th>
-              <th className="border border-black px-2 py-1 font-bold text-black text-left pl-3">Spesifikasi Barang / Jasa</th>
-              <th className="border border-black px-2 py-1 font-bold text-black w-14">Unit</th>
-              <th className="border border-black px-2 py-1 font-bold text-black w-16">Quantity</th>
-              <th className="border border-black px-2 py-1 font-bold text-black text-right pr-3 w-32">Estimasi Harga</th>
-              <th className="border border-black px-2 py-1 font-bold text-black text-left pl-3 w-32">Tanggal/Keterangan</th>
+            <tr style={{ backgroundColor: '#FFFFCC' }} className={sizeRowHeader}>
+              <th className="border border-black px-1.5 py-0.5 font-bold text-black w-7">No.</th>
+              <th className="border border-black px-1.5 py-0.5 font-bold text-black text-left pl-2">Spesifikasi Barang / Jasa</th>
+              <th className="border border-black px-1.5 py-0.5 font-bold text-black w-12">Unit</th>
+              <th className="border border-black px-1.5 py-0.5 font-bold text-black w-14">Quantity</th>
+              <th className="border border-black px-1.5 py-0.5 font-bold text-black text-right pr-2 w-28">Estimasi Harga</th>
+              <th className="border border-black px-1.5 py-0.5 font-bold text-black text-left pl-2 w-28">Tanggal/Keterangan</th>
             </tr>
           </thead>
           <tbody>
-            {getRecordItems(selectedItem).map((it: ReimbursementItem, idx: number) => {
+            {items.map((it: ReimbursementItem, idx: number) => {
               const price = Number(it.estimasi_harga) || 0;
+              const qty = Number(it.qty) || 0;
               return (
-                <tr key={it.id || idx} className="h-7">
-                  <td className="border border-black px-2 py-1 text-center text-black">{idx + 1}</td>
-                  <td className="border border-black px-2 py-1 text-left pl-3 text-black">{it.spesifikasi || '-'}</td>
-                  <td className="border border-black px-2 py-1 text-center text-black">{it.unit || '-'}</td>
-                  <td className="border border-black px-2 py-1 text-center text-black">{it.qty || 0}</td>
-                  <td className="border border-black px-2 py-1 text-right pr-3 text-black">{formatCurrency(price)}</td>
-                  <td className="border border-black px-2 py-1 text-left pl-3 text-black">{it.keterangan || ''}</td>
+                <tr key={it.id || it.tempId || idx} className={sizeRowBody}>
+                  <td className="border border-black px-1.5 py-0.5 text-center text-black">{idx + 1}</td>
+                  <td className="border border-black px-1.5 py-0.5 text-left pl-2 text-black truncate max-w-[120px]">{it.spesifikasi || '—'}</td>
+                  <td className="border border-black px-1.5 py-0.5 text-center text-black">{it.unit || '—'}</td>
+                  <td className="border border-black px-1.5 py-0.5 text-center text-black">{qty}</td>
+                  <td className="border border-black px-1.5 py-0.5 text-right pr-2 text-black">{formatCurrency(price)}</td>
+                  <td className="border border-black px-1.5 py-0.5 text-left pl-2 text-black truncate max-w-[120px]">{it.keterangan || ''}</td>
                 </tr>
               );
             })}
             {/* Pad to 8 rows */}
-            {Array.from({ length: Math.max(0, 8 - getRecordItems(selectedItem).length) }).map((_, i) => {
-              const idx = getRecordItems(selectedItem).length + i;
+            {Array.from({ length: Math.max(0, 8 - items.length) }).map((_, i) => {
+              const idx = items.length + i;
               return (
-                <tr key={`pad-${idx}`} className="h-7">
-                  <td className="border border-black px-2 py-1 text-center text-gray-400">{idx + 1}</td>
-                  <td className="border border-black px-2 py-1"></td>
-                  <td className="border border-black px-2 py-1"></td>
-                  <td className="border border-black px-2 py-1"></td>
-                  <td className="border border-black px-2 py-1"></td>
-                  <td className="border border-black px-2 py-1"></td>
+                <tr key={`pad-${idx}`} className={sizeRowBody}>
+                  <td className="border border-black px-1.5 py-0.5 text-center text-gray-400">{idx + 1}</td>
+                  <td className="border border-black px-1.5 py-0.5"></td>
+                  <td className="border border-black px-1.5 py-0.5"></td>
+                  <td className="border border-black px-1.5 py-0.5"></td>
+                  <td className="border border-black px-1.5 py-0.5"></td>
+                  <td className="border border-black px-1.5 py-0.5"></td>
                 </tr>
               );
             })}
             {/* TOTAL row */}
-            <tr className="h-8 font-bold">
-              <td colSpan={4} className="border border-black px-2 py-1 text-right pr-3 text-black font-black" style={{ letterSpacing: '3px' }}>T O T A L</td>
-              <td className="border border-black px-2 py-1 text-right pr-3 text-black font-black" style={{ backgroundColor: '#FFFFCC' }}>
-                Rp {(selectedItem.amount ?? 0).toLocaleString('id-ID') || formatCurrency(selectedItem.amount ?? 0)}
+            <tr className={`${sizeRowTotal} font-bold`}>
+              <td colSpan={4} className="border border-black px-1.5 py-0.5 text-right pr-2 text-black font-black" style={{ letterSpacing: '2px' }}>T O T A L</td>
+              <td className="border border-black px-1.5 py-0.5 text-right pr-2 text-black font-black" style={{ backgroundColor: '#FFFFCC' }}>
+                {isDetailView ? `Rp ${totalAmount.toLocaleString('id-ID')}` : formatCurrency(totalAmount)}
               </td>
-              <td className="border border-black px-2 py-1"></td>
+              <td className="border border-black px-1.5 py-0.5"></td>
             </tr>
           </tbody>
         </table>
       </div>
 
       {/* ===== TERBILANG BOX ===== */}
-      <div className="mb-4">
-        <div className="text-[10px] font-bold italic mb-1">Terbilang</div>
-        <div className="border border-black min-h-[28px] px-3 py-1.5 text-[10px] font-bold text-black" style={{ border: '1.5px solid #000' }}>
-          {terbilang(selectedItem.amount ?? 0)}
+      <div className="mb-3">
+        <div className={`${sizeTerbilangLabel} font-bold italic`}>Terbilang</div>
+        <div className={`border border-black font-bold text-black ${sizeTerbilangBox}`} style={{ border: '1.5px solid #000' }}>
+          {terbilang(totalAmount)}
         </div>
       </div>
 
       {/* ===== SIGNATURE GRID (4 columns matching Excel) ===== */}
-      <table className="w-full border-collapse text-[9px] mt-4 signature-table" style={{ border: '1.5px solid #000' }}>
+      <table className={`w-full border-collapse ${sizeSigText} signature-table`} style={{ border: '1.5px solid #000' }}>
         <thead>
           <tr>
-            <th className="border border-black text-center font-bold py-1.5 w-1/4">DIRUT</th>
-            <th className="border border-black text-center font-bold py-1.5 w-1/4">FINANCE</th>
-            <th className="border border-black text-center font-bold py-1.5 w-1/4">UNIT HEAD</th>
-            <th className="border border-black text-center font-bold py-1.5 w-1/4">REQUESTER</th>
+            <th className="border border-black text-center font-bold py-1 w-1/4">DIRUT</th>
+            <th className="border border-black text-center font-bold py-1 w-1/4">FINANCE</th>
+            <th className="border border-black text-center font-bold py-1 w-1/4">UNIT HEAD</th>
+            <th className="border border-black text-center font-bold py-1 w-1/4">REQUESTER</th>
           </tr>
         </thead>
         <tbody>
           {/* Signature spaces */}
           <tr>
             <td className="border border-black text-center align-middle sig-space">
-              {selectedItem.status === 'approved' && (
+              {status === 'approved' ? (
                 <div className="inline-block border-2 border-blue-600 text-blue-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-blue-50/50">APPROVED</div>
-              )}
-              {selectedItem.status === 'rejected' && (
+              ) : status === 'rejected' ? (
                 <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
-              )}
-            </td>
-            <td className="border border-black text-center align-middle sig-space">
-              {selectedItem.status === 'approved' && (
-                <div className="inline-block border-2 border-green-600 text-green-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-green-50/50">VERIFIED</div>
-              )}
-              {selectedItem.status === 'rejected' && (
-                <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
-              )}
-            </td>
-            <td className="border border-black text-center align-middle sig-space">
-              {selectedItem.status === 'approved' && (
-                <div className="inline-block border-2 border-green-600 text-green-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-green-50/50">VERIFIED</div>
-              )}
-              {selectedItem.status === 'rejected' && (
-                <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
-              )}
-            </td>
-            <td className="border border-black text-center align-middle sig-space">
-              {selectedItem.signature ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={selectedItem.signature} alt="TTD" className="h-12 mx-auto object-contain" />
               ) : (
-                <span className="text-gray-400 text-[8px]">— Tanpa TTD —</span>
+                <span className="text-gray-400 italic text-[7px]">— Belum Disetujui —</span>
               )}
-              <div className="text-[8px] font-bold mt-1">{selectedItem.employee_name || selectedItem.user?.name || '-'}</div>
+            </td>
+            <td className="border border-black text-center align-middle sig-space">
+              {status === 'approved' ? (
+                <div className="inline-block border-2 border-green-600 text-green-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-green-50/50">VERIFIED</div>
+              ) : status === 'rejected' ? (
+                <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
+              ) : (
+                <span className="text-gray-400 italic text-[7px]">— Belum Diverifikasi —</span>
+              )}
+            </td>
+            <td className="border border-black text-center align-middle sig-space">
+              {status === 'approved' ? (
+                <div className="inline-block border-2 border-green-600 text-green-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-green-50/50">VERIFIED</div>
+              ) : status === 'rejected' ? (
+                <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
+              ) : (
+                <span className="text-gray-400 italic text-[7px]">— Belum Diverifikasi —</span>
+              )}
+            </td>
+            <td className="border border-black text-center align-middle sig-space">
+              {signature ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={signature} alt="TTD" className={`${sizeSigImg} mx-auto object-contain`} />
+              ) : (
+                <span className="text-gray-400 text-[7px]">— Belum TTD —</span>
+              )}
+              <div className={`${sizeSigName} font-bold mt-0.5`}>{employee_name || '—'}</div>
             </td>
           </tr>
           {/* Extra row: Posting Accounting & Procurement */}
@@ -590,6 +430,68 @@ const PrintableSheet = ({ selectedItem }: PrintableSheetProps) => {
           </tr>
         </tbody>
       </table>
+    </div>
+  );
+};
+
+interface LiveExcelPreviewProps {
+  formData: ReimbursementFormData;
+  calculatedTotal: number;
+  user: { name?: string | null } | null;
+}
+
+const LiveExcelPreview = ({ formData, calculatedTotal, user }: LiveExcelPreviewProps) => {
+  const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const noStr = `REIM/${new Date().toISOString().substring(0, 10).replaceAll('-', '')}/DRAFT`;
+  
+  return (
+    <div className="hidden lg:block lg:w-[52%] xl:w-[55%] sticky top-6 bg-white rounded-xl border border-gray-200 shadow-sm p-6 max-h-[85vh] overflow-y-auto">
+      <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
+        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Live Preview (Tampilan Excel / Cetak)</span>
+        <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold">Auto Update</span>
+      </div>
+      <ReimbursementSheetInner
+        title={formData.title}
+        employee_name={formData.employee_name || user?.name || ""}
+        divisi={formData.divisi}
+        tujuan={formData.tujuan === "Lainnya" ? formData.tujuanLainnya : formData.tujuan}
+        priority={formData.priority}
+        items={formData.items}
+        signature={formData.signature}
+        totalAmount={calculatedTotal}
+        dateStr={dateStr}
+        noStr={noStr}
+        status="pending"
+        isDetailView={false}
+      />
+    </div>
+  );
+};
+
+interface PrintableSheetProps {
+  selectedItem: ReimbursementRecord;
+}
+
+const PrintableSheet = ({ selectedItem }: PrintableSheetProps) => {
+  const dateStr = new Date(selectedItem.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const noStr = `REIM/${new Date(selectedItem.created_at).toISOString().substring(0, 10).replaceAll('-', '')}/${String(selectedItem.id).padStart(5, '0')}`;
+  
+  return (
+    <div className="printable-sheet bg-white shadow-xl border border-gray-300 rounded-xl p-10 max-w-4xl mx-auto my-4 transition-all">
+      <ReimbursementSheetInner
+        title={selectedItem.title}
+        employee_name={selectedItem.employee_name || selectedItem.user?.name || "—"}
+        divisi={selectedItem.divisi}
+        tujuan={selectedItem.tujuan || ""}
+        priority={selectedItem.priority}
+        items={getRecordItems(selectedItem)}
+        signature={selectedItem.signature}
+        totalAmount={selectedItem.amount ?? 0}
+        dateStr={dateStr}
+        noStr={noStr}
+        status={selectedItem.status}
+        isDetailView={true}
+      />
     </div>
   );
 };
@@ -622,7 +524,7 @@ export default function ReimbursementsPage() {
     tujuanLainnya: "",
     priority: "Normal",
     items: [
-      { tempId: Math.random().toString(36).substring(2, 9), spesifikasi: "", unit: "", qty: 1, estimasi_harga: 0, keterangan: "" }
+      { tempId: generateUniqueId(), spesifikasi: "", unit: "", qty: 1, estimasi_harga: 0, keterangan: "" }
     ],
     signature: "",
     attachments: [] as File[],
@@ -785,7 +687,7 @@ export default function ReimbursementsPage() {
         tujuan: "",
         tujuanLainnya: "",
         priority: "Normal",
-        items: [{ tempId: Math.random().toString(36).substring(2, 9), spesifikasi: "", unit: "", qty: 1, estimasi_harga: 0, keterangan: "" }],
+        items: [{ tempId: generateUniqueId(), spesifikasi: "", unit: "", qty: 1, estimasi_harga: 0, keterangan: "" }],
         signature: "",
         attachments: [],
       });
