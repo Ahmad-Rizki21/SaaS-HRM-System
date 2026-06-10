@@ -838,7 +838,7 @@ export default function OvertimesPage() {
                       year: 'numeric'
                     });
                     return (
-                      <tr key={idx} className="h-7">
+                      <tr key={it.id || `${it.date}-${idx}`} className="h-7">
                         <td className="border border-gray-800 px-3 py-1 text-center text-gray-700 font-semibold w-12">{idx + 1}</td>
                         <td className="border border-gray-800 px-3 py-1 pl-4 text-gray-800">
                           <span className="font-semibold text-gray-900">{formattedDate}</span> - {it.reason}

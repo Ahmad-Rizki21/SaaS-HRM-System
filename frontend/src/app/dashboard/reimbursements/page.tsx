@@ -131,6 +131,469 @@ interface ReimbursementFormData {
   attachments: File[];
 }
 
+const getRecordItems = (record: ReimbursementRecord | null | undefined): ReimbursementItem[] => {
+  if (!record) return [];
+  if (record.items) {
+    if (Array.isArray(record.items)) return record.items;
+    try {
+      const parsed = typeof record.items === 'string' ? JSON.parse(record.items) : record.items;
+      if (Array.isArray(parsed)) return parsed;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  // Backward compatibility fallback
+  return [{
+    spesifikasi: record.title || "Klaim / Reimbursement",
+    unit: "Lbr",
+    qty: 1,
+    estimasi_harga: record.amount || 0,
+    keterangan: record.description || ""
+  }];
+};
+
+const calculateTotal = (items: ReimbursementItem[]): number => {
+  return items.reduce((sum: number, item: ReimbursementItem) => {
+    const qty = Number.parseFloat(item.qty as unknown as string) || 0;
+    const price = Number.parseFloat(item.estimasi_harga as unknown as string) || 0;
+    return sum + (qty * price);
+  }, 0);
+};
+
+interface LiveExcelPreviewProps {
+  formData: ReimbursementFormData;
+  calculatedTotal: number;
+  user: { name?: string | null } | null;
+}
+
+const LiveExcelPreview = ({ formData, calculatedTotal, user }: LiveExcelPreviewProps) => {
+  return (
+    <div className="hidden lg:block lg:w-[52%] xl:w-[55%] sticky top-6 bg-white rounded-xl border border-gray-200 shadow-sm p-6 max-h-[85vh] overflow-y-auto">
+      <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
+        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Live Preview (Tampilan Excel / Cetak)</span>
+        <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold">Auto Update</span>
+      </div>
+      
+      <div 
+        className="bg-white border border-gray-300 rounded-lg p-6 shadow-inner max-w-full overflow-x-auto" 
+        style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
+      >
+        {/* ===== HEADER: Logo left + Date/No right ===== */}
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <img src="/artacom.png" alt="Artacom Logo" className="h-12 mb-1" />
+            <div className="text-[10px] font-black text-black tracking-wide">PT ARTACOMINDO JEJARING NUSA</div>
+          </div>
+          <div className="text-right text-[9px] flex flex-col gap-1 w-[150px]">
+            <div className="flex justify-between items-end">
+              <span className="font-bold pr-1">Date :</span>
+              <span className="border-b border-black pl-1 pb-0.5 flex-1 text-left">
+                {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </span>
+            </div>
+            <div className="flex justify-between items-end pt-1">
+              <span className="font-bold pr-1">No :</span>
+              <span className="border-b border-black pl-1 pb-0.5 flex-1 text-left text-gray-400">
+                REIM/{new Date().toISOString().substring(0,10).replaceAll('-', '')}/DRAFT
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ===== TITLE ===== */}
+        <div className="text-center my-3">
+          <h1 className="text-[14px] font-black text-black tracking-[1px]">PENGAJUAN UANG MUKA / PERMINTAAN DANA</h1>
+        </div>
+
+        {/* ===== PRIORITY CHECKBOXES (right-aligned) ===== */}
+        <div className="flex justify-end mb-2 text-[8px]">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 font-bold">
+              <span className="inline-flex items-center justify-center w-[10px] h-[10px] border border-black text-[7px] font-black">
+                {(formData.priority || 'Normal').toLowerCase() === 'normal' ? '✓' : ''}
+              </span> NORMAL
+            </div>
+            <div className="flex items-center gap-1.5 font-bold">
+              <span className="inline-flex items-center justify-center w-[10px] h-[10px] border border-black text-[7px] font-black">
+                {(formData.priority || '').toLowerCase() === 'urgent' ? '✓' : ''}
+              </span> URGENT
+            </div>
+            <div className="flex items-center gap-1.5 font-bold">
+              <span className="inline-flex items-center justify-center w-[10px] h-[10px] border border-black text-[7px] font-black">
+                {['top urgent', 'top_urgent'].includes((formData.priority || '').toLowerCase()) ? '✓' : ''}
+              </span> TOP URGENT
+            </div>
+          </div>
+        </div>
+
+        {/* ===== INFO FIELDS: Nama / Tujuan / Div + Pengadaan options ===== */}
+        <div className="flex justify-between items-start text-[9px] mb-3 gap-4">
+          <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2 w-full">
+            {/* Row 1, Col 1: Nama */}
+            <div className="flex items-center">
+              <span className="font-bold w-[45px] py-1 text-black shrink-0">Nama</span>
+              <span className="w-[6px] py-1 text-black shrink-0">:</span>
+              <span className="border-b border-dotted border-gray-500 py-1 text-black font-semibold flex-1 ml-1 truncate">
+                {formData.employee_name || '—'}
+              </span>
+            </div>
+            {/* Row 1, Col 2: Tujuan */}
+            <div className="flex items-center">
+              <span className="font-bold w-[45px] py-1 text-black shrink-0">Tujuan</span>
+              <span className="w-[6px] py-1 text-black shrink-0">:</span>
+              <span className="border-b border-dotted border-gray-500 py-1 text-black font-semibold flex-1 ml-1 truncate">
+                {formData.title || '—'}
+              </span>
+            </div>
+            {/* Row 2, Col 1: Div */}
+            <div className="flex items-center">
+              <span className="font-bold w-[45px] py-1 text-black shrink-0">Div.</span>
+              <span className="w-[6px] py-1 text-black shrink-0">:</span>
+              <span className="border-b border-dotted border-gray-500 py-1 text-black font-semibold flex-1 ml-1 truncate">
+                {formData.divisi || '—'}
+              </span>
+            </div>
+            {/* Row 2, Col 2: Empty spacer */}
+            <div></div>
+          </div>
+          <div className="text-[8px] space-y-0.5 flex-shrink-0">
+            <div className="flex items-center gap-1 text-black font-semibold">
+              <span className={`inline-block w-[9px] h-[9px] border border-black text-[6px] text-center leading-[9px] ${formData.tujuan === 'Pengadaan Baru' ? 'bg-black text-white' : ''}`}>
+                {formData.tujuan === 'Pengadaan Baru' ? '✓' : ''}
+              </span> Pengadaan Baru
+            </div>
+            <div className="flex items-center gap-1 text-black font-semibold">
+              <span className={`inline-block w-[9px] h-[9px] border border-black text-[6px] text-center leading-[9px] ${formData.tujuan === 'Dari Gudang' ? 'bg-black text-white' : ''}`}>
+                {formData.tujuan === 'Dari Gudang' ? '✓' : ''}
+              </span> Dari Gudang
+            </div>
+          </div>
+        </div>
+
+        {/* ===== ITEMS TABLE (Yellow header like Excel) ===== */}
+        <div className="mb-3">
+          <table className="w-full border-collapse text-[9px] excel-table" style={{ border: '1.5px solid #000' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#FFFFCC' }} className="h-7">
+                <th className="border border-black px-1.5 py-0.5 font-bold text-black w-7">No.</th>
+                <th className="border border-black px-1.5 py-0.5 font-bold text-black text-left pl-2">Spesifikasi Barang / Jasa</th>
+                <th className="border border-black px-1.5 py-0.5 font-bold text-black w-12">Unit</th>
+                <th className="border border-black px-1.5 py-0.5 font-bold text-black w-14">Quantity</th>
+                <th className="border border-black px-1.5 py-0.5 font-bold text-black text-right pr-2 w-28">Estimasi Harga</th>
+                <th className="border border-black px-1.5 py-0.5 font-bold text-black text-left pl-2 w-28">Tanggal/Keterangan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {formData.items.map((it: ReimbursementItem, idx: number) => {
+                const price = Number(it.estimasi_harga) || 0;
+                const qty = Number(it.qty) || 0;
+                return (
+                  <tr key={it.tempId || idx} className="h-6">
+                    <td className="border border-black px-1.5 py-0.5 text-center text-black">{idx + 1}</td>
+                    <td className="border border-black px-1.5 py-0.5 text-left pl-2 text-black truncate max-w-[120px]">{it.spesifikasi || '—'}</td>
+                    <td className="border border-black px-1.5 py-0.5 text-center text-black">{it.unit || '—'}</td>
+                    <td className="border border-black px-1.5 py-0.5 text-center text-black">{qty}</td>
+                    <td className="border border-black px-1.5 py-0.5 text-right pr-2 text-black">{formatCurrency(price)}</td>
+                    <td className="border border-black px-1.5 py-0.5 text-left pl-2 text-black truncate max-w-[120px]">{it.keterangan || ''}</td>
+                  </tr>
+                );
+              })}
+              {/* Pad to 8 rows */}
+              {Array.from({ length: Math.max(0, 8 - formData.items.length) }).map((_, i) => {
+                const idx = formData.items.length + i;
+                return (
+                  <tr key={`pad-${idx}`} className="h-6">
+                    <td className="border border-black px-1.5 py-0.5 text-center text-gray-400">{idx + 1}</td>
+                    <td className="border border-black px-1.5 py-0.5"></td>
+                    <td className="border border-black px-1.5 py-0.5"></td>
+                    <td className="border border-black px-1.5 py-0.5"></td>
+                    <td className="border border-black px-1.5 py-0.5"></td>
+                    <td className="border border-black px-1.5 py-0.5"></td>
+                  </tr>
+                );
+              })}
+              {/* TOTAL row */}
+              <tr className="h-7 font-bold">
+                <td colSpan={4} className="border border-black px-1.5 py-0.5 text-right pr-2 text-black font-black" style={{ letterSpacing: '2px' }}>T O T A L</td>
+                <td className="border border-black px-1.5 py-0.5 text-right pr-2 text-black font-black" style={{ backgroundColor: '#FFFFCC' }}>
+                  {formatCurrency(calculatedTotal)}
+                </td>
+                <td className="border border-black px-1.5 py-0.5"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* ===== TERBILANG BOX ===== */}
+        <div className="mb-3">
+          <div className="text-[8px] font-bold italic mb-0.5">Terbilang</div>
+          <div className="border border-black min-h-[24px] px-2 py-1 text-[8px] font-bold text-black bg-gray-50/50" style={{ border: '1.5px solid #000' }}>
+            {terbilang(calculatedTotal)}
+          </div>
+        </div>
+
+        {/* ===== SIGNATURE GRID (4 columns matching Excel) ===== */}
+        <table className="w-full border-collapse text-[8px] signature-table" style={{ border: '1.5px solid #000' }}>
+          <thead>
+            <tr>
+              <th className="border border-black text-center font-bold py-1 w-1/4">DIRUT</th>
+              <th className="border border-black text-center font-bold py-1 w-1/4">FINANCE</th>
+              <th className="border border-black text-center font-bold py-1 w-1/4">UNIT HEAD</th>
+              <th className="border border-black text-center font-bold py-1 w-1/4">REQUESTER</th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Signature spaces */}
+            <tr>
+              <td className="border border-black text-center align-middle sig-space text-gray-400 italic text-[7px]">— Belum Disetujui —</td>
+              <td className="border border-black text-center align-middle sig-space text-gray-400 italic text-[7px]">— Belum Diverifikasi —</td>
+              <td className="border border-black text-center align-middle sig-space text-gray-400 italic text-[7px]">— Belum Diverifikasi —</td>
+              <td className="border border-black text-center align-middle sig-space">
+                {formData.signature ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={formData.signature} alt="TTD" className="h-10 mx-auto object-contain" />
+                ) : (
+                  <span className="text-gray-400 text-[7px]">— Belum TTD —</span>
+                )}
+                <div className="text-[7px] font-bold mt-0.5">{formData.employee_name || user?.name || '—'}</div>
+              </td>
+            </tr>
+            {/* Extra row: Posting Accounting & Procurement */}
+            <tr>
+              <td colSpan={2} className="no-border" style={{ border: 'none' }}></td>
+              <td className="border border-black text-center font-bold py-1 text-[7px]">Posting<br/>Accounting</td>
+              <td className="border border-black text-center font-bold py-1 text-[7px]">PROCUREMENT</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+interface PrintableSheetProps {
+  selectedItem: ReimbursementRecord;
+}
+
+const PrintableSheet = ({ selectedItem }: PrintableSheetProps) => {
+  return (
+    <div 
+      className="printable-sheet bg-white shadow-xl border border-gray-300 rounded-xl p-10 max-w-4xl mx-auto my-4 transition-all" 
+      style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
+    >
+      {/* ===== HEADER: Logo left + Date/No right ===== */}
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/artacom.png" alt="Artacom Logo" className="h-14 mb-1" />
+          <div className="text-[11px] font-black text-black tracking-wide">PT ARTACOMINDO JEJARING NUSA</div>
+        </div>
+        <div className="text-right text-[10px] flex flex-col gap-1 w-[180px]">
+          <div className="flex justify-between items-end">
+            <span className="font-bold pr-1">Date :</span>
+            <span className="border-b border-black pl-1 pb-0.5 flex-1 text-left">
+              {new Date(selectedItem.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            </span>
+          </div>
+          <div className="flex justify-between items-end pt-1">
+            <span className="font-bold pr-1">No :</span>
+            <span className="border-b border-black pl-1 pb-0.5 flex-1 text-left">
+              REIM/{new Date(selectedItem.created_at).toISOString().substring(0,10).replaceAll('-', '')}/{String(selectedItem.id).padStart(5,'0')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== TITLE ===== */}
+      <div className="text-center my-4">
+        <h1 className="text-[16px] font-black text-black tracking-[1px]">PENGAJUAN UANG MUKA / PERMINTAAN DANA</h1>
+      </div>
+
+      {/* ===== PRIORITY CHECKBOXES (right-aligned) ===== */}
+      <div className="flex justify-end mb-2 text-[9px]">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-1.5 font-bold">
+            <span className="inline-flex items-center justify-center w-[11px] h-[11px] border border-black text-[8px] font-black">
+              {(selectedItem.priority || 'Normal').toLowerCase() === 'normal' ? '✓' : ''}
+            </span> NORMAL
+          </div>
+          <div className="flex items-center gap-1.5 font-bold">
+            <span className="inline-flex items-center justify-center w-[11px] h-[11px] border border-black text-[8px] font-black">
+              {(selectedItem.priority || '').toLowerCase() === 'urgent' ? '✓' : ''}
+            </span> URGENT
+          </div>
+          <div className="flex items-center gap-1.5 font-bold">
+            <span className="inline-flex items-center justify-center w-[11px] h-[11px] border border-black text-[8px] font-black">
+              {['top urgent', 'top_urgent'].includes((selectedItem.priority || '').toLowerCase()) ? '✓' : ''}
+            </span> TOP URGENT
+          </div>
+        </div>
+      </div>
+
+      {/* ===== INFO FIELDS: Nama / Tujuan / Div + Pengadaan options ===== */}
+      <div className="flex justify-between items-start text-[10px] mb-3 gap-4">
+        <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-2">
+          {/* Row 1, Col 1: Nama */}
+          <div className="flex items-center">
+            <span className="font-bold w-[50px] py-1 shrink-0">Nama</span>
+            <span className="w-[8px] py-1 shrink-0">:</span>
+            <span className="border-b border-dotted border-gray-500 py-1 flex-1 ml-1 truncate">
+              {selectedItem.employee_name || selectedItem.user?.name || '—'}
+            </span>
+          </div>
+          {/* Row 1, Col 2: Tujuan */}
+          <div className="flex items-center">
+            <span className="font-bold w-[50px] py-1 shrink-0">Tujuan</span>
+            <span className="w-[8px] py-1 shrink-0">:</span>
+            <span className="border-b border-dotted border-gray-500 py-1 flex-1 ml-1 truncate">
+              {selectedItem.title || '—'}
+            </span>
+          </div>
+          {/* Row 2, Col 1: Div */}
+          <div className="flex items-center">
+            <span className="font-bold w-[50px] py-1 shrink-0">Div.</span>
+            <span className="w-[8px] py-1 shrink-0">:</span>
+            <span className="border-b border-dotted border-gray-500 py-1 flex-1 ml-1 truncate">
+              {selectedItem.divisi || '—'}
+            </span>
+          </div>
+          {/* Row 2, Col 2: Empty spacer */}
+          <div></div>
+        </div>
+        <div className="text-[9px] space-y-0.5 flex-shrink-0">
+          <div className="flex items-center gap-1">
+            <span className={`inline-block w-[10px] h-[10px] border border-black text-[7px] text-center leading-[10px] ${(selectedItem.tujuan || '').toLowerCase().includes('pengadaan') ? 'bg-black text-white' : ''}`}>
+              {(selectedItem.tujuan || '').toLowerCase().includes('pengadaan') ? '✓' : ''}
+            </span> Pengadaan Baru
+          </div>
+          <div className="flex items-center gap-1">
+            <span className={`inline-block w-[10px] h-[10px] border border-black text-[7px] text-center leading-[10px] ${(selectedItem.tujuan || '').toLowerCase().includes('gudang') ? 'bg-black text-white' : ''}`}>
+              {(selectedItem.tujuan || '').toLowerCase().includes('gudang') ? '✓' : ''}
+            </span> Dari Gudang
+          </div>
+        </div>
+      </div>
+
+      {/* ===== ITEMS TABLE (Yellow header like Excel) ===== */}
+      <div className="mb-4">
+        <table className="w-full border-collapse text-[10px] excel-table" style={{ border: '1.5px solid #000' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#FFFFCC' }} className="h-8">
+              <th className="border border-black px-2 py-1 font-bold text-black w-8">No.</th>
+              <th className="border border-black px-2 py-1 font-bold text-black text-left pl-3">Spesifikasi Barang / Jasa</th>
+              <th className="border border-black px-2 py-1 font-bold text-black w-14">Unit</th>
+              <th className="border border-black px-2 py-1 font-bold text-black w-16">Quantity</th>
+              <th className="border border-black px-2 py-1 font-bold text-black text-right pr-3 w-32">Estimasi Harga</th>
+              <th className="border border-black px-2 py-1 font-bold text-black text-left pl-3 w-32">Tanggal/Keterangan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {getRecordItems(selectedItem).map((it: ReimbursementItem, idx: number) => {
+              const price = Number(it.estimasi_harga) || 0;
+              return (
+                <tr key={it.id || idx} className="h-7">
+                  <td className="border border-black px-2 py-1 text-center text-black">{idx + 1}</td>
+                  <td className="border border-black px-2 py-1 text-left pl-3 text-black">{it.spesifikasi || '-'}</td>
+                  <td className="border border-black px-2 py-1 text-center text-black">{it.unit || '-'}</td>
+                  <td className="border border-black px-2 py-1 text-center text-black">{it.qty || 0}</td>
+                  <td className="border border-black px-2 py-1 text-right pr-3 text-black">{formatCurrency(price)}</td>
+                  <td className="border border-black px-2 py-1 text-left pl-3 text-black">{it.keterangan || ''}</td>
+                </tr>
+              );
+            })}
+            {/* Pad to 8 rows */}
+            {Array.from({ length: Math.max(0, 8 - getRecordItems(selectedItem).length) }).map((_, i) => {
+              const idx = getRecordItems(selectedItem).length + i;
+              return (
+                <tr key={`pad-${idx}`} className="h-7">
+                  <td className="border border-black px-2 py-1 text-center text-gray-400">{idx + 1}</td>
+                  <td className="border border-black px-2 py-1"></td>
+                  <td className="border border-black px-2 py-1"></td>
+                  <td className="border border-black px-2 py-1"></td>
+                  <td className="border border-black px-2 py-1"></td>
+                  <td className="border border-black px-2 py-1"></td>
+                </tr>
+              );
+            })}
+            {/* TOTAL row */}
+            <tr className="h-8 font-bold">
+              <td colSpan={4} className="border border-black px-2 py-1 text-right pr-3 text-black font-black" style={{ letterSpacing: '3px' }}>T O T A L</td>
+              <td className="border border-black px-2 py-1 text-right pr-3 text-black font-black" style={{ backgroundColor: '#FFFFCC' }}>
+                Rp {(selectedItem.amount ?? 0).toLocaleString('id-ID') || formatCurrency(selectedItem.amount ?? 0)}
+              </td>
+              <td className="border border-black px-2 py-1"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* ===== TERBILANG BOX ===== */}
+      <div className="mb-4">
+        <div className="text-[10px] font-bold italic mb-1">Terbilang</div>
+        <div className="border border-black min-h-[28px] px-3 py-1.5 text-[10px] font-bold text-black" style={{ border: '1.5px solid #000' }}>
+          {terbilang(selectedItem.amount ?? 0)}
+        </div>
+      </div>
+
+      {/* ===== SIGNATURE GRID (4 columns matching Excel) ===== */}
+      <table className="w-full border-collapse text-[9px] mt-4 signature-table" style={{ border: '1.5px solid #000' }}>
+        <thead>
+          <tr>
+            <th className="border border-black text-center font-bold py-1.5 w-1/4">DIRUT</th>
+            <th className="border border-black text-center font-bold py-1.5 w-1/4">FINANCE</th>
+            <th className="border border-black text-center font-bold py-1.5 w-1/4">UNIT HEAD</th>
+            <th className="border border-black text-center font-bold py-1.5 w-1/4">REQUESTER</th>
+          </tr>
+        </thead>
+        <tbody>
+          {/* Signature spaces */}
+          <tr>
+            <td className="border border-black text-center align-middle sig-space">
+              {selectedItem.status === 'approved' && (
+                <div className="inline-block border-2 border-blue-600 text-blue-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-blue-50/50">APPROVED</div>
+              )}
+              {selectedItem.status === 'rejected' && (
+                <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
+              )}
+            </td>
+            <td className="border border-black text-center align-middle sig-space">
+              {selectedItem.status === 'approved' && (
+                <div className="inline-block border-2 border-green-600 text-green-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-green-50/50">VERIFIED</div>
+              )}
+              {selectedItem.status === 'rejected' && (
+                <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
+              )}
+            </td>
+            <td className="border border-black text-center align-middle sig-space">
+              {selectedItem.status === 'approved' && (
+                <div className="inline-block border-2 border-green-600 text-green-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-green-50/50">VERIFIED</div>
+              )}
+              {selectedItem.status === 'rejected' && (
+                <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
+              )}
+            </td>
+            <td className="border border-black text-center align-middle sig-space">
+              {selectedItem.signature ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={selectedItem.signature} alt="TTD" className="h-12 mx-auto object-contain" />
+              ) : (
+                <span className="text-gray-400 text-[8px]">— Tanpa TTD —</span>
+              )}
+              <div className="text-[8px] font-bold mt-1">{selectedItem.employee_name || selectedItem.user?.name || '-'}</div>
+            </td>
+          </tr>
+          {/* Extra row: Posting Accounting & Procurement */}
+          <tr>
+            <td colSpan={2} className="no-border" style={{ border: 'none' }}></td>
+            <td className="border border-black text-center font-bold py-1 text-[7px]">Posting<br/>Accounting</td>
+            <td className="border border-black text-center font-bold py-1 text-[7px]">PROCUREMENT</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 export default function ReimbursementsPage() {
   const { hasPermission, user } = useAuth();
   const [reimbursements, setReimbursements] = useState<ReimbursementRecord[]>([]);
@@ -259,11 +722,7 @@ export default function ReimbursementsPage() {
     setFormData({ ...formData, items: newItems });
   };
 
-  const calculatedTotal = formData.items.reduce((sum: number, item: ReimbursementItem) => {
-    const qty = Number.parseFloat(item.qty as unknown as string) || 0;
-    const price = Number.parseFloat(item.estimasi_harga as unknown as string) || 0;
-    return sum + (qty * price);
-  }, 0);
+  const calculatedTotal = calculateTotal(formData.items);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,7 +756,11 @@ export default function ReimbursementsPage() {
     data.append("tujuan", selectedTujuan);
     data.append("priority", formData.priority || "Normal");
     
-    const cleanedItems = formData.items.map(({ tempId: _, ...rest }: ReimbursementItem) => rest);
+    const cleanedItems = formData.items.map((item: ReimbursementItem) => {
+      const copy = { ...item };
+      delete copy.tempId;
+      return copy;
+    });
     data.append("items", JSON.stringify(cleanedItems));
     data.append("description", formData.title); 
     data.append("signature", formData.signature);
@@ -380,27 +843,6 @@ export default function ReimbursementsPage() {
       console.error(err);
       toast.error("Gagal mendownload Excel.");
     }
-  };
-
-  const getRecordItems = (record: ReimbursementRecord | null | undefined): ReimbursementItem[] => {
-    if (!record) return [];
-    if (record.items) {
-      if (Array.isArray(record.items)) return record.items as ReimbursementItem[];
-      try {
-        const parsed = typeof record.items === 'string' ? JSON.parse(record.items) : record.items;
-        if (Array.isArray(parsed)) return parsed;
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    // Backward compatibility fallback
-    return [{
-      spesifikasi: record.title || "Klaim / Reimbursement",
-      unit: "Lbr",
-      qty: 1,
-      estimasi_harga: record.amount || 0,
-      keterangan: record.description || ""
-    }];
   };
 
   const handleCancelCreate = () => {
@@ -743,7 +1185,20 @@ export default function ReimbursementsPage() {
                         </label>
                       </div>
 
-                      {!formData.is_custom_employee_name ? (
+                      {formData.is_custom_employee_name ? (
+                        <div className="flex flex-col gap-1">
+                          <label htmlFor="employee-manual-input" className="sr-only">Nama Karyawan Manual</label>
+                          <input
+                            id="employee-manual-input"
+                            type="text"
+                            required
+                            placeholder="Ketik nama karyawan secara manual..."
+                            className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
+                            value={formData.employee_name}
+                            onChange={(e) => setFormData({ ...formData, employee_name: e.target.value })}
+                          />
+                        </div>
+                      ) : (
                         <div className="flex flex-col gap-1">
                           <label htmlFor="employee-select-input" className="sr-only">Pilih Karyawan</label>
                           <select
@@ -766,19 +1221,6 @@ export default function ReimbursementsPage() {
                               </option>
                             ))}
                           </select>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-1">
-                          <label htmlFor="employee-manual-input" className="sr-only">Nama Karyawan Manual</label>
-                          <input
-                            id="employee-manual-input"
-                            type="text"
-                            required
-                            placeholder="Ketik nama karyawan secara manual..."
-                            className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
-                            value={formData.employee_name}
-                            onChange={(e) => setFormData({ ...formData, employee_name: e.target.value })}
-                          />
                         </div>
                       )}
                     </div>
@@ -1124,211 +1566,7 @@ export default function ReimbursementsPage() {
             </div>
 
             {/* RIGHT PANEL: Live Excel-style Preview */}
-            <div className="hidden lg:block lg:w-[52%] xl:w-[55%] sticky top-6 bg-white rounded-xl border border-gray-200 shadow-sm p-6 max-h-[85vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Live Preview (Tampilan Excel / Cetak)</span>
-                <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold">Auto Update</span>
-              </div>
-              
-              <div 
-                className="bg-white border border-gray-300 rounded-lg p-6 shadow-inner max-w-full overflow-x-auto" 
-                style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
-              >
-                {/* ===== HEADER: Logo left + Date/No right ===== */}
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <img src="/artacom.png" alt="Artacom Logo" className="h-12 mb-1" />
-                    <div className="text-[10px] font-black text-black tracking-wide">PT ARTACOMINDO JEJARING NUSA</div>
-                  </div>
-                  <div className="text-right text-[9px]">                    <table role="presentation">
-                      <tbody>
-                        <tr>
-                          <td className="font-bold pr-1 text-right">Date :</td>
-                          <td className="border-b border-black pl-1 min-w-[100px] text-left">
-                            {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="font-bold pr-1 text-right pt-1">No :</td>
-                          <td className="border-b border-black pl-1 pt-1 text-left text-gray-400">
-                            REIM/{new Date().toISOString().substring(0,10).replaceAll(/-/g,'')}/DRAFT
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* ===== TITLE ===== */}
-                <div className="text-center my-3">
-                  <h1 className="text-[14px] font-black text-black tracking-[1px]">PENGAJUAN UANG MUKA / PERMINTAAN DANA</h1>
-                </div>
-
-                {/* ===== PRIORITY CHECKBOXES (right-aligned) ===== */}
-                <div className="flex justify-end mb-2 text-[8px]">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-1.5 font-bold">
-                      <span className="inline-flex items-center justify-center w-[10px] h-[10px] border border-black text-[7px] font-black">
-                        {(formData.priority || 'Normal').toLowerCase() === 'normal' ? '✓' : ''}
-                      </span> NORMAL
-                    </div>
-                    <div className="flex items-center gap-1.5 font-bold">
-                      <span className="inline-flex items-center justify-center w-[10px] h-[10px] border border-black text-[7px] font-black">
-                        {(formData.priority || '').toLowerCase() === 'urgent' ? '✓' : ''}
-                      </span> URGENT
-                    </div>
-                    <div className="flex items-center gap-1.5 font-bold">
-                      <span className="inline-flex items-center justify-center w-[10px] h-[10px] border border-black text-[7px] font-black">
-                        {['top urgent', 'top_urgent'].includes((formData.priority || '').toLowerCase()) ? '✓' : ''}
-                      </span> TOP URGENT
-                    </div>
-                  </div>
-                </div>
-
-                {/* ===== INFO FIELDS: Nama / Tujuan / Div + Pengadaan options ===== */}
-                <div className="flex justify-between items-start text-[9px] mb-3 gap-4">
-                  <div className="flex-1">
-                    <table className="w-full" role="presentation">
-                      <tbody>
-                        <tr>
-                          <td className="font-bold w-[45px] py-1 text-black">Nama</td>
-                          <td className="w-[6px] py-1 text-black">:</td>
-                          <td className="border-b border-dotted border-gray-500 py-1 text-black font-semibold">
-                            {formData.employee_name || '—'}
-                          </td>
-                          <td className="w-[15px]"></td>
-                          <td className="font-bold w-[45px] py-1 text-black">Tujuan</td>
-                          <td className="w-[6px] py-1 text-black">:</td>
-                          <td className="border-b border-dotted border-gray-500 py-1 text-black font-semibold">
-                            {formData.title || '—'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="font-bold py-1 text-black">Div.</td>
-                          <td className="py-1 text-black">:</td>
-                          <td className="border-b border-dotted border-gray-500 py-1 text-black font-semibold">
-                            {formData.divisi || '—'}
-                          </td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="text-[8px] space-y-0.5 flex-shrink-0">
-                    <div className="flex items-center gap-1 text-black font-semibold">
-                      <span className={`inline-block w-[9px] h-[9px] border border-black text-[6px] text-center leading-[9px] ${formData.tujuan === 'Pengadaan Baru' ? 'bg-black text-white' : ''}`}>
-                        {formData.tujuan === 'Pengadaan Baru' ? '✓' : ''}
-                      </span> Pengadaan Baru
-                    </div>
-                    <div className="flex items-center gap-1 text-black font-semibold">
-                      <span className={`inline-block w-[9px] h-[9px] border border-black text-[6px] text-center leading-[9px] ${formData.tujuan === 'Dari Gudang' ? 'bg-black text-white' : ''}`}>
-                        {formData.tujuan === 'Dari Gudang' ? '✓' : ''}
-                      </span> Dari Gudang
-                    </div>
-                  </div>
-                </div>
-
-                {/* ===== ITEMS TABLE (Yellow header like Excel) ===== */}
-                <div className="mb-3">
-                  <table className="w-full border-collapse text-[9px] excel-table" style={{ border: '1.5px solid #000' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: '#FFFFCC' }} className="h-7">
-                        <th className="border border-black px-1.5 py-0.5 font-bold text-black w-7">No.</th>
-                        <th className="border border-black px-1.5 py-0.5 font-bold text-black text-left pl-2">Spesifikasi Barang / Jasa</th>
-                        <th className="border border-black px-1.5 py-0.5 font-bold text-black w-12">Unit</th>
-                        <th className="border border-black px-1.5 py-0.5 font-bold text-black w-14">Quantity</th>
-                        <th className="border border-black px-1.5 py-0.5 font-bold text-black text-right pr-2 w-28">Estimasi Harga</th>
-                        <th className="border border-black px-1.5 py-0.5 font-bold text-black text-left pl-2 w-28">Tanggal/Keterangan</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {formData.items.map((it: ReimbursementItem, idx: number) => {
-                        const price = Number(it.estimasi_harga) || 0;
-                        const qty = Number(it.qty) || 0;
-                        return (
-                          <tr key={it.tempId || idx} className="h-6">
-                            <td className="border border-black px-1.5 py-0.5 text-center text-black">{idx + 1}</td>
-                            <td className="border border-black px-1.5 py-0.5 text-left pl-2 text-black truncate max-w-[120px]">{it.spesifikasi || '—'}</td>
-                            <td className="border border-black px-1.5 py-0.5 text-center text-black">{it.unit || '—'}</td>
-                            <td className="border border-black px-1.5 py-0.5 text-center text-black">{qty}</td>
-                            <td className="border border-black px-1.5 py-0.5 text-right pr-2 text-black">{formatCurrency(price)}</td>
-                            <td className="border border-black px-1.5 py-0.5 text-left pl-2 text-black truncate max-w-[120px]">{it.keterangan || ''}</td>
-                          </tr>
-                        );
-                      })}
-                      {/* Pad to 8 rows */}
-                      {Array.from({ length: Math.max(0, 8 - formData.items.length) }).map((_, i) => {
-                        const idx = formData.items.length + i;
-                        return (
-                          <tr key={`pad-${idx}`} className="h-6">
-                            <td className="border border-black px-1.5 py-0.5 text-center text-gray-400">{idx + 1}</td>
-                            <td className="border border-black px-1.5 py-0.5"></td>
-                            <td className="border border-black px-1.5 py-0.5"></td>
-                            <td className="border border-black px-1.5 py-0.5"></td>
-                            <td className="border border-black px-1.5 py-0.5"></td>
-                            <td className="border border-black px-1.5 py-0.5"></td>
-                          </tr>
-                        );
-                      })}
-                      {/* TOTAL row */}
-                      <tr className="h-7 font-bold">
-                        <td colSpan={4} className="border border-black px-1.5 py-0.5 text-right pr-2 text-black font-black" style={{ letterSpacing: '2px' }}>T O T A L</td>
-                        <td className="border border-black px-1.5 py-0.5 text-right pr-2 text-black font-black" style={{ backgroundColor: '#FFFFCC' }}>
-                          {formatCurrency(calculatedTotal)}
-                        </td>
-                        <td className="border border-black px-1.5 py-0.5"></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* ===== TERBILANG BOX ===== */}
-                <div className="mb-3">
-                  <div className="text-[8px] font-bold italic mb-0.5">Terbilang</div>
-                  <div className="border border-black min-h-[24px] px-2 py-1 text-[8px] font-bold text-black bg-gray-50/50" style={{ border: '1.5px solid #000' }}>
-                    {terbilang(calculatedTotal)}
-                  </div>
-                </div>
-
-                {/* ===== SIGNATURE GRID (4 columns matching Excel) ===== */}
-                <table className="w-full border-collapse text-[8px] signature-table" style={{ border: '1.5px solid #000' }}>
-                  <thead>
-                    <tr>
-                      <th className="border border-black text-center font-bold py-1 w-1/4">DIRUT</th>
-                      <th className="border border-black text-center font-bold py-1 w-1/4">FINANCE</th>
-                      <th className="border border-black text-center font-bold py-1 w-1/4">UNIT HEAD</th>
-                      <th className="border border-black text-center font-bold py-1 w-1/4">REQUESTER</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Signature spaces */}
-                    <tr>
-                      <td className="border border-black text-center align-middle sig-space text-gray-400 italic text-[7px]">— Belum Disetujui —</td>
-                      <td className="border border-black text-center align-middle sig-space text-gray-400 italic text-[7px]">— Belum Diverifikasi —</td>
-                      <td className="border border-black text-center align-middle sig-space text-gray-400 italic text-[7px]">— Belum Diverifikasi —</td>
-                      <td className="border border-black text-center align-middle sig-space">
-                        {formData.signature ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={formData.signature} alt="TTD" className="h-10 mx-auto object-contain" />
-                        ) : (
-                          <span className="text-gray-400 text-[7px]">— Belum TTD —</span>
-                        )}
-                        <div className="text-[7px] font-bold mt-0.5">{formData.employee_name || user?.name || '—'}</div>
-                      </td>
-                    </tr>
-                    {/* Extra row: Posting Accounting & Procurement */}
-                    <tr>
-                      <td colSpan={2} className="no-border" style={{ border: 'none' }}></td>
-                      <td className="border border-black text-center font-bold py-1 text-[7px]">Posting<br/>Accounting</td>
-                      <td className="border border-black text-center font-bold py-1 text-[7px]">PROCUREMENT</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <LiveExcelPreview formData={formData} calculatedTotal={calculatedTotal} user={user} />
           </form>
         </div>
       )}
@@ -1365,225 +1603,7 @@ export default function ReimbursementsPage() {
           </div>
 
           {/* Printable Sheet Layout — Matches AJNusa Excel Template */}
-          <div 
-            className="printable-sheet bg-white shadow-xl border border-gray-300 rounded-xl p-10 max-w-4xl mx-auto my-4 transition-all" 
-            style={{ fontFamily: 'Calibri, Arial, sans-serif' }}
-          >
-            {/* ===== HEADER: Logo left + Date/No right ===== */}
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/artacom.png" alt="Artacom Logo" className="h-14 mb-1" />
-                <div className="text-[11px] font-black text-black tracking-wide">PT ARTACOMINDO JEJARING NUSA</div>
-              </div>
-              <div className="text-right text-[10px]">
-                <table role="presentation">
-                  <tbody>
-                    <tr>
-                      <td className="font-bold pr-1 text-right">Date :</td>
-                      <td className="border-b border-black pl-1 min-w-[130px]">
-                        {new Date(selectedItem.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="font-bold pr-1 text-right pt-1">No :</td>
-                      <td className="border-b border-black pl-1 pt-1">
-                        REIM/{new Date(selectedItem.created_at).toISOString().substring(0,10).replaceAll(/-/g,'')}/{String(selectedItem.id).padStart(5,'0')}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* ===== TITLE ===== */}
-            <div className="text-center my-4">
-              <h1 className="text-[16px] font-black text-black tracking-[1px]">PENGAJUAN UANG MUKA / PERMINTAAN DANA</h1>
-            </div>
-
-            {/* ===== PRIORITY CHECKBOXES (right-aligned) ===== */}
-            <div className="flex justify-end mb-2 text-[9px]">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <span className="inline-flex items-center justify-center w-[11px] h-[11px] border border-black text-[8px] font-black">
-                    {(selectedItem.priority || 'Normal').toLowerCase() === 'normal' ? '✓' : ''}
-                  </span> NORMAL
-                </div>
-                <div className="flex items-center gap-1.5 font-bold">
-                  <span className="inline-flex items-center justify-center w-[11px] h-[11px] border border-black text-[8px] font-black">
-                    {(selectedItem.priority || '').toLowerCase() === 'urgent' ? '✓' : ''}
-                  </span> URGENT
-                </div>
-                <div className="flex items-center gap-1.5 font-bold">
-                  <span className="inline-flex items-center justify-center w-[11px] h-[11px] border border-black text-[8px] font-black">
-                    {['top urgent', 'top_urgent'].includes((selectedItem.priority || '').toLowerCase()) ? '✓' : ''}
-                  </span> TOP URGENT
-                </div>
-              </div>
-            </div>
-
-            {/* ===== INFO FIELDS: Nama / Tujuan / Div + Pengadaan options ===== */}
-            <div className="flex justify-between items-start text-[10px] mb-3 gap-4">
-              <div className="flex-1">
-                <table className="w-full" role="presentation">
-                  <tbody>
-                    <tr>
-                      <td className="font-bold w-[50px] py-1">Nama</td>
-                      <td className="w-[8px] py-1">:</td>
-                      <td className="border-b border-dotted border-gray-500 py-1">{selectedItem.employee_name || selectedItem.user?.name || '—'}</td>
-                      <td className="w-[20px]"></td>
-                      <td className="font-bold w-[50px] py-1">Tujuan</td>
-                      <td className="w-[8px] py-1">:</td>
-                      <td className="border-b border-dotted border-gray-500 py-1">{selectedItem.title || '—'}</td>
-                    </tr>
-                    <tr>
-                      <td className="font-bold py-1">Div.</td>
-                      <td className="py-1">:</td>
-                      <td className="border-b border-dotted border-gray-500 py-1">{selectedItem.divisi || '—'}</td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="text-[9px] space-y-0.5 flex-shrink-0">
-                <div className="flex items-center gap-1">
-                  <span className={`inline-block w-[10px] h-[10px] border border-black text-[7px] text-center leading-[10px] ${(selectedItem.tujuan || '').toLowerCase().includes('pengadaan') ? 'bg-black text-white' : ''}`}>
-                    {(selectedItem.tujuan || '').toLowerCase().includes('pengadaan') ? '✓' : ''}
-                  </span> Pengadaan Baru
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className={`inline-block w-[10px] h-[10px] border border-black text-[7px] text-center leading-[10px] ${(selectedItem.tujuan || '').toLowerCase().includes('gudang') ? 'bg-black text-white' : ''}`}>
-                    {(selectedItem.tujuan || '').toLowerCase().includes('gudang') ? '✓' : ''}
-                  </span> Dari Gudang
-                </div>
-              </div>
-            </div>
-
-            {/* ===== ITEMS TABLE (Yellow header like Excel) ===== */}
-            <div className="mb-4">
-              <table className="w-full border-collapse text-[10px] excel-table" style={{ border: '1.5px solid #000' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#FFFFCC' }} className="h-8">
-                    <th className="border border-black px-2 py-1 font-bold text-black w-8">No.</th>
-                    <th className="border border-black px-2 py-1 font-bold text-black text-left pl-3">Spesifikasi Barang / Jasa</th>
-                    <th className="border border-black px-2 py-1 font-bold text-black w-14">Unit</th>
-                    <th className="border border-black px-2 py-1 font-bold text-black w-16">Quantity</th>
-                    <th className="border border-black px-2 py-1 font-bold text-black text-right pr-3 w-32">Estimasi Harga</th>
-                    <th className="border border-black px-2 py-1 font-bold text-black text-left pl-3 w-32">Tanggal/Keterangan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getRecordItems(selectedItem).map((it: ReimbursementItem, idx: number) => {
-                    const price = Number(it.estimasi_harga) || 0;
-                    return (
-                      <tr key={it.id || idx} className="h-7">
-                        <td className="border border-black px-2 py-1 text-center text-black">{idx + 1}</td>
-                        <td className="border border-black px-2 py-1 text-left pl-3 text-black">{it.spesifikasi || '-'}</td>
-                        <td className="border border-black px-2 py-1 text-center text-black">{it.unit || '-'}</td>
-                        <td className="border border-black px-2 py-1 text-center text-black">{it.qty || 0}</td>
-                        <td className="border border-black px-2 py-1 text-right pr-3 text-black">{formatCurrency(price)}</td>
-                        <td className="border border-black px-2 py-1 text-left pl-3 text-black">{it.keterangan || ''}</td>
-                      </tr>
-                    );
-                  })}
-                  {/* Pad to 8 rows */}
-                  {Array.from({ length: Math.max(0, 8 - getRecordItems(selectedItem).length) }).map((_, i) => {
-                    const idx = getRecordItems(selectedItem).length + i;
-                    return (
-                      <tr key={`pad-${idx}`} className="h-7">
-                        <td className="border border-black px-2 py-1 text-center text-gray-400">{idx + 1}</td>
-                        <td className="border border-black px-2 py-1"></td>
-                        <td className="border border-black px-2 py-1"></td>
-                        <td className="border border-black px-2 py-1"></td>
-                        <td className="border border-black px-2 py-1"></td>
-                        <td className="border border-black px-2 py-1"></td>
-                      </tr>
-                    );
-                  })}
-                  {/* TOTAL row */}
-                  <tr className="h-8 font-bold">
-                    <td colSpan={4} className="border border-black px-2 py-1 text-right pr-3 text-black font-black" style={{ letterSpacing: '3px' }}>T O T A L</td>
-                    <td className="border border-black px-2 py-1 text-right pr-3 text-black font-black" style={{ backgroundColor: '#FFFFCC' }}>
-                      Rp {(selectedItem.amount ?? 0).toLocaleString('id-ID') || formatCurrency(selectedItem.amount ?? 0)}
-                    </td>
-                    <td className="border border-black px-2 py-1"></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* ===== TERBILANG BOX ===== */}
-            <div className="mb-4">
-              <div className="text-[10px] font-bold italic mb-1">Terbilang</div>
-              <div className="border border-black min-h-[28px] px-3 py-1.5 text-[10px] font-bold text-black" style={{ border: '1.5px solid #000' }}>
-                {terbilang(selectedItem.amount ?? 0)}
-              </div>
-            </div>
-
-            {/* ===== SIGNATURE GRID (4 columns matching Excel) ===== */}
-            <table className="w-full border-collapse text-[9px] mt-4 signature-table" style={{ border: '1.5px solid #000' }}>
-              <thead>
-                <tr>
-                  <th className="border border-black text-center font-bold py-1.5 w-1/4">DIRUT</th>
-                  <th className="border border-black text-center font-bold py-1.5 w-1/4">FINANCE</th>
-                  <th className="border border-black text-center font-bold py-1.5 w-1/4">UNIT HEAD</th>
-                  <th className="border border-black text-center font-bold py-1.5 w-1/4">REQUESTER</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Signature spaces */}
-                <tr>
-                  <td className="border border-black text-center align-middle sig-space">
-                    {selectedItem.status === 'approved' && (
-                      <div className="inline-block border-2 border-blue-600 text-blue-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-blue-50/50">APPROVED</div>
-                    )}
-                    {selectedItem.status === 'rejected' && (
-                      <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
-                    )}
-                  </td>
-                  <td className="border border-black text-center align-middle sig-space">
-                    {selectedItem.status === 'approved' && (
-                      <div className="inline-block border-2 border-green-600 text-green-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-green-50/50">VERIFIED</div>
-                    )}
-                    {selectedItem.status === 'rejected' && (
-                      <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
-                    )}
-                  </td>
-                  <td className="border border-black text-center align-middle sig-space">
-                    {selectedItem.status === 'approved' && (
-                      <div className="inline-block border-2 border-green-600 text-green-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-green-50/50">VERIFIED</div>
-                    )}
-                    {selectedItem.status === 'rejected' && (
-                      <div className="inline-block border-2 border-red-600 text-red-600 rounded px-2 py-0.5 font-bold text-[8px] uppercase bg-red-50/50">REJECTED</div>
-                    )}
-                  </td>
-                  <td className="border border-black text-center align-middle sig-space">
-                    {selectedItem.signature ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={selectedItem.signature} alt="TTD" className="h-12 mx-auto object-contain" />
-                    ) : (
-                      <span className="text-gray-400 text-[8px]">— Tanpa TTD —</span>
-                    )}
-                    <div className="text-[8px] font-bold mt-1">{selectedItem.employee_name || selectedItem.user?.name || '-'}</div>
-                  </td>
-                </tr>
-                {/* Extra row: Posting Accounting & Procurement */}
-                <tr>
-                  <td colSpan={2} className="no-border" style={{ border: 'none' }}></td>
-                  <td className="border border-black text-center font-bold py-2 text-[8px]">Posting<br/>Accounting</td>
-                  <td className="border border-black text-center font-bold py-2 text-[8px]">PROCUREMENT</td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* Print metadata footer */}
-            <div className="mt-8 pt-3 border-t border-gray-200 text-center text-[9px] text-gray-400">
-              Dokumen ini dihasilkan secara otomatis oleh HRMS SaaS pada {new Date().toLocaleString('id-ID')}
-            </div>
-          </div>
+          <PrintableSheet selectedItem={selectedItem} />
 
           {/* Attachments Section - display only in browser/detail mode */}
           {selectedItem.attachment && (
@@ -1591,7 +1611,7 @@ export default function ReimbursementsPage() {
               <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-4">Lampiran Bukti Struk / Nota Pendukung</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {(Array.isArray(selectedItem.attachment) ? selectedItem.attachment : [selectedItem.attachment]).map((path: string, idx: number) => (
-                  <div key={idx} className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 group relative">
+                  <div key={path} className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 group relative">
                     <img 
                       src={getStorageUrl(path)} 
                       alt={`Bukti Struk ${idx + 1}`} 
