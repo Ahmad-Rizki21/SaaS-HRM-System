@@ -9,9 +9,58 @@ import SignaturePad from "@/components/SignaturePad";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
 
+interface LeaveRecord {
+  id: number;
+  user?: {
+    name?: string;
+    leave_balance?: number;
+    department?: string;
+    office?: {
+      name?: string;
+    };
+    company?: {
+      name?: string;
+    };
+    supervisor?: {
+      name?: string;
+    };
+    role?: {
+      name?: string;
+    };
+  };
+  start_date: string;
+  end_date: string;
+  type: string;
+  reason: string;
+  status: string;
+  remark?: string;
+  signature?: string;
+  created_at: string;
+  approved_by?: string;
+  hr_approver?: {
+    name?: string;
+  };
+  hrApprover?: {
+    name?: string;
+  };
+  supervisor_approver?: {
+    name?: string;
+  };
+  supervisorApprover?: {
+    name?: string;
+  };
+  supervisor_approved_by?: string;
+  supervisor_approved_at?: string;
+  supervisor_remark?: string;
+  updated_at: string;
+  approved_at?: string;
+  leave_address?: string;
+  emergency_phone?: string;
+}
+
 export default function LeavesPage() {
   const { hasPermission, user } = useAuth();
-  const [leaves, setLeaves] = useState<any[]>([]);
+  const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -21,9 +70,8 @@ export default function LeavesPage() {
   });
 
   const [viewMode, setViewMode] = useState<"list" | "create" | "detail">("list");
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<LeaveRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
 
   const [formData, setFormData] = useState({
     start_date: "",
@@ -80,24 +128,23 @@ export default function LeavesPage() {
         signature: ""
       });
       fetchLeaves(page);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal mengajukan cuti");
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Gagal mengajukan cuti");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleViewDetail = (item: any) => {
+  const handleViewDetail = (item: LeaveRecord) => {
     setSelectedItem(item);
     setViewMode("detail");
   };
 
   const handlePrint = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsPrinting(true);
     setTimeout(() => {
-      window.print();
-      setIsPrinting(false);
+      globalThis.print();
     }, 500);
   };
 
@@ -106,14 +153,15 @@ export default function LeavesPage() {
       const response = await axiosInstance.get(`/export/leave/${recordId}`, {
         responseType: 'blob'
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Cuti_${userName.replace(/\s+/g, '_')}.pdf`);
+      link.setAttribute('download', `Cuti_${userName.replaceAll(/\s+/g, '_')}.pdf`);
       document.body.appendChild(link);
       link.click();
-      link.parentNode?.removeChild(link);
+      link.remove();
     } catch (err) {
+      console.error(err);
       toast.error("Gagal mendownload PDF.");
     }
   };
@@ -123,14 +171,15 @@ export default function LeavesPage() {
       const response = await axiosInstance.get(`/export/leave/${recordId}/excel`, {
         responseType: 'blob'
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Cuti_${userName.replace(/\s+/g, '_')}.xlsx`);
+      link.setAttribute('download', `Cuti_${userName.replaceAll(/\s+/g, '_')}.xlsx`);
       document.body.appendChild(link);
       link.click();
-      link.parentNode?.removeChild(link);
+      link.remove();
     } catch (err) {
+      console.error(err);
       toast.error("Gagal mendownload Excel.");
     }
   };
@@ -148,7 +197,7 @@ export default function LeavesPage() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{ __html: String.raw`
         @page {
           size: portrait;
           margin: 8mm 10mm !important;
@@ -163,7 +212,7 @@ export default function LeavesPage() {
           }
           /* Hide sidebar, header, navigation, and everything not related to print */
           aside, .dash-sidebar, .dash-desktop-header, .dash-mobile-header, .dash-overlay,
-          .print\\:hidden, .no-print, header, nav, footer, .dash-page-header, .dash-page-actions {
+          .print\:hidden, .no-print, header, nav, footer, .dash-page-header, .dash-page-actions {
             display: none !important;
           }
           /* Reset dashboard layout wrapper to display: block on print */
@@ -198,7 +247,7 @@ export default function LeavesPage() {
           .print-container .text-xs {
             font-size: 10px !important;
           }
-          .print-container .text-\\[10px\\] {
+          .print-container .text-\[10px\\] {
             font-size: 8px !important;
           }
           
@@ -411,6 +460,7 @@ export default function LeavesPage() {
             {/* Header / Logo */}
             <div className="flex items-start justify-between border-b-2 border-gray-800 pb-3 mb-4">
               <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/artacom.png" alt="Logo" className="h-12 object-contain" />
               </div>
               <div className="text-right">
@@ -430,7 +480,7 @@ export default function LeavesPage() {
                 {/* Employee details (readonly) */}
                 <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Name</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{user?.name || '-'}</span></div>
                 <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Position</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{user?.role?.name || '-'}</span></div>
-                <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Departement</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{(user as any)?.office?.name || (user as any)?.company?.name || '-'}</span></div>
+                <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Departement</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{(user as LeaveRecord['user'])?.office?.name || (user as LeaveRecord['user'])?.company?.name || '-'}</span></div>
                 
                 {/* Purpose Selection (Checkboxes) */}
                 <div className="flex items-center"><span className="w-40 font-semibold text-gray-700 shrink-0">Purpose</span><span className="mr-2 text-gray-400">:</span>
@@ -689,6 +739,7 @@ export default function LeavesPage() {
             
             {/* === HEADER with Logo === */}
             <div className="flex items-center justify-between border-b-2 border-gray-800 pb-3 mb-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/artacom.png" alt="Logo" className="h-12 object-contain" />
               <div className="text-right">
                 <h1 className="text-xl font-bold uppercase tracking-wider text-gray-900">Leave Application Form</h1>
@@ -747,6 +798,7 @@ export default function LeavesPage() {
                     <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
                     {selectedItem.signature ? (
                       <div className="p-1 bg-white inline-block">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={selectedItem.signature} alt="TTD" className="h-12 mx-auto object-contain" />
                       </div>
                     ) : (
@@ -768,7 +820,7 @@ export default function LeavesPage() {
                   <div className="font-semibold text-gray-700">Leave eligibility, Current Year</div>
                   <div className="text-gray-400 text-center">:</div>
                   <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">
-                    {selectedItem.user?.leave_balance != null ? (selectedItem.user.leave_balance + (Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000*60*60*24)) + 1)) : '—'}
+                    {selectedItem.user?.leave_balance == null ? '—' : (selectedItem.user.leave_balance + (Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000*60*60*24)) + 1))}
                   </div>
                   <div className="text-gray-600 pl-2">days</div>
 
@@ -803,8 +855,8 @@ export default function LeavesPage() {
                     <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
                     {['approved','pending_hr'].includes(selectedItem.status) ? (
                       <div className="mt-1">
-                        <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center rotate-[-12deg] opacity-60 mx-auto">
-                          <Check size={22} />
+                        <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                           <Check size={22} />
                         </div>
                         <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'HRD'}</p>
                       </div>
@@ -840,15 +892,15 @@ export default function LeavesPage() {
                     <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
                     {['pending_hr','approved'].includes(selectedItem.status) ? (
                       <div className="mt-1">
-                        <div className="border border-blue-500 text-blue-600 rounded-full w-10 h-10 flex items-center justify-center rotate-[-12deg] opacity-60 mx-auto">
-                          <Check size={22} />
+                        <div className="border border-blue-500 text-blue-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                           <Check size={22} />
                         </div>
                         <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.supervisor_approver?.name || selectedItem.supervisorApprover?.name || selectedItem.user?.supervisor?.name || 'Supervisor'}</p>
                       </div>
                     ) : selectedItem.status === 'rejected' && selectedItem.supervisor_approved_by ? (
                       <div className="mt-1">
-                        <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center rotate-[-12deg] opacity-60 mx-auto">
-                          <X size={22} />
+                        <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                           <X size={22} />
                         </div>
                         <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.supervisor_approver?.name || 'Supervisor'}</p>
                       </div>
@@ -884,15 +936,15 @@ export default function LeavesPage() {
                     <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
                     {selectedItem.status === 'approved' ? (
                       <div className="mt-1">
-                        <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center rotate-[-12deg] opacity-60 mx-auto">
-                          <Check size={22} />
+                        <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                           <Check size={22} />
                         </div>
                         <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'Director'}</p>
                       </div>
                     ) : selectedItem.status === 'rejected' ? (
                       <div className="mt-1">
-                        <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center rotate-[-12deg] opacity-60 mx-auto">
-                          <X size={22} />
+                        <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                           <X size={22} />
                         </div>
                         <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || 'Director'}</p>
                       </div>
