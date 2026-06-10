@@ -210,41 +210,29 @@ export default function OvertimesPage() {
     }, 200);
   };
 
-  const handleDownloadPdf = async (recordId: number, userName: string) => {
+  const handleDownload = async (recordId: number, userName: string, format: 'pdf' | 'excel') => {
     try {
-      const response = await axiosInstance.get(`/export/overtime/${recordId}`, {
+      const urlPath = format === 'pdf' ? `/export/overtime/${recordId}` : `/export/overtime/${recordId}/excel`;
+      const ext = format === 'pdf' ? 'pdf' : 'xlsx';
+      
+      const response = await axiosInstance.get(urlPath, {
         responseType: 'blob'
       });
       const url = globalThis.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Lembur_${userName.replaceAll(/\s+/g, '_')}.pdf`);
+      link.setAttribute('download', `Lembur_${userName.replaceAll(/\s+/g, '_')}.${ext}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (err) {
       console.error(err);
-      toast.error("Gagal mendownload PDF.");
+      toast.error(`Gagal mendownload ${format === 'pdf' ? 'PDF' : 'Excel'}.`);
     }
   };
 
-  const handleDownloadExcel = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/overtime/${recordId}/excel`, {
-        responseType: 'blob'
-      });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Lembur_${userName.replaceAll(/\s+/g, '_')}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload Excel.");
-    }
-  };
+  const handleDownloadPdf = (recordId: number, userName: string) => handleDownload(recordId, userName, 'pdf');
+  const handleDownloadExcel = (recordId: number, userName: string) => handleDownload(recordId, userName, 'excel');
 
   const getStatusBadge = (status: string) => {
     const map: Record<string, { cls: string; text: string }> = {

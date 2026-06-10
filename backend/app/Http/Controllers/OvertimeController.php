@@ -205,13 +205,8 @@ class OvertimeController extends Controller
             'model_id' => $overtime->id,
         ]);
 
-        $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
-
-        if ($workflowResult && isset($workflowResult['approvers'])) {
-            $this->notify($user, self::NOTIFICATION_OVERTIME_SUCCESS, "Permohonan lembur Anda telah diajukan. Menunggu: {$workflowResult['step_label']}.", 'info');
-            foreach ($workflowResult['approvers'] as $approver) {
-                $this->notify($approver, 'PENGAJUAN LEMBUR PERLU PERSETUJUAN', "{$user->name} telah mengajukan lembur. Mohon segera tinjau.", 'warning', self::ROUTE_APPROVALS);
-            }
+        if ($this->handleOvertimeWorkflowNotification($user, $companyId)) {
+            // Already handled
         } else {
             // Fallback notifications
             if ($user->supervisor_id) {
@@ -348,13 +343,7 @@ class OvertimeController extends Controller
         ]);
 
         if ($isSubmitting) {
-            $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
-            if ($workflowResult && isset($workflowResult['approvers'])) {
-                $this->notify($user, self::NOTIFICATION_OVERTIME_SUCCESS, "Permohonan lembur Anda telah diajukan. Menunggu: {$workflowResult['step_label']}.", 'info');
-                foreach ($workflowResult['approvers'] as $approver) {
-                    $this->notify($approver, 'PENGAJUAN LEMBUR PERLU PERSETUJUAN', "{$user->name} telah mengajukan lembur. Mohon segera tinjau.", 'warning', self::ROUTE_APPROVALS);
-                }
-            } else {
+            if (!$this->handleOvertimeWorkflowNotification($user, $companyId)) {
                 $this->notify($user, self::NOTIFICATION_OVERTIME_SUCCESS, "Permohonan lembur Anda sedang menunggu persetujuan.", 'info');
             }
 
@@ -596,5 +585,20 @@ class OvertimeController extends Controller
         ];
 
         return Excel::download(new OvertimeExport($overtimes, $meta), 'laporan-lembur-'.now()->format('Y-m-d').'.xlsx');
+    }
+
+    private function handleOvertimeWorkflowNotification(User $user, int $companyId)
+    {
+        $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
+
+        if ($workflowResult && isset($workflowResult['approvers'])) {
+            $this->notify($user, self::NOTIFICATION_OVERTIME_SUCCESS, "Permohonan lembur Anda telah diajukan. Menunggu: {$workflowResult['step_label']}.", 'info');
+            foreach ($workflowResult['approvers'] as $approver) {
+                $this->notify($approver, 'PENGAJUAN LEMBUR PERLU PERSETUJUAN', "{$user->name} telah mengajukan lembur. Mohon segera tinjau.", 'warning', self::ROUTE_APPROVALS);
+            }
+            return true;
+        }
+
+        return false;
     }
 }

@@ -58,6 +58,501 @@ interface LeaveRecord {
   emergency_phone?: string;
 }
 
+interface LeaveSheetInnerProps {
+  isFormMode: boolean;
+  user: LeaveRecord['user'] | null | undefined;
+  formData?: {
+    start_date: string;
+    end_date: string;
+    type: string;
+    reason: string;
+    leave_address: string;
+    emergency_phone: string;
+    signature: string;
+  };
+  setFormData?: React.Dispatch<React.SetStateAction<{
+    start_date: string;
+    end_date: string;
+    type: string;
+    reason: string;
+    leave_address: string;
+    emergency_phone: string;
+    signature: string;
+  }>>;
+  selectedItem?: LeaveRecord | null;
+}
+
+const LeaveSheetInner = ({
+  isFormMode,
+  user,
+  formData,
+  setFormData,
+  selectedItem
+}: LeaveSheetInnerProps) => {
+  const documentNo = isFormMode
+    ? `HRD-XXX/LF/${new Date().getMonth() + 1}/${new Date().getFullYear().toString().slice(-2)}`
+    : selectedItem
+    ? `HRD-${selectedItem.id.toString().padStart(3, '0')}/LF/${new Date(selectedItem.created_at).getMonth() + 1}/${new Date(selectedItem.created_at).getFullYear().toString().slice(-2)}`
+    : "";
+
+  const name = isFormMode ? user?.name : selectedItem?.user?.name;
+  const position = isFormMode ? user?.role?.name : selectedItem?.user?.role?.name;
+  const department = isFormMode
+    ? (user?.office?.name || user?.company?.name)
+    : (selectedItem?.user?.office?.name || selectedItem?.user?.company?.name);
+
+  const reason = isFormMode ? formData?.reason : selectedItem?.reason;
+  const leaveAddress = isFormMode ? formData?.leave_address : selectedItem?.leave_address;
+  const emergencyPhone = isFormMode ? formData?.emergency_phone : selectedItem?.emergency_phone;
+  const signature = isFormMode ? formData?.signature : selectedItem?.signature;
+  const dateStr = isFormMode
+    ? new Date().toLocaleDateString('id-ID')
+    : selectedItem?.created_at
+    ? new Date(selectedItem.created_at).toLocaleDateString('id-ID')
+    : "";
+
+  const typeVal = isFormMode ? formData?.type : selectedItem?.type;
+
+  const calculateDays = () => {
+    if (isFormMode) {
+      if (formData?.start_date && formData?.end_date) {
+        return Math.max(1, Math.ceil((new Date(formData.end_date).getTime() - new Date(formData.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1) + " hari";
+      }
+      return "—";
+    } else {
+      if (selectedItem?.start_date && selectedItem?.end_date) {
+        return Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1 + " hari";
+      }
+      return "—";
+    }
+  };
+
+  return (
+    <>
+      {/* Header / Logo */}
+      <div className={`flex items-start justify-between border-b-2 border-gray-800 pb-3 ${isFormMode ? 'mb-4' : 'mb-0'}`}>
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/artacom.png" alt="Logo" className="h-12 object-contain" />
+        </div>
+        <div className="text-right">
+          <h1 className="text-xl font-bold uppercase tracking-wider text-gray-900">Leave Application Form</h1>
+          <p className="text-xs font-mono text-gray-500 mt-1">NO. : {documentNo}</p>
+        </div>
+      </div>
+
+      {/* === 4-PART FORM CONTAINER === */}
+      <div className={`border border-gray-400 rounded-sm overflow-hidden ${!isFormMode ? 'mt-3' : ''}`}>
+        {/* === PART I - Employee Section === */}
+        <div>
+          <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
+            <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part I - To be completed by employee</span>
+          </div>
+          <div className="p-4 space-y-3 text-xs">
+            {/* Employee details */}
+            <div className="flex items-end">
+              <span className="w-40 font-semibold text-gray-700 shrink-0">Name</span>
+              <span className="mr-2 text-gray-400">:</span>
+              <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{name || '-'}</span>
+            </div>
+            <div className="flex items-end">
+              <span className="w-40 font-semibold text-gray-700 shrink-0">Position</span>
+              <span className="mr-2 text-gray-400">:</span>
+              <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{position || '-'}</span>
+            </div>
+            <div className="flex items-end">
+              <span className="w-40 font-semibold text-gray-700 shrink-0">Departement</span>
+              <span className="mr-2 text-gray-400">:</span>
+              <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{department || '-'}</span>
+            </div>
+            
+            {/* Purpose Selection */}
+            <div className="flex items-center">
+              <span className="w-40 font-semibold text-gray-700 shrink-0">Purpose</span>
+              <span className="mr-2 text-gray-400">:</span>
+              <div className="flex items-center gap-4 flex-wrap flex-1 pl-1">
+                {["Cuti Tahunan", "Cuti Melahirkan", "Cuti Alasan Penting", "Lainnya"].map((type) => {
+                  const isChecked = isFormMode
+                    ? typeVal === type
+                    : (typeVal === type || (type === "Lainnya" && !["Cuti Tahunan", "Cuti Melahirkan", "Cuti Alasan Penting"].includes(typeVal || "")));
+                  return (
+                    <label key={type} className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-gray-700 select-none">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        readOnly={!isFormMode}
+                        onChange={() => {
+                          if (isFormMode && setFormData && formData) {
+                            setFormData({ ...formData, type });
+                          }
+                        }}
+                        className="w-3.5 h-3.5 rounded border-gray-400 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>{type}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Reason Details */}
+            <div className="flex items-end">
+              <span className="w-40 font-semibold text-gray-700 shrink-0">Keterangan</span>
+              <span className="mr-2 text-gray-400">:</span>
+              {isFormMode ? (
+                <input
+                  type="text"
+                  value={reason || ""}
+                  onChange={(e) => {
+                    if (setFormData && formData) {
+                      setFormData({ ...formData, reason: e.target.value });
+                    }
+                  }}
+                  placeholder="Tulis detail keperluan cuti di sini..."
+                  className="flex-1 border-0 border-b border-dotted border-gray-500 border-dotted-print focus:ring-0 focus:border-blue-500 bg-transparent px-1 py-0.5 text-xs text-gray-800 focus:outline-none font-medium"
+                  required
+                />
+              ) : (
+                <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-medium">{reason || '-'}</span>
+              )}
+            </div>
+
+            {/* Periode and number of days */}
+            <div className="flex items-center flex-wrap gap-1">
+              <span className="w-40 font-semibold text-gray-700 shrink-0">Periode of leave required from</span>
+              <span className="mr-1 text-gray-400">:</span>
+              {isFormMode ? (
+                <>
+                  <input
+                    type="date"
+                    value={formData?.start_date || ""}
+                    onChange={(e) => {
+                      if (setFormData && formData) {
+                        setFormData({ ...formData, start_date: e.target.value });
+                      }
+                    }}
+                    className="border-0 border-b border-dotted border-gray-500 border-dotted-print bg-transparent px-1 py-0.5 text-xs focus:outline-none w-32 font-medium"
+                    required
+                  />
+                  <span className="mx-2 font-medium text-gray-500">to</span>
+                  <input
+                    type="date"
+                    value={formData?.end_date || ""}
+                    onChange={(e) => {
+                      if (setFormData && formData) {
+                        setFormData({ ...formData, end_date: e.target.value });
+                      }
+                    }}
+                    className="border-0 border-b border-dotted border-gray-500 border-dotted-print bg-transparent px-1 py-0.5 text-xs focus:outline-none w-32 font-medium"
+                    required
+                  />
+                </>
+              ) : (
+                <>
+                  <span className="border-b border-dotted border-gray-500 border-dotted-print px-1 min-w-[120px] text-center text-gray-800 font-medium">
+                    {selectedItem?.start_date ? new Date(selectedItem.start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                  </span>
+                  <span className="mx-2 font-medium text-gray-500">to</span>
+                  <span className="border-b border-dotted border-gray-500 border-dotted-print px-1 min-w-[120px] text-center text-gray-800 font-medium">
+                    {selectedItem?.end_date ? new Date(selectedItem.end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                  </span>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-end">
+              <span className="w-40 font-semibold text-gray-700 shrink-0">Number of days</span>
+              <span className="mr-2 text-gray-400">:</span>
+              <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-bold">
+                {calculateDays()}
+              </span>
+            </div>
+
+            {/* Address and Contact details */}
+            <div className="flex items-end">
+              <span className="w-40 font-semibold text-gray-700 shrink-0">Leave Address</span>
+              <span className="mr-2 text-gray-400">:</span>
+              {isFormMode ? (
+                <input
+                  type="text"
+                  value={leaveAddress || ""}
+                  onChange={(e) => {
+                    if (setFormData && formData) {
+                      setFormData({ ...formData, leave_address: e.target.value });
+                    }
+                  }}
+                  placeholder="Alamat lengkap selama cuti..."
+                  className="flex-1 border-0 border-b border-dotted border-gray-500 border-dotted-print focus:ring-0 focus:border-blue-500 bg-transparent px-1 py-0.5 text-xs text-gray-800 focus:outline-none font-medium"
+                  required
+                />
+              ) : (
+                <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-medium">{leaveAddress || '-'}</span>
+              )}
+            </div>
+
+            <div className="flex items-end">
+              <span className="w-40 font-semibold text-gray-700 shrink-0">Contact #</span>
+              <span className="mr-2 text-gray-400">:</span>
+              {isFormMode ? (
+                <input
+                  type="text"
+                  value={emergencyPhone || ""}
+                  onChange={(e) => {
+                    if (setFormData && formData) {
+                      setFormData({ ...formData, emergency_phone: e.target.value });
+                    }
+                  }}
+                  placeholder="Nomor HP darurat..."
+                  className="flex-1 border-0 border-b border-dotted border-gray-500 border-dotted-print focus:ring-0 focus:border-blue-500 bg-transparent px-1 py-0.5 text-xs text-gray-800 focus:outline-none font-medium"
+                  required
+                />
+              ) : (
+                <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-medium">{emergencyPhone || '-'}</span>
+              )}
+            </div>
+
+            {/* Date & Signature pad */}
+            <div className="flex items-end justify-between mt-4 pt-2">
+              <div>
+                <span className="font-semibold text-gray-700">Date</span>
+                <span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[120px] text-center font-medium">
+                  {dateStr}
+                </span>
+              </div>
+              <div className="text-center w-64">
+                <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
+                {isFormMode ? (
+                  <div className="border border-dashed border-gray-300 rounded p-1 bg-white">
+                    <SignaturePad onSign={(dataUrl) => {
+                      if (setFormData && formData) {
+                        setFormData({ ...formData, signature: dataUrl });
+                      }
+                    }} />
+                  </div>
+                ) : signature ? (
+                  <div className="p-1 bg-white inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={signature} alt="TTD" className="h-12 mx-auto object-contain" />
+                  </div>
+                ) : (
+                  <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
+                )}
+                <p className="text-[10px] mt-1 text-gray-500 font-bold">{name}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* === PART II - HRD Section === */}
+        <div className={`border-t border-gray-400 ${isFormMode ? 'opacity-60' : ''}`}>
+          <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
+            <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part II - To be completed by HRD Dept</span>
+          </div>
+          <div className="p-4 text-xs">
+            <div className="grid grid-cols-[240px_16px_80px_40px] items-center gap-y-2 mb-4">
+              <div className="font-semibold text-gray-700">Leave eligibility, Current Year</div>
+              <div className="text-gray-400 text-center">:</div>
+              <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">
+                {isFormMode || selectedItem?.user?.leave_balance == null
+                  ? '—'
+                  : (selectedItem.user.leave_balance + (Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1))}
+              </div>
+              <div className="text-gray-600 pl-2">days</div>
+
+              <div className="font-semibold text-gray-700 pl-8">Previous Year c/f</div>
+              <div className="text-gray-400 text-center">:</div>
+              <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">—</div>
+              <div className="text-gray-600 pl-2">days</div>
+
+              <div className="font-semibold text-gray-700 pl-8">Total</div>
+              <div className="text-gray-400 text-center">:</div>
+              <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">—</div>
+              <div className="text-gray-600 pl-2">days</div>
+
+              <div className="font-semibold text-gray-700">Less No. of day to be taken</div>
+              <div className="text-gray-400 text-center">:</div>
+              <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">
+                {isFormMode || !selectedItem
+                  ? '—'
+                  : Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1}
+              </div>
+              <div className="text-gray-600 pl-2">days</div>
+
+              <div className="font-semibold text-gray-700">Balance Leave</div>
+              <div className="text-gray-400 text-center">:</div>
+              <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-bold h-4">
+                {isFormMode ? '—' : (selectedItem?.user?.leave_balance ?? '—')}
+              </div>
+              <div className="text-gray-600 pl-2">days</div>
+            </div>
+            <div className="flex items-end justify-between mt-4 pt-2">
+              <div>
+                <span className="font-semibold text-gray-700">Date</span>
+                <span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px] text-center font-semibold">
+                  {!isFormMode && selectedItem?.status === 'approved' && selectedItem.approved_at
+                    ? new Date(selectedItem.approved_at).toLocaleDateString('id-ID')
+                    : ''}
+                </span>
+              </div>
+              <div className="text-center w-64">
+                <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
+                {!isFormMode && selectedItem && ['approved', 'pending_hr'].includes(selectedItem.status) ? (
+                  <div className="mt-1">
+                    <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                      <Check size={22} />
+                    </div>
+                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'HRD'}</p>
+                  </div>
+                ) : (
+                  <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* === PART III - Department Manager Section === */}
+        <div className={`border-t border-gray-400 ${isFormMode ? 'opacity-60' : ''}`}>
+          <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
+            <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part III - To be completed by Departement Manager</span>
+          </div>
+          <div className="p-4 text-xs">
+            <div className="flex items-center gap-4 mb-2">
+              <span className="font-semibold text-gray-700">Leave Permit :</span>
+              <label className="flex items-center gap-1.5 text-gray-700 font-semibold select-none">
+                <input
+                  type="checkbox"
+                  disabled={isFormMode}
+                  readOnly={!isFormMode}
+                  checked={!isFormMode && selectedItem ? ['pending_hr', 'approved'].includes(selectedItem.status) : false}
+                  className="w-3.5 h-3.5 rounded text-blue-600"
+                /> Approved
+              </label>
+              <label className="flex items-center gap-1.5 text-gray-700 font-semibold select-none">
+                <input
+                  type="checkbox"
+                  disabled={isFormMode}
+                  readOnly={!isFormMode}
+                  checked={!isFormMode && selectedItem ? (selectedItem.status === 'rejected' && !!selectedItem.supervisor_approved_by) : false}
+                  className="w-3.5 h-3.5 rounded text-blue-600"
+                /> Not Approved
+              </label>
+            </div>
+            <div className="flex mb-1">
+              <span className="font-semibold text-gray-700 w-16">Remark</span>
+              <span className="mr-2 text-gray-400">:</span>
+              <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 min-h-[16px] text-gray-800 font-semibold">
+                {!isFormMode && selectedItem ? selectedItem.supervisor_remark || "" : ""}
+              </span>
+            </div>
+            <div className="border-b border-dotted border-gray-500 border-dotted-print w-full h-4 mb-1"></div>
+            <div className="flex items-end justify-between mt-4 pt-2">
+              <div>
+                <span className="font-semibold text-gray-700">Date</span>
+                <span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px] text-center font-semibold">
+                  {!isFormMode && selectedItem?.supervisor_approved_at
+                    ? new Date(selectedItem.supervisor_approved_at).toLocaleDateString('id-ID')
+                    : ''}
+                </span>
+              </div>
+              <div className="text-center w-64">
+                <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
+                {!isFormMode && selectedItem && ['pending_hr', 'approved'].includes(selectedItem.status) ? (
+                  <div className="mt-1">
+                    <div className="border border-blue-500 text-blue-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                      <Check size={22} />
+                    </div>
+                    <p className="text-[10px] mt-1 text-gray-500 font-bold">
+                      {selectedItem.supervisor_approver?.name || selectedItem.supervisorApprover?.name || selectedItem.user?.supervisor?.name || 'Supervisor'}
+                    </p>
+                  </div>
+                ) : !isFormMode && selectedItem?.status === 'rejected' && selectedItem.supervisor_approved_by ? (
+                  <div className="mt-1">
+                    <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                      <X size={22} />
+                    </div>
+                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.supervisor_approver?.name || 'Supervisor'}</p>
+                  </div>
+                ) : (
+                  <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* === PART IV - Director Section === */}
+        <div className={`border-t border-gray-400 ${isFormMode ? 'opacity-60' : ''}`}>
+          <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
+            <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part IV - To be completed by Director</span>
+          </div>
+          <div className="p-4 text-xs">
+            <div className="flex items-center gap-4 mb-2">
+              <span className="font-semibold text-gray-700">Leave Permit :</span>
+              <label className="flex items-center gap-1.5 text-gray-700 font-semibold select-none">
+                <input
+                  type="checkbox"
+                  disabled={isFormMode}
+                  readOnly={!isFormMode}
+                  checked={!isFormMode && selectedItem ? selectedItem.status === 'approved' : false}
+                  className="w-3.5 h-3.5 rounded text-blue-600"
+                /> Approved
+              </label>
+              <label className="flex items-center gap-1.5 text-gray-700 font-semibold select-none">
+                <input
+                  type="checkbox"
+                  disabled={isFormMode}
+                  readOnly={!isFormMode}
+                  checked={!isFormMode && selectedItem ? selectedItem.status === 'rejected' : false}
+                  className="w-3.5 h-3.5 rounded text-blue-600"
+                /> Not Approved
+              </label>
+            </div>
+            <div className="flex mb-1">
+              <span className="font-semibold text-gray-700 w-16">Remark</span>
+              <span className="mr-2 text-gray-400">:</span>
+              <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 min-h-[16px] text-gray-800 font-semibold">
+                {!isFormMode && selectedItem ? selectedItem.remark || "" : ""}
+              </span>
+            </div>
+            <div className="border-b border-dotted border-gray-500 border-dotted-print w-full h-4 mb-1"></div>
+            <div className="flex items-end justify-between mt-4 pt-2">
+              <div>
+                <span className="font-semibold text-gray-700">Date</span>
+                <span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px] text-center font-semibold">
+                  {!isFormMode && selectedItem?.status === 'approved'
+                    ? new Date(selectedItem.updated_at).toLocaleDateString('id-ID')
+                    : ''}
+                </span>
+              </div>
+              <div className="text-center w-64">
+                <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
+                {!isFormMode && selectedItem?.status === 'approved' ? (
+                  <div className="mt-1">
+                    <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                      <Check size={22} />
+                    </div>
+                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'Director'}</p>
+                  </div>
+                ) : !isFormMode && selectedItem?.status === 'rejected' ? (
+                  <div className="mt-1">
+                    <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
+                      <X size={22} />
+                    </div>
+                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || 'Director'}</p>
+                  </div>
+                ) : (
+                  <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 export default function LeavesPage() {
   const { hasPermission, user } = useAuth();
   const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
@@ -148,41 +643,29 @@ export default function LeavesPage() {
     }, 500);
   };
 
-  const handleDownloadPdf = async (recordId: number, userName: string) => {
+  const handleDownload = async (recordId: number, userName: string, format: 'pdf' | 'excel') => {
     try {
-      const response = await axiosInstance.get(`/export/leave/${recordId}`, {
+      const urlPath = format === 'pdf' ? `/export/leave/${recordId}` : `/export/leave/${recordId}/excel`;
+      const ext = format === 'pdf' ? 'pdf' : 'xlsx';
+      
+      const response = await axiosInstance.get(urlPath, {
         responseType: 'blob'
       });
       const url = globalThis.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Cuti_${userName.replaceAll(/\s+/g, '_')}.pdf`);
+      link.setAttribute('download', `Cuti_${userName.replaceAll(/\s+/g, '_')}.${ext}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (err) {
       console.error(err);
-      toast.error("Gagal mendownload PDF.");
+      toast.error(`Gagal mendownload ${format === 'pdf' ? 'PDF' : 'Excel'}.`);
     }
   };
 
-  const handleDownloadExcel = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/leave/${recordId}/excel`, {
-        responseType: 'blob'
-      });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Cuti_${userName.replaceAll(/\s+/g, '_')}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal mendownload Excel.");
-    }
-  };
+  const handleDownloadPdf = (recordId: number, userName: string) => handleDownload(recordId, userName, 'pdf');
+  const handleDownloadExcel = (recordId: number, userName: string) => handleDownload(recordId, userName, 'excel');
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -457,227 +940,12 @@ export default function LeavesPage() {
 
           <form onSubmit={handleSubmit} className="print-container bg-white shadow-xl border border-gray-200 rounded-xl p-8 max-w-4xl mx-auto my-4 transition-all" style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}>
             
-            {/* Header / Logo */}
-            <div className="flex items-start justify-between border-b-2 border-gray-800 pb-3 mb-4">
-              <div className="flex items-center gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/artacom.png" alt="Logo" className="h-12 object-contain" />
-              </div>
-              <div className="text-right">
-                <h1 className="text-xl font-bold uppercase tracking-wider text-gray-900">Leave Application Form</h1>
-                <p className="text-xs font-mono text-gray-500 mt-1">NO. : HRD-XXX/LF/{new Date().getMonth()+1}/{new Date().getFullYear().toString().slice(-2)}</p>
-              </div>
-            </div>
-
-            {/* === 4-PART FORM CONTAINER === */}
-            <div className="border border-gray-400 rounded-sm overflow-hidden">
-              {/* === PART I - Employee Section === */}
-              <div>
-              <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-                <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part I - To be completed by employee</span>
-              </div>
-              <div className="p-4 space-y-3 text-xs">
-                {/* Employee details (readonly) */}
-                <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Name</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{user?.name || '-'}</span></div>
-                <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Position</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{user?.role?.name || '-'}</span></div>
-                <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Departement</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-semibold">{(user as LeaveRecord['user'])?.office?.name || (user as LeaveRecord['user'])?.company?.name || '-'}</span></div>
-                
-                {/* Purpose Selection (Checkboxes) */}
-                <div className="flex items-center"><span className="w-40 font-semibold text-gray-700 shrink-0">Purpose</span><span className="mr-2 text-gray-400">:</span>
-                  <div className="flex items-center gap-4 flex-wrap flex-1 pl-1">
-                    {["Cuti Tahunan", "Cuti Melahirkan", "Cuti Alasan Penting", "Lainnya"].map((type) => (
-                      <label key={type} className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-gray-700 select-none">
-                        <input
-                          type="checkbox"
-                          checked={formData.type === type}
-                          onChange={() => setFormData({...formData, type})}
-                          className="w-3.5 h-3.5 rounded border-gray-400 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span>{type}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Reason Details */}
-                <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Keterangan</span><span className="mr-2 text-gray-400">:</span>
-                  <input
-                    type="text"
-                    value={formData.reason}
-                    onChange={(e) => setFormData({...formData, reason: e.target.value})}
-                    placeholder="Tulis detail keperluan cuti di sini..."
-                    className="flex-1 border-0 border-b border-dotted border-gray-500 border-dotted-print focus:ring-0 focus:border-blue-500 bg-transparent px-1 py-0.5 text-xs text-gray-800 focus:outline-none font-medium"
-                    required
-                  />
-                </div>
-
-                {/* Periode and number of days */}
-                <div className="flex items-center flex-wrap gap-1">
-                  <span className="w-40 font-semibold text-gray-700 shrink-0">Periode of leave required from</span>
-                  <span className="mr-1 text-gray-400">:</span>
-                  <input
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({...formData, start_date: e.target.value})}
-                    className="border-0 border-b border-dotted border-gray-500 border-dotted-print bg-transparent px-1 py-0.5 text-xs focus:outline-none w-32 font-medium"
-                    required
-                  />
-                  <span className="mx-2 font-medium text-gray-500">to</span>
-                  <input
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({...formData, end_date: e.target.value})}
-                    className="border-0 border-b border-dotted border-gray-500 border-dotted-print bg-transparent px-1 py-0.5 text-xs focus:outline-none w-32 font-medium"
-                    required
-                  />
-                </div>
-
-                <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Number of days</span><span className="mr-2 text-gray-400">:</span>
-                  <span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 py-0.5 text-gray-800 font-bold">
-                    {formData.start_date && formData.end_date
-                      ? Math.max(1, Math.ceil((new Date(formData.end_date).getTime() - new Date(formData.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1) + " hari"
-                      : "—"}
-                  </span>
-                </div>
-
-                {/* Address and Contact details */}
-                <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Leave Address</span><span className="mr-2 text-gray-400">:</span>
-                  <input
-                    type="text"
-                    value={formData.leave_address}
-                    onChange={(e) => setFormData({...formData, leave_address: e.target.value})}
-                    placeholder="Alamat lengkap selama cuti..."
-                    className="flex-1 border-0 border-b border-dotted border-gray-500 border-dotted-print focus:ring-0 focus:border-blue-500 bg-transparent px-1 py-0.5 text-xs text-gray-800 focus:outline-none font-medium"
-                    required
-                  />
-                </div>
-
-                <div className="flex items-end"><span className="w-40 font-semibold text-gray-700 shrink-0">Contact #</span><span className="mr-2 text-gray-400">:</span>
-                  <input
-                    type="text"
-                    value={formData.emergency_phone}
-                    onChange={(e) => setFormData({...formData, emergency_phone: e.target.value})}
-                    placeholder="Nomor HP darurat..."
-                    className="flex-1 border-0 border-b border-dotted border-gray-500 border-dotted-print focus:ring-0 focus:border-blue-500 bg-transparent px-1 py-0.5 text-xs text-gray-800 focus:outline-none font-medium"
-                    required
-                  />
-                </div>
-
-                {/* Date & Signature pad in Part I */}
-                <div className="flex items-end justify-between mt-4 pt-2">
-                  <div>
-                    <span className="font-semibold text-gray-700">Date</span>
-                    <span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[120px] text-center font-medium">
-                      {new Date().toLocaleDateString('id-ID')}
-                    </span>
-                  </div>
-                  <div className="text-center w-64">
-                    <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
-                    <div className="border border-dashed border-gray-300 rounded p-1 bg-white">
-                      <SignaturePad onSign={(dataUrl) => setFormData({...formData, signature: dataUrl})} />
-                    </div>
-                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{user?.name}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-              {/* === PART II - HRD Section (Readonly placeholder) === */}
-              <div className="border-t border-gray-400 opacity-60">
-              <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-                <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part II - To be completed by HRD Dept</span>
-              </div>
-              <div className="p-4 text-xs">
-                <div className="grid grid-cols-[240px_16px_80px_40px] items-center gap-y-2 mb-4">
-                  <div className="font-semibold text-gray-700">Leave eligibility, Current Year</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">—</div>
-                  <div className="text-gray-600 pl-2">days</div>
-
-                  <div className="font-semibold text-gray-700 pl-8">Previous Year c/f</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">—</div>
-                  <div className="text-gray-600 pl-2">days</div>
-
-                  <div className="font-semibold text-gray-700 pl-8">Total</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">—</div>
-                  <div className="text-gray-600 pl-2">days</div>
-
-                  <div className="font-semibold text-gray-700">Less No. of day to be taken</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">—</div>
-                  <div className="text-gray-600 pl-2">days</div>
-
-                  <div className="font-semibold text-gray-700">Balance Leave</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-bold h-4">—</div>
-                  <div className="text-gray-600 pl-2">days</div>
-                </div>
-                <div className="flex items-end justify-between mt-4 pt-2">
-                  <div><span className="font-semibold text-gray-700">Date</span><span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px]">&nbsp;</span></div>
-                  <div className="text-center">
-                    <span className="font-semibold text-gray-700">Name / Signature:</span>
-                    <div className="border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-              {/* === PART III - Department Manager Section (Readonly placeholder) === */}
-              <div className="border-t border-gray-400 opacity-60">
-              <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-                <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part III - To be completed by Departement Manager</span>
-              </div>
-              <div className="p-4 text-xs">
-                <div className="flex items-center gap-4 mb-2">
-                  <span className="font-semibold text-gray-700">Leave Permit :</span>
-                  <label className="flex items-center gap-1.5 text-gray-600 font-semibold select-none">
-                    <input type="checkbox" disabled className="w-3 h-3" /> Approved
-                  </label>
-                  <label className="flex items-center gap-1.5 text-gray-600 font-semibold select-none">
-                    <input type="checkbox" disabled className="w-3 h-3" /> Not Approved
-                  </label>
-                </div>
-                <div className="flex mb-1"><span className="font-semibold text-gray-700 w-16">Remark</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 min-h-[16px]"></span></div>
-                <div className="border-b border-dotted border-gray-500 border-dotted-print w-full h-4 mb-1"></div>
-                <div className="flex items-end justify-between mt-4 pt-2">
-                  <div><span className="font-semibold text-gray-700">Date</span><span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px]">&nbsp;</span></div>
-                  <div className="text-center">
-                    <span className="font-semibold text-gray-700">Name / Signature:</span>
-                    <div className="border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-              {/* === PART IV - Director Section (Readonly placeholder) === */}
-              <div className="border-t border-gray-400 opacity-60">
-              <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-                <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part IV - To be completed by Director</span>
-              </div>
-              <div className="p-4 text-xs">
-                <div className="flex items-center gap-4 mb-2">
-                  <span className="font-semibold text-gray-700">Leave Permit :</span>
-                  <label className="flex items-center gap-1.5 text-gray-600 font-semibold select-none">
-                    <input type="checkbox" disabled className="w-3 h-3" /> Approved
-                  </label>
-                  <label className="flex items-center gap-1.5 text-gray-600 font-semibold select-none">
-                    <input type="checkbox" disabled className="w-3 h-3" /> Not Approved
-                  </label>
-                </div>
-                <div className="flex mb-1"><span className="font-semibold text-gray-700 w-16">Remark</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 min-h-[16px]"></span></div>
-                <div className="border-b border-dotted border-gray-500 border-dotted-print w-full h-4 mb-1"></div>
-                <div className="flex items-end justify-between mt-4 pt-2">
-                  <div><span className="font-semibold text-gray-700">Date</span><span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px]">&nbsp;</span></div>
-                  <div className="text-center">
-                    <span className="font-semibold text-gray-700">Name / Signature:</span>
-                    <div className="border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            <LeaveSheetInner
+              isFormMode={true}
+              user={user}
+              formData={formData}
+              setFormData={setFormData}
+            />
 
             {/* Bottom Buttons */}
             <div className="mt-8 flex justify-end gap-3 no-print">
@@ -737,225 +1005,11 @@ export default function LeavesPage() {
 
           <div className="print-container bg-white shadow-xl border border-gray-200 rounded-xl p-8 max-w-4xl mx-auto my-4 transition-all" style={{ fontFamily: 'Tahoma, Arial, sans-serif', fontSize: '12px' }}>
             
-            {/* === HEADER with Logo === */}
-            <div className="flex items-center justify-between border-b-2 border-gray-800 pb-3 mb-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/artacom.png" alt="Logo" className="h-12 object-contain" />
-              <div className="text-right">
-                <h1 className="text-xl font-bold uppercase tracking-wider text-gray-900">Leave Application Form</h1>
-                <p className="text-xs font-mono text-gray-500 mt-1">NO. : HRD-{selectedItem.id.toString().padStart(3,'0')}/LF/{new Date(selectedItem.created_at).getMonth()+1}/{new Date(selectedItem.created_at).getFullYear().toString().slice(-2)}</p>
-              </div>
-            </div>
-
-            <div className="border border-gray-400 mt-3 rounded-sm">
-              {/* === PART I - Employee === */}
-              <div>
-              <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-                <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part I - To be completed by employee</span>
-              </div>
-              <div className="p-4 space-y-2.5 text-xs">
-                <div className="flex"><span className="w-40 font-semibold text-gray-700">Name</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-semibold">{selectedItem.user?.name || '-'}</span></div>
-                <div className="flex"><span className="w-40 font-semibold text-gray-700">Position</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-semibold">{selectedItem.user?.role?.name || '-'}</span></div>
-                <div className="flex"><span className="w-40 font-semibold text-gray-700">Departement</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-semibold">{selectedItem.user?.office?.name || selectedItem.user?.company?.name || '-'}</span></div>
-                
-                {/* Purpose with Checkboxes (Readonly in Detail/Print mode) */}
-                <div className="flex items-center"><span className="w-40 font-semibold text-gray-700 shrink-0">Purpose</span><span className="mr-2 text-gray-400">:</span>
-                  <div className="flex items-center gap-4 flex-wrap flex-1 pl-1">
-                    {["Cuti Tahunan", "Cuti Melahirkan", "Cuti Alasan Penting", "Lainnya"].map((type) => (
-                      <label key={type} className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 select-none">
-                        <input
-                          type="checkbox"
-                          readOnly
-                          checked={selectedItem.type === type || (type === "Lainnya" && !["Cuti Tahunan", "Cuti Melahirkan", "Cuti Alasan Penting"].includes(selectedItem.type))}
-                          className="w-3.5 h-3.5 rounded border-gray-400 text-blue-600"
-                        />
-                        <span>{type}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex"><span className="w-40 font-semibold text-gray-700">Keterangan</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-medium">{selectedItem.reason || '-'}</span></div>
-                
-                <div className="flex items-center gap-1 flex-wrap">
-                  <span className="w-40 font-semibold text-gray-700">Periode of leave required from</span><span className="mr-1 text-gray-400">:</span>
-                  <span className="border-b border-dotted border-gray-500 border-dotted-print px-1 min-w-[120px] text-center text-gray-800 font-medium">{new Date(selectedItem.start_date).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'})}</span>
-                  <span className="mx-2 font-medium text-gray-500">to</span>
-                  <span className="border-b border-dotted border-gray-500 border-dotted-print px-1 min-w-[120px] text-center text-gray-800 font-medium">{new Date(selectedItem.end_date).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'})}</span>
-                </div>
-                
-                <div className="flex"><span className="w-40 font-semibold text-gray-700">Number of days</span><span className="mr-2 text-gray-400">:</span><span className="border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-bold">{Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000*60*60*24)) + 1} hari</span></div>
-                <div className="flex"><span className="w-40 font-semibold text-gray-700">Leave Address</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-medium">{selectedItem.leave_address || '-'}</span></div>
-                <div className="flex"><span className="w-40 font-semibold text-gray-700">Contact #</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 text-gray-800 font-medium">{selectedItem.emergency_phone || '-'}</span></div>
-                
-                {/* Employee Signature */}
-                <div className="flex items-end justify-between mt-4 pt-2">
-                  <div>
-                    <span className="font-semibold text-gray-700">Date:</span>
-                    <span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[120px] text-center font-semibold">{new Date(selectedItem.created_at).toLocaleDateString('id-ID')}</span>
-                  </div>
-                  <div className="text-center w-64">
-                    <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
-                    {selectedItem.signature ? (
-                      <div className="p-1 bg-white inline-block">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={selectedItem.signature} alt="TTD" className="h-12 mx-auto object-contain" />
-                      </div>
-                    ) : (
-                      <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-                    )}
-                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.user?.name}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-              {/* === PART II - HRD Dept === */}
-              <div className="border-t border-gray-400">
-              <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-                <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part II - To be completed by HRD Dept</span>
-              </div>
-              <div className="p-4 text-xs">
-                <div className="grid grid-cols-[240px_16px_80px_40px] items-center gap-y-2 mb-4">
-                  <div className="font-semibold text-gray-700">Leave eligibility, Current Year</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">
-                    {selectedItem.user?.leave_balance == null ? '—' : (selectedItem.user.leave_balance + (Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000*60*60*24)) + 1))}
-                  </div>
-                  <div className="text-gray-600 pl-2">days</div>
-
-                  <div className="font-semibold text-gray-700 pl-8">Previous Year c/f</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">—</div>
-                  <div className="text-gray-600 pl-2">days</div>
-
-                  <div className="font-semibold text-gray-700 pl-8">Total</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">—</div>
-                  <div className="text-gray-600 pl-2">days</div>
-
-                  <div className="font-semibold text-gray-700">Less No. of day to be taken</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">
-                    {Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000*60*60*24)) + 1}
-                  </div>
-                  <div className="text-gray-600 pl-2">days</div>
-
-                  <div className="font-semibold text-gray-700">Balance Leave</div>
-                  <div className="text-gray-400 text-center">:</div>
-                  <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-bold h-4">
-                    {selectedItem.user?.leave_balance ?? '—'}
-                  </div>
-                  <div className="text-gray-600 pl-2">days</div>
-                </div>
-                
-                <div className="flex items-end justify-between mt-4 pt-2">
-                  <div><span className="font-semibold text-gray-700">Date</span><span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px] text-center font-semibold">{selectedItem.status === 'approved' && selectedItem.approved_at ? new Date(selectedItem.approved_at).toLocaleDateString('id-ID') : ''}</span></div>
-                  <div className="text-center w-64">
-                    <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
-                    {['approved','pending_hr'].includes(selectedItem.status) ? (
-                      <div className="mt-1">
-                        <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                           <Check size={22} />
-                        </div>
-                        <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'HRD'}</p>
-                      </div>
-                    ) : (
-                      <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-              {/* === PART III - Departement Manager === */}
-              <div className="border-t border-gray-400">
-              <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-                <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part III - To be completed by Departement Manager</span>
-              </div>
-              <div className="p-4 text-xs">
-                <div className="flex items-center gap-4 mb-2">
-                  <span className="font-semibold text-gray-700">Leave Permit :</span>
-                  <label className="flex items-center gap-1.5 text-gray-700 font-semibold select-none">
-                    <input type="checkbox" readOnly checked={['pending_hr','approved'].includes(selectedItem.status)} className="w-3.5 h-3.5 rounded text-blue-600" /> Approved
-                  </label>
-                  <label className="flex items-center gap-1.5 text-gray-700 font-semibold select-none">
-                    <input type="checkbox" readOnly checked={selectedItem.status === 'rejected' && !!selectedItem.supervisor_approved_by} className="w-3.5 h-3.5 rounded text-blue-600" /> Not Approved
-                  </label>
-                </div>
-                <div className="flex mb-1"><span className="font-semibold text-gray-700 w-16">Remark</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 min-h-[16px] text-gray-800 font-semibold">{selectedItem.supervisor_remark || ''}</span></div>
-                <div className="border-b border-dotted border-gray-500 border-dotted-print w-full h-4 mb-1"></div>
-                
-                <div className="flex items-end justify-between mt-4 pt-2">
-                  <div><span className="font-semibold text-gray-700">Date</span><span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px] text-center font-semibold">{selectedItem.supervisor_approved_at ? new Date(selectedItem.supervisor_approved_at).toLocaleDateString('id-ID') : ''}</span></div>
-                  <div className="text-center w-64">
-                    <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
-                    {['pending_hr','approved'].includes(selectedItem.status) ? (
-                      <div className="mt-1">
-                        <div className="border border-blue-500 text-blue-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                           <Check size={22} />
-                        </div>
-                        <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.supervisor_approver?.name || selectedItem.supervisorApprover?.name || selectedItem.user?.supervisor?.name || 'Supervisor'}</p>
-                      </div>
-                    ) : selectedItem.status === 'rejected' && selectedItem.supervisor_approved_by ? (
-                      <div className="mt-1">
-                        <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                           <X size={22} />
-                        </div>
-                        <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.supervisor_approver?.name || 'Supervisor'}</p>
-                      </div>
-                    ) : (
-                      <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-              {/* === PART IV - Director === */}
-              <div className="border-t border-gray-400">
-              <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-                <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part IV - To be completed by Director</span>
-              </div>
-              <div className="p-4 text-xs">
-                <div className="flex items-center gap-4 mb-2">
-                  <span className="font-semibold text-gray-700">Leave Permit :</span>
-                  <label className="flex items-center gap-1.5 text-gray-700 font-semibold select-none">
-                    <input type="checkbox" readOnly checked={selectedItem.status === 'approved'} className="w-3.5 h-3.5 rounded text-blue-600" /> Approved
-                  </label>
-                  <label className="flex items-center gap-1.5 text-gray-700 font-semibold select-none">
-                    <input type="checkbox" readOnly checked={selectedItem.status === 'rejected'} className="w-3.5 h-3.5 rounded text-blue-600" /> Not Approved
-                  </label>
-                </div>
-                <div className="flex mb-1"><span className="font-semibold text-gray-700 w-16">Remark</span><span className="mr-2 text-gray-400">:</span><span className="flex-1 border-b border-dotted border-gray-500 border-dotted-print px-1 min-h-[16px] text-gray-800 font-semibold">{selectedItem.remark || ''}</span></div>
-                <div className="border-b border-dotted border-gray-500 border-dotted-print w-full h-4 mb-1"></div>
-                
-                <div className="flex items-end justify-between mt-4 pt-2">
-                  <div><span className="font-semibold text-gray-700">Date</span><span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px] text-center font-semibold">{selectedItem.status === 'approved' ? new Date(selectedItem.updated_at).toLocaleDateString('id-ID') : ''}</span></div>
-                  <div className="text-center w-64">
-                    <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
-                    {selectedItem.status === 'approved' ? (
-                      <div className="mt-1">
-                        <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                           <Check size={22} />
-                        </div>
-                        <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'Director'}</p>
-                      </div>
-                    ) : selectedItem.status === 'rejected' ? (
-                      <div className="mt-1">
-                        <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                           <X size={22} />
-                        </div>
-                        <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || 'Director'}</p>
-                      </div>
-                    ) : (
-                      <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            <LeaveSheetInner
+              isFormMode={false}
+              user={user}
+              selectedItem={selectedItem}
+            />
 
             {/* Print timestamp */}
             <div className="mt-8 pt-3 border-t border-gray-200 text-center text-[10px] text-gray-400 print-only">
