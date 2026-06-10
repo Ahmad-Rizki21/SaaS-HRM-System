@@ -82,6 +82,38 @@ interface LeaveSheetInnerProps {
   selectedItem?: LeaveRecord | null;
 }
 
+const SectionHeader = ({ title }: { title: string }) => (
+  <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
+    <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">{title}</span>
+  </div>
+);
+
+const ApprovalStatus = ({
+  approverName,
+  colorClass,
+  isRejected = false
+}: {
+  approverName?: string;
+  colorClass: "green" | "blue" | "red";
+  isRejected?: boolean;
+}) => {
+  const borderClass = colorClass === "green" 
+    ? "border-green-500 text-green-600" 
+    : colorClass === "blue" 
+    ? "border-blue-500 text-blue-600" 
+    : "border-red-500 text-red-600";
+  const Icon = isRejected ? X : Check;
+
+  return (
+    <div className="mt-1">
+      <div className={`border ${borderClass} rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto`}>
+        <Icon size={22} />
+      </div>
+      <p className="text-[10px] mt-1 text-gray-500 font-bold">{approverName || '—'}</p>
+    </div>
+  );
+};
+
 const LeaveSheetInner = ({
   isFormMode,
   user,
@@ -89,27 +121,43 @@ const LeaveSheetInner = ({
   setFormData,
   selectedItem
 }: LeaveSheetInnerProps) => {
-  const documentNo = isFormMode
-    ? `HRD-XXX/LF/${new Date().getMonth() + 1}/${new Date().getFullYear().toString().slice(-2)}`
-    : selectedItem
-    ? `HRD-${selectedItem.id.toString().padStart(3, '0')}/LF/${new Date(selectedItem.created_at).getMonth() + 1}/${new Date(selectedItem.created_at).getFullYear().toString().slice(-2)}`
-    : "";
+  const getDocumentNo = () => {
+    if (isFormMode) {
+      const month = new Date().getMonth() + 1;
+      const year = new Date().getFullYear().toString().slice(-2);
+      return `HRD-XXX/LF/${month}/${year}`;
+    }
+    if (selectedItem) {
+      const date = new Date(selectedItem.created_at);
+      const id = selectedItem.id.toString().padStart(3, '0');
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear().toString().slice(-2);
+      return `HRD-${id}/LF/${month}/${year}`;
+    }
+    return "";
+  };
+
+  const documentNo = getDocumentNo();
 
   const name = isFormMode ? user?.name : selectedItem?.user?.name;
   const position = isFormMode ? user?.role?.name : selectedItem?.user?.role?.name;
-  const department = isFormMode
-    ? (user?.office?.name || user?.company?.name)
-    : (selectedItem?.user?.office?.name || selectedItem?.user?.company?.name);
+  const getDepartment = () => {
+    if (isFormMode) return user?.office?.name || user?.company?.name;
+    return selectedItem?.user?.office?.name || selectedItem?.user?.company?.name;
+  };
+  const department = getDepartment();
 
   const reason = isFormMode ? formData?.reason : selectedItem?.reason;
   const leaveAddress = isFormMode ? formData?.leave_address : selectedItem?.leave_address;
   const emergencyPhone = isFormMode ? formData?.emergency_phone : selectedItem?.emergency_phone;
   const signature = isFormMode ? formData?.signature : selectedItem?.signature;
-  const dateStr = isFormMode
-    ? new Date().toLocaleDateString('id-ID')
-    : selectedItem?.created_at
-    ? new Date(selectedItem.created_at).toLocaleDateString('id-ID')
-    : "";
+  
+  const getDateStr = () => {
+    if (isFormMode) return new Date().toLocaleDateString('id-ID');
+    if (selectedItem?.created_at) return new Date(selectedItem.created_at).toLocaleDateString('id-ID');
+    return "";
+  };
+  const dateStr = getDateStr();
 
   const typeVal = isFormMode ? formData?.type : selectedItem?.type;
 
@@ -119,12 +167,11 @@ const LeaveSheetInner = ({
         return Math.max(1, Math.ceil((new Date(formData.end_date).getTime() - new Date(formData.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1) + " hari";
       }
       return "—";
-    } else {
-      if (selectedItem?.start_date && selectedItem?.end_date) {
-        return Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1 + " hari";
-      }
-      return "—";
     }
+    if (selectedItem?.start_date && selectedItem?.end_date) {
+      return Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1 + " hari";
+    }
+    return "—";
   };
 
   return (
@@ -142,12 +189,10 @@ const LeaveSheetInner = ({
       </div>
 
       {/* === 4-PART FORM CONTAINER === */}
-      <div className={`border border-gray-400 rounded-sm overflow-hidden ${!isFormMode ? 'mt-3' : ''}`}>
+      <div className={`border border-gray-400 rounded-sm overflow-hidden ${isFormMode ? '' : 'mt-3'}`}>
         {/* === PART I - Employee Section === */}
         <div>
-          <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-            <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part I - To be completed by employee</span>
-          </div>
+          <SectionHeader title="Part I - To be completed by employee" />
           <div className="p-4 space-y-3 text-xs">
             {/* Employee details */}
             <div className="flex items-end">
@@ -345,17 +390,17 @@ const LeaveSheetInner = ({
 
         {/* === PART II - HRD Section === */}
         <div className={`border-t border-gray-400 ${isFormMode ? 'opacity-60' : ''}`}>
-          <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-            <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part II - To be completed by HRD Dept</span>
-          </div>
+          <SectionHeader title="Part II - To be completed by HRD Dept" />
           <div className="p-4 text-xs">
             <div className="grid grid-cols-[240px_16px_80px_40px] items-center gap-y-2 mb-4">
               <div className="font-semibold text-gray-700">Leave eligibility, Current Year</div>
               <div className="text-gray-400 text-center">:</div>
               <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">
-                {isFormMode || selectedItem?.user?.leave_balance == null
-                  ? '—'
-                  : (selectedItem.user.leave_balance + (Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1))}
+                {(() => {
+                  if (isFormMode || selectedItem?.user?.leave_balance == null) return '—';
+                  const days = Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                  return selectedItem.user.leave_balance + days;
+                })()}
               </div>
               <div className="text-gray-600 pl-2">days</div>
 
@@ -372,9 +417,10 @@ const LeaveSheetInner = ({
               <div className="font-semibold text-gray-700">Less No. of day to be taken</div>
               <div className="text-gray-400 text-center">:</div>
               <div className="border-b border-dotted border-gray-500 border-dotted-print text-center text-gray-800 font-semibold h-4">
-                {isFormMode || !selectedItem
-                  ? '—'
-                  : Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1}
+                {(() => {
+                  if (isFormMode || !selectedItem) return '—';
+                  return Math.ceil((new Date(selectedItem.end_date).getTime() - new Date(selectedItem.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                })()}
               </div>
               <div className="text-gray-600 pl-2">days</div>
 
@@ -389,20 +435,21 @@ const LeaveSheetInner = ({
               <div>
                 <span className="font-semibold text-gray-700">Date</span>
                 <span className="border-b border-dotted border-gray-500 border-dotted-print px-2 ml-1 inline-block min-w-[100px] text-center font-semibold">
-                  {!isFormMode && selectedItem?.status === 'approved' && selectedItem.approved_at
-                    ? new Date(selectedItem.approved_at).toLocaleDateString('id-ID')
-                    : ''}
+                  {(() => {
+                    if (!isFormMode && selectedItem?.status === 'approved' && selectedItem.approved_at) {
+                      return new Date(selectedItem.approved_at).toLocaleDateString('id-ID');
+                    }
+                    return '';
+                  })()}
                 </span>
               </div>
               <div className="text-center w-64">
                 <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
                 {!isFormMode && selectedItem && ['approved', 'pending_hr'].includes(selectedItem.status) ? (
-                  <div className="mt-1">
-                    <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                      <Check size={22} />
-                    </div>
-                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'HRD'}</p>
-                  </div>
+                  <ApprovalStatus
+                    colorClass="green"
+                    approverName={selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'HRD'}
+                  />
                 ) : (
                   <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
                 )}
@@ -413,9 +460,7 @@ const LeaveSheetInner = ({
 
         {/* === PART III - Department Manager Section === */}
         <div className={`border-t border-gray-400 ${isFormMode ? 'opacity-60' : ''}`}>
-          <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-            <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part III - To be completed by Departement Manager</span>
-          </div>
+          <SectionHeader title="Part III - To be completed by Departement Manager" />
           <div className="p-4 text-xs">
             <div className="flex items-center gap-4 mb-2">
               <span className="font-semibold text-gray-700">Leave Permit :</span>
@@ -457,25 +502,32 @@ const LeaveSheetInner = ({
               </div>
               <div className="text-center w-64">
                 <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
-                {!isFormMode && selectedItem && ['pending_hr', 'approved'].includes(selectedItem.status) ? (
-                  <div className="mt-1">
-                    <div className="border border-blue-500 text-blue-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                      <Check size={22} />
-                    </div>
-                    <p className="text-[10px] mt-1 text-gray-500 font-bold">
-                      {selectedItem.supervisor_approver?.name || selectedItem.supervisorApprover?.name || selectedItem.user?.supervisor?.name || 'Supervisor'}
-                    </p>
-                  </div>
-                ) : !isFormMode && selectedItem?.status === 'rejected' && selectedItem.supervisor_approved_by ? (
-                  <div className="mt-1">
-                    <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                      <X size={22} />
-                    </div>
-                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.supervisor_approver?.name || 'Supervisor'}</p>
-                  </div>
-                ) : (
-                  <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-                )}
+                {(() => {
+                  if (isFormMode || !selectedItem) {
+                    return <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>;
+                  }
+                  
+                  if (['pending_hr', 'approved'].includes(selectedItem.status)) {
+                    return (
+                      <ApprovalStatus
+                        colorClass="blue"
+                        approverName={selectedItem.supervisor_approver?.name || selectedItem.supervisorApprover?.name || selectedItem.user?.supervisor?.name || 'Supervisor'}
+                      />
+                    );
+                  }
+                  
+                  if (selectedItem.status === 'rejected' && selectedItem.supervisor_approved_by) {
+                    return (
+                      <ApprovalStatus
+                        colorClass="red"
+                        isRejected={true}
+                        approverName={selectedItem.supervisor_approver?.name || 'Supervisor'}
+                      />
+                    );
+                  }
+                  
+                  return <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>;
+                })()}
               </div>
             </div>
           </div>
@@ -483,9 +535,7 @@ const LeaveSheetInner = ({
 
         {/* === PART IV - Director Section === */}
         <div className={`border-t border-gray-400 ${isFormMode ? 'opacity-60' : ''}`}>
-          <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-400">
-            <span className="text-xs font-bold underline text-gray-800 uppercase tracking-wide">Part IV - To be completed by Director</span>
-          </div>
+          <SectionHeader title="Part IV - To be completed by Director" />
           <div className="p-4 text-xs">
             <div className="flex items-center gap-4 mb-2">
               <span className="font-semibold text-gray-700">Leave Permit :</span>
@@ -527,23 +577,32 @@ const LeaveSheetInner = ({
               </div>
               <div className="text-center w-64">
                 <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
-                {!isFormMode && selectedItem?.status === 'approved' ? (
-                  <div className="mt-1">
-                    <div className="border border-green-500 text-green-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                      <Check size={22} />
-                    </div>
-                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'Director'}</p>
-                  </div>
-                ) : !isFormMode && selectedItem?.status === 'rejected' ? (
-                  <div className="mt-1">
-                    <div className="border border-red-500 text-red-600 rounded-full w-10 h-10 flex items-center justify-center -rotate-12 opacity-60 mx-auto">
-                      <X size={22} />
-                    </div>
-                    <p className="text-[10px] mt-1 text-gray-500 font-bold">{selectedItem.hr_approver?.name || 'Director'}</p>
-                  </div>
-                ) : (
-                  <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-                )}
+                {(() => {
+                  if (isFormMode || !selectedItem) {
+                    return <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>;
+                  }
+                  
+                  if (selectedItem.status === 'approved') {
+                    return (
+                      <ApprovalStatus
+                        colorClass="green"
+                        approverName={selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'Director'}
+                      />
+                    );
+                  }
+                  
+                  if (selectedItem.status === 'rejected') {
+                    return (
+                      <ApprovalStatus
+                        colorClass="red"
+                        isRejected={true}
+                        approverName={selectedItem.hr_approver?.name || 'Director'}
+                      />
+                    );
+                  }
+                  
+                  return <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>;
+                })()}
               </div>
             </div>
           </div>
