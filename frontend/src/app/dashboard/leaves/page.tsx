@@ -130,11 +130,10 @@ interface SectionProps {
 }
 
 const Part1EmployeeSection = ({ isFormMode, user, formData, setFormData, selectedItem }: Part1EmployeeSectionProps) => {
-  const name = isFormMode ? user?.name : selectedItem?.user?.name;
-  const position = isFormMode ? user?.role?.name : selectedItem?.user?.role?.name;
-  const department = isFormMode 
-    ? (user?.office?.name || user?.company?.name) 
-    : (selectedItem?.user?.office?.name || selectedItem?.user?.company?.name);
+  const employee = isFormMode ? user : selectedItem?.user;
+  const name = employee?.name;
+  const position = employee?.role?.name;
+  const department = employee?.office?.name || employee?.company?.name || '-';
   
   const reason = isFormMode ? formData?.reason : selectedItem?.reason;
   const leaveAddress = isFormMode ? formData?.leave_address : selectedItem?.leave_address;
@@ -142,10 +141,10 @@ const Part1EmployeeSection = ({ isFormMode, user, formData, setFormData, selecte
   const signature = isFormMode ? formData?.signature : selectedItem?.signature;
   const typeVal = isFormMode ? formData?.type : selectedItem?.type;
 
+  const start = isFormMode ? formData?.start_date : selectedItem?.start_date;
+  const end = isFormMode ? formData?.end_date : selectedItem?.end_date;
+
   const calculateDays = () => {
-    const start = isFormMode ? formData?.start_date : selectedItem?.start_date;
-    const end = isFormMode ? formData?.end_date : selectedItem?.end_date;
-    
     if (start && end) {
       const diff = Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24)) + 1;
       const days = Math.max(1, diff);
@@ -156,8 +155,30 @@ const Part1EmployeeSection = ({ isFormMode, user, formData, setFormData, selecte
 
   const getDateStr = () => {
     if (isFormMode) return new Date().toLocaleDateString('id-ID');
-    if (selectedItem?.created_at) return new Date(selectedItem.created_at).toLocaleDateString('id-ID');
-    return "";
+    return selectedItem?.created_at ? new Date(selectedItem.created_at).toLocaleDateString('id-ID') : "";
+  };
+
+  const renderEmployeeSignature = () => {
+    if (isFormMode) {
+      return (
+        <div className="border border-dashed border-gray-300 rounded p-1 bg-white">
+          <SignaturePad onSign={(dataUrl) => {
+            if (setFormData && formData) {
+              setFormData({ ...formData, signature: dataUrl });
+            }
+          }} />
+        </div>
+      );
+    }
+    if (signature) {
+      return (
+        <div className="p-1 bg-white inline-block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={signature} alt="TTD" className="h-12 mx-auto object-contain" />
+        </div>
+      );
+    }
+    return <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>;
   };
 
   return (
@@ -332,22 +353,7 @@ const Part1EmployeeSection = ({ isFormMode, user, formData, setFormData, selecte
           </div>
           <div className="text-center w-64">
             <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
-            {isFormMode ? (
-              <div className="border border-dashed border-gray-300 rounded p-1 bg-white">
-                <SignaturePad onSign={(dataUrl) => {
-                  if (setFormData && formData) {
-                    setFormData({ ...formData, signature: dataUrl });
-                  }
-                }} />
-              </div>
-            ) : signature ? (
-              <div className="p-1 bg-white inline-block">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={signature} alt="TTD" className="h-12 mx-auto object-contain" />
-              </div>
-            ) : (
-              <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
-            )}
+            {renderEmployeeSignature()}
             <p className="text-[10px] mt-1 text-gray-500 font-bold">{name}</p>
           </div>
         </div>
@@ -418,10 +424,10 @@ const Part2HRDSection = ({ isFormMode, selectedItem }: SectionProps) => {
           </div>
           <div className="text-center w-64">
             <span className="font-semibold text-gray-700 block mb-1">Name / Signature:</span>
-            {!isFormMode && selectedItem && ['approved', 'pending_hr'].includes(selectedItem.status) ? (
+            {!isFormMode && ['approved', 'pending_hr'].includes(selectedItem?.status || '') ? (
               <ApprovalStatus
                 colorClass="green"
-                approverName={selectedItem.hr_approver?.name || selectedItem.hrApprover?.name || 'HRD'}
+                approverName={selectedItem?.hr_approver?.name || selectedItem?.hrApprover?.name || 'HRD'}
               />
             ) : (
               <div className="signature-space border-b border-dotted border-gray-500 border-dotted-print inline-block min-w-[150px] ml-1 h-8">&nbsp;</div>
@@ -434,8 +440,8 @@ const Part2HRDSection = ({ isFormMode, selectedItem }: SectionProps) => {
 };
 
 const Part3ManagerSection = ({ isFormMode, selectedItem }: SectionProps) => {
-  const isApproved = !isFormMode && selectedItem && ['pending_hr', 'approved'].includes(selectedItem.status);
-  const isRejected = !isFormMode && selectedItem && selectedItem.status === 'rejected' && !!selectedItem.supervisor_approved_by;
+  const isApproved = !isFormMode && ['pending_hr', 'approved'].includes(selectedItem?.status || '');
+  const isRejected = !isFormMode && selectedItem?.status === 'rejected' && !!selectedItem?.supervisor_approved_by;
   
   const getDate = () => {
     if (!isFormMode && selectedItem?.supervisor_approved_at) {
@@ -508,8 +514,8 @@ const Part3ManagerSection = ({ isFormMode, selectedItem }: SectionProps) => {
 };
 
 const Part4DirectorSection = ({ isFormMode, selectedItem }: SectionProps) => {
-  const isApproved = !isFormMode && selectedItem && selectedItem.status === 'approved';
-  const isRejected = !isFormMode && selectedItem && selectedItem.status === 'rejected';
+  const isApproved = !isFormMode && selectedItem?.status === 'approved';
+  const isRejected = !isFormMode && selectedItem?.status === 'rejected';
 
   const getDate = () => {
     if (!isFormMode && selectedItem?.status === 'approved') {
