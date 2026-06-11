@@ -21,6 +21,8 @@ class OvertimeController extends Controller
     private const MSG_FORBIDDEN = 'Akses ditolak.';
     private const MODEL_OVERTIME = 'App\Models\Overtime';
     private const RULE_REQ_STRING = 'required|string';
+    private const NOTIFICATION_OVERTIME_SUCCESS = 'PENGAJUAN LEMBUR BERHASIL';
+    private const ROUTE_APPROVALS = '/dashboard/approvals';
 
     public function index(Request $request)
     {
@@ -69,6 +71,24 @@ class OvertimeController extends Controller
      */
     public function store(Request $request)
     {
+        $this->normalizeOvertimeItems($request);
+
+        $isDraft = $request->input('status') === 'draft';
+
+        $this->validateOvertimeStore($request, $isDraft);
+
+        $user = $request->user();
+        $companyId = $user->company_id;
+
+        $overtime = DB::transaction(function () use ($request, $user, $companyId, $isDraft) {
+            return $this->createOvertime($request, $user, $companyId, $isDraft);
+        });
+
+        return $this->handlePostOvertimeStore($overtime, $user, $companyId, $isDraft);
+    }
+
+    private function normalizeOvertimeItems(Request $request): void
+    {
         if (! $request->has('items') && $request->filled('date')) {
             $request->merge([
                 'items' => [
@@ -81,9 +101,10 @@ class OvertimeController extends Controller
                 ]
             ]);
         }
+    }
 
-        $isDraft = $request->input('status') === 'draft';
-
+    private function validateOvertimeStore(Request $request, bool $isDraft): void
+    {
         if ($isDraft) {
             // Draft: minimal validation
             $request->validate([
@@ -106,110 +127,108 @@ class OvertimeController extends Controller
                 'signature' => 'nullable|string',
             ]);
         }
+    }
 
-        $user = $request->user();
-        $companyId = $user->company_id;
+    private function createOvertime(Request $request, User $user, $companyId, bool $isDraft): Overtime
+    {
+        if ($isDraft) {
+            $overtime = Overtime::create([
+                'user_id' => $user->id,
+                'company_id' => $companyId,
+                'title' => $request->title,
+                'status' => 'draft',
+            ]);
+        } else {
+            // ── Dynamic Workflow Check ──
+            $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
 
-        return DB::transaction(function () use ($request, $user, $companyId, $isDraft) {
-            if ($isDraft) {
+            if ($workflowResult) {
                 $overtime = Overtime::create([
                     'user_id' => $user->id,
                     'company_id' => $companyId,
                     'title' => $request->title,
-                    'status' => 'draft',
+                    'signature' => $request->signature,
+                    'status' => $workflowResult['status'],
+                    'current_approval_step' => $workflowResult['current_approval_step'],
                 ]);
             } else {
-                // ── Dynamic Workflow Check ──
-                $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
-
-                if ($workflowResult) {
-                    $overtime = Overtime::create([
-                        'user_id' => $user->id,
-                        'company_id' => $companyId,
-                        'title' => $request->title,
-                        'signature' => $request->signature,
-                        'status' => $workflowResult['status'],
-                        'current_approval_step' => $workflowResult['current_approval_step'],
-                    ]);
-                } else {
-                    $overtime = Overtime::create([
-                        'user_id' => $user->id,
-                        'company_id' => $companyId,
-                        'title' => $request->title,
-                        'signature' => $request->signature,
-                        'status' => 'pending',
-                    ]);
-                }
-            }
-
-            // Create items
-            if ($request->has('items') && is_array($request->items)) {
-                foreach ($request->items as $item) {
-                    OvertimeItem::create([
-                        'overtime_id' => $overtime->id,
-                        'date' => $item['date'],
-                        'start_time' => $item['start_time'],
-                        'end_time' => $item['end_time'],
-                        'reason' => $item['reason'],
-                    ]);
-                }
-            }
-
-            $overtime->load('items');
-
-            if ($isDraft) {
-                ActivityLog::create([
+                $overtime = Overtime::create([
                     'user_id' => $user->id,
                     'company_id' => $companyId,
-                    'action' => 'OVERTIME_DRAFT',
-                    'description' => "Menyimpan draf lembur: " . ($request->title ?? 'Untitled'),
-                    'model_type' => self::MODEL_OVERTIME,
-                    'model_id' => $overtime->id,
+                    'title' => $request->title,
+                    'signature' => $request->signature,
+                    'status' => 'pending',
                 ]);
-
-                return $this->successResponse($overtime, 'Draf lembur berhasil disimpan.', 201);
             }
+        }
 
-            // Notifications for submit
+        // Create items
+        if ($request->has('items') && is_array($request->items)) {
+            foreach ($request->items as $item) {
+                OvertimeItem::create([
+                    'overtime_id' => $overtime->id,
+                    'date' => $item['date'],
+                    'start_time' => $item['start_time'],
+                    'end_time' => $item['end_time'],
+                    'reason' => $item['reason'],
+                ]);
+            }
+        }
+
+        $overtime->load('items');
+
+        return $overtime;
+    }
+
+    private function handlePostOvertimeStore(Overtime $overtime, User $user, $companyId, bool $isDraft): \Illuminate\Http\JsonResponse
+    {
+        if ($isDraft) {
             ActivityLog::create([
                 'user_id' => $user->id,
                 'company_id' => $companyId,
-                'action' => 'OVERTIME_SUBMISSION',
-                'description' => "Mengajukan lembur: " . ($request->title ?? '-'),
+                'action' => 'OVERTIME_DRAFT',
+                'description' => "Menyimpan draf lembur: " . ($overtime->title ?? 'Untitled'),
                 'model_type' => self::MODEL_OVERTIME,
                 'model_id' => $overtime->id,
             ]);
 
-            $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
+            return $this->successResponse($overtime, 'Draf lembur berhasil disimpan.', 201);
+        }
 
-            if ($workflowResult && isset($workflowResult['approvers'])) {
-                $this->notify($user, 'PENGAJUAN LEMBUR BERHASIL', "Permohonan lembur Anda telah diajukan. Menunggu: {$workflowResult['step_label']}.", 'info');
-                foreach ($workflowResult['approvers'] as $approver) {
-                    $this->notify($approver, 'PENGAJUAN LEMBUR PERLU PERSETUJUAN', "{$user->name} telah mengajukan lembur. Mohon segera tinjau.", 'warning', '/dashboard/approvals');
+        // Notifications for submit
+        ActivityLog::create([
+            'user_id' => $user->id,
+            'company_id' => $companyId,
+            'action' => 'OVERTIME_SUBMISSION',
+            'description' => "Mengajukan lembur: " . ($overtime->title ?? '-'),
+            'model_type' => self::MODEL_OVERTIME,
+            'model_id' => $overtime->id,
+        ]);
+
+        if ($this->handleOvertimeWorkflowNotification($user, $companyId)) {
+            // Already handled
+        } else {
+            // Fallback notifications
+            if ($user->supervisor_id) {
+                $supervisor = $user->supervisor;
+                if ($supervisor) {
+                    $this->notify($supervisor, 'PENGAJUAN LEMBUR BAWAHAN', "{$user->name} telah mengajukan lembur. Mohon segera tinjau.", 'warning', self::ROUTE_APPROVALS);
                 }
-            } else {
-                // Fallback notifications
-                if ($user->supervisor_id) {
-                    $supervisor = $user->supervisor;
-                    if ($supervisor) {
-                        $this->notify($supervisor, 'PENGAJUAN LEMBUR BAWAHAN', "{$user->name} telah mengajukan lembur. Mohon segera tinjau.", 'warning', '/dashboard/approvals');
-                    }
-                }
-
-                $admins = User::where('company_id', $companyId)
-                    ->where('role_id', '>', 1)
-                    ->where('id', '!=', $user->supervisor_id)
-                    ->get();
-
-                foreach ($admins as $admin) {
-                    $this->notify($admin, 'PENGAJUAN LEMBUR BARU (ADMIN)', "{$user->name} telah mengajukan lembur.", 'warning');
-                }
-
-                $this->notify($user, 'PENGAJUAN LEMBUR BERHASIL', "Permohonan lembur Anda sedang menunggu persetujuan.", 'info');
             }
 
-            return $this->successResponse($overtime, 'Permohonan lembur berhasil diajukan.', 201);
-        });
+            $admins = User::where('company_id', $companyId)
+                ->where('role_id', '>', 1)
+                ->where('id', '!=', $user->supervisor_id)
+                ->get();
+
+            foreach ($admins as $admin) {
+                $this->notify($admin, 'PENGAJUAN LEMBUR BARU (ADMIN)', "{$user->name} telah mengajukan lembur.", 'warning');
+            }
+
+            $this->notify($user, self::NOTIFICATION_OVERTIME_SUCCESS, "Permohonan lembur Anda sedang menunggu persetujuan.", 'info');
+        }
+
+        return $this->successResponse($overtime, 'Permohonan lembur berhasil diajukan.', 201);
     }
 
     /**
@@ -217,18 +236,7 @@ class OvertimeController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (! $request->has('items') && $request->filled('date')) {
-            $request->merge([
-                'items' => [
-                    [
-                        'date' => $request->date,
-                        'start_time' => $request->start_time,
-                        'end_time' => $request->end_time,
-                        'reason' => $request->reason,
-                    ]
-                ]
-            ]);
-        }
+        $this->normalizeOvertimeItems($request);
 
         $user = $request->user();
         $overtime = Overtime::findOrFail($id);
@@ -244,6 +252,17 @@ class OvertimeController extends Controller
 
         $isSubmitting = $request->input('status') === 'pending';
 
+        $this->validateOvertimeUpdate($request, $isSubmitting);
+
+        $overtime = DB::transaction(function () use ($request, $user, $overtime, $isSubmitting) {
+            return $this->performOvertimeUpdate($request, $user, $overtime, $isSubmitting);
+        });
+
+        return $this->handlePostOvertimeUpdate($overtime, $user, $isSubmitting);
+    }
+
+    private function validateOvertimeUpdate(Request $request, bool $isSubmitting): void
+    {
         if ($isSubmitting) {
             $request->validate([
                 'title' => 'nullable|string|max:255',
@@ -264,73 +283,74 @@ class OvertimeController extends Controller
                 'items.*.reason' => self::RULE_REQ_STRING,
             ]);
         }
+    }
 
-        return DB::transaction(function () use ($request, $user, $overtime, $isSubmitting) {
-            $companyId = $user->company_id;
+    private function performOvertimeUpdate(Request $request, User $user, Overtime $overtime, bool $isSubmitting): Overtime
+    {
+        $companyId = $user->company_id;
 
-            // Update main record
-            $updateData = ['title' => $request->title ?? $overtime->title];
+        // Update main record
+        $updateData = ['title' => $request->title ?? $overtime->title];
 
-            if ($isSubmitting) {
-                $updateData['signature'] = $request->signature;
-                $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
+        if ($isSubmitting) {
+            $updateData['signature'] = $request->signature;
+            $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
 
-                if ($workflowResult) {
-                    $updateData['status'] = $workflowResult['status'];
-                    $updateData['current_approval_step'] = $workflowResult['current_approval_step'];
-                } else {
-                    $updateData['status'] = 'pending';
-                }
+            if ($workflowResult) {
+                $updateData['status'] = $workflowResult['status'];
+                $updateData['current_approval_step'] = $workflowResult['current_approval_step'];
+            } else {
+                $updateData['status'] = 'pending';
+            }
+        }
+
+        $overtime->update($updateData);
+
+        // Replace items
+        if ($request->has('items') && is_array($request->items)) {
+            $overtime->items()->delete();
+            foreach ($request->items as $item) {
+                OvertimeItem::create([
+                    'overtime_id' => $overtime->id,
+                    'date' => $item['date'],
+                    'start_time' => $item['start_time'],
+                    'end_time' => $item['end_time'],
+                    'reason' => $item['reason'],
+                ]);
+            }
+        }
+
+        $overtime->load('items');
+
+        return $overtime;
+    }
+
+    private function handlePostOvertimeUpdate(Overtime $overtime, User $user, bool $isSubmitting): \Illuminate\Http\JsonResponse
+    {
+        $companyId = $user->company_id;
+        $action = $isSubmitting ? 'OVERTIME_SUBMISSION' : 'OVERTIME_DRAFT_UPDATE';
+        $desc = $isSubmitting
+            ? "Mengajukan lembur dari draf: " . ($overtime->title ?? '-')
+            : "Memperbarui draf lembur: " . ($overtime->title ?? '-');
+
+        ActivityLog::create([
+            'user_id' => $user->id,
+            'company_id' => $companyId,
+            'action' => $action,
+            'description' => $desc,
+            'model_type' => self::MODEL_OVERTIME,
+            'model_id' => $overtime->id,
+        ]);
+
+        if ($isSubmitting) {
+            if (!$this->handleOvertimeWorkflowNotification($user, $companyId)) {
+                $this->notify($user, self::NOTIFICATION_OVERTIME_SUCCESS, "Permohonan lembur Anda sedang menunggu persetujuan.", 'info');
             }
 
-            $overtime->update($updateData);
+            return $this->successResponse($overtime, 'Lembur berhasil diajukan.');
+        }
 
-            // Replace items
-            if ($request->has('items') && is_array($request->items)) {
-                $overtime->items()->delete();
-                foreach ($request->items as $item) {
-                    OvertimeItem::create([
-                        'overtime_id' => $overtime->id,
-                        'date' => $item['date'],
-                        'start_time' => $item['start_time'],
-                        'end_time' => $item['end_time'],
-                        'reason' => $item['reason'],
-                    ]);
-                }
-            }
-
-            $overtime->load('items');
-
-            $action = $isSubmitting ? 'OVERTIME_SUBMISSION' : 'OVERTIME_DRAFT_UPDATE';
-            $desc = $isSubmitting
-                ? "Mengajukan lembur dari draf: " . ($overtime->title ?? '-')
-                : "Memperbarui draf lembur: " . ($overtime->title ?? '-');
-
-            ActivityLog::create([
-                'user_id' => $user->id,
-                'company_id' => $companyId,
-                'action' => $action,
-                'description' => $desc,
-                'model_type' => self::MODEL_OVERTIME,
-                'model_id' => $overtime->id,
-            ]);
-
-            if ($isSubmitting) {
-                $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
-                if ($workflowResult && isset($workflowResult['approvers'])) {
-                    $this->notify($user, 'PENGAJUAN LEMBUR BERHASIL', "Permohonan lembur Anda telah diajukan. Menunggu: {$workflowResult['step_label']}.", 'info');
-                    foreach ($workflowResult['approvers'] as $approver) {
-                        $this->notify($approver, 'PENGAJUAN LEMBUR PERLU PERSETUJUAN', "{$user->name} telah mengajukan lembur. Mohon segera tinjau.", 'warning', '/dashboard/approvals');
-                    }
-                } else {
-                    $this->notify($user, 'PENGAJUAN LEMBUR BERHASIL', "Permohonan lembur Anda sedang menunggu persetujuan.", 'info');
-                }
-
-                return $this->successResponse($overtime, 'Lembur berhasil diajukan.');
-            }
-
-            return $this->successResponse($overtime, 'Draf lembur berhasil diperbarui.');
-        });
+        return $this->successResponse($overtime, 'Draf lembur berhasil diperbarui.');
     }
 
     public function approve(Request $request, $id)
@@ -380,7 +400,7 @@ class OvertimeController extends Controller
 
             if (isset($result['approvers'])) {
                 foreach ($result['approvers'] as $nextApprover) {
-                    $this->notify($nextApprover, 'LEMBUR MENUNGGU PERSETUJUAN', "Pengajuan lembur {$overtime->user->name} menunggu persetujuan Anda. Tahap: {$result['step_label']}.", 'warning', '/dashboard/approvals');
+                    $this->notify($nextApprover, 'LEMBUR MENUNGGU PERSETUJUAN', "Pengajuan lembur {$overtime->user->name} menunggu persetujuan Anda. Tahap: {$result['step_label']}.", 'warning', self::ROUTE_APPROVALS);
                 }
             }
             $this->notify($overtime->user, 'LEMBUR DALAM PROSES', "Pengajuan lembur Anda disetujui di tahap sebelumnya. Menunggu: {$result['step_label']}.", 'info');
@@ -389,32 +409,7 @@ class OvertimeController extends Controller
         }
 
         // ── Fallback: Default logic ──
-        abort_if(! $request->user()->hasPermission('approve-overtimes'), 403, self::MSG_FORBIDDEN);
-
-        $overtime->update([
-            'status' => 'approved',
-            'approved_by' => $request->user()->id,
-            'remark' => $request->remark,
-        ]);
-
-        // Log Activity
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'company_id' => $request->user()->company_id,
-            'action' => 'OVERTIME_APPROVAL',
-            'description' => "Menyetujui lembur {$overtime->user->name}",
-            'model_type' => self::MODEL_OVERTIME,
-            'model_id' => $overtime->id,
-        ]);
-
-        $this->notify(
-            $overtime->user,
-            'LEMBUR DISETUJUI',
-            "Permohonan lembur Anda telah DISETUJUI oleh Admin.",
-            'success'
-        );
-
-        return $this->successResponse($overtime, 'Permohonan lembur disetujui.');
+        return $this->handleFallbackDecision($request, $overtime, 'approve');
     }
 
     public function reject(Request $request, $id)
@@ -457,32 +452,7 @@ class OvertimeController extends Controller
         }
 
         // ── Fallback: Default logic ──
-        abort_if(! $request->user()->hasPermission('approve-overtimes'), 403, self::MSG_FORBIDDEN);
-
-        $overtime->update([
-            'status' => 'rejected',
-            'approved_by' => $request->user()->id,
-            'remark' => $request->remark,
-        ]);
-
-        // Log Activity
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'company_id' => $request->user()->company_id,
-            'action' => 'OVERTIME_REJECTION',
-            'description' => "Menolak lembur {$overtime->user->name}",
-            'model_type' => self::MODEL_OVERTIME,
-            'model_id' => $overtime->id,
-        ]);
-
-        $this->notify(
-            $overtime->user,
-            'LEMBUR DITOLAK',
-            "Mohon maaf, permohonan lembur Anda telah DITOLAK.",
-            'danger'
-        );
-
-        return $this->successResponse($overtime, 'Permohonan lembur ditolak.');
+        return $this->handleFallbackDecision($request, $overtime, 'reject');
     }
 
     public function destroy(Request $request, $id)
@@ -565,5 +535,59 @@ class OvertimeController extends Controller
         ];
 
         return Excel::download(new OvertimeExport($overtimes, $meta), 'laporan-lembur-'.now()->format('Y-m-d').'.xlsx');
+    }
+
+    /**
+     * Handle fallback approve/reject when no dynamic workflow is configured.
+     * Consolidates duplicate logic from approve() and reject() fallback paths.
+     */
+    private function handleFallbackDecision(Request $request, Overtime $overtime, string $decision): \Illuminate\Http\JsonResponse
+    {
+        abort_if(! $request->user()->hasPermission('approve-overtimes'), 403, self::MSG_FORBIDDEN);
+
+        $isApproval = $decision === 'approve';
+        $status = $isApproval ? 'approved' : 'rejected';
+        $action = $isApproval ? 'OVERTIME_APPROVAL' : 'OVERTIME_REJECTION';
+        $actionLabel = $isApproval ? 'Menyetujui' : 'Menolak';
+        $notifTitle = $isApproval ? 'LEMBUR DISETUJUI' : 'LEMBUR DITOLAK';
+        $notifMsg = $isApproval
+            ? "Permohonan lembur Anda telah DISETUJUI oleh Admin."
+            : "Mohon maaf, permohonan lembur Anda telah DITOLAK.";
+        $notifType = $isApproval ? 'success' : 'danger';
+        $responseMsg = $isApproval ? 'Permohonan lembur disetujui.' : 'Permohonan lembur ditolak.';
+
+        $overtime->update([
+            'status' => $status,
+            'approved_by' => $request->user()->id,
+            'remark' => $request->remark,
+        ]);
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'company_id' => $request->user()->company_id,
+            'action' => $action,
+            'description' => "$actionLabel lembur {$overtime->user->name}",
+            'model_type' => self::MODEL_OVERTIME,
+            'model_id' => $overtime->id,
+        ]);
+
+        $this->notify($overtime->user, $notifTitle, $notifMsg, $notifType);
+
+        return $this->successResponse($overtime, $responseMsg);
+    }
+
+    private function handleOvertimeWorkflowNotification(User $user, int $companyId)
+    {
+        $workflowResult = ApprovalService::initApproval('overtime', $companyId, $user);
+
+        if ($workflowResult && isset($workflowResult['approvers'])) {
+            $this->notify($user, self::NOTIFICATION_OVERTIME_SUCCESS, "Permohonan lembur Anda telah diajukan. Menunggu: {$workflowResult['step_label']}.", 'info');
+            foreach ($workflowResult['approvers'] as $approver) {
+                $this->notify($approver, 'PENGAJUAN LEMBUR PERLU PERSETUJUAN', "{$user->name} telah mengajukan lembur. Mohon segera tinjau.", 'warning', self::ROUTE_APPROVALS);
+            }
+            return true;
+        }
+
+        return false;
     }
 }

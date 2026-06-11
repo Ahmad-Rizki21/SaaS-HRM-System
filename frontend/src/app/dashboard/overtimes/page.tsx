@@ -2,15 +2,21 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-import { Plus, Search, Eye, Clock, FileDown, Trash2, Save, Send, Printer, ArrowLeft, Check, X } from "lucide-react";
+import { downloadFile, sanitizeFileName } from "@/lib/downloadHelper";
+import { Plus, Search, Eye, Clock, FileDown, Trash2, Save, Send, Printer, ArrowLeft } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { useAuth } from "@/contexts/AuthContext";
 import { TableSkeleton } from "@/components/Skeleton";
 import { toast } from "sonner";
 import SignaturePad from "@/components/SignaturePad";
 
+const generateUniqueId = (): string => {
+  return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + '-' + String(Date.now() % 1000));
+};
+
 interface OvertimeItem {
   id?: number;
+  tempId?: string;
   date: string;
   start_time: string;
   end_time: string;
@@ -42,7 +48,13 @@ interface OvertimeRecord {
   reason?: string;
 }
 
-const emptyItem = (): OvertimeItem => ({ date: "", start_time: "", end_time: "", reason: "" });
+const emptyItem = (): OvertimeItem => ({
+  tempId: generateUniqueId(),
+  date: "",
+  start_time: "",
+  end_time: "",
+  reason: ""
+});
 
 export default function OvertimesPage() {
   const { user } = useAuth();
@@ -92,9 +104,21 @@ export default function OvertimesPage() {
     setFormTitle(ot.title || "");
     setFormSignature(ot.signature || "");
     if (ot.items && ot.items.length > 0) {
-      setFormItems(ot.items.map(i => ({ date: i.date, start_time: i.start_time?.substring(0,5) || "", end_time: i.end_time?.substring(0,5) || "", reason: i.reason })));
+      setFormItems(ot.items.map(i => ({
+        tempId: generateUniqueId(),
+        date: i.date,
+        start_time: i.start_time?.substring(0,5) || "",
+        end_time: i.end_time?.substring(0,5) || "",
+        reason: i.reason
+      })));
     } else if (ot.date) {
-      setFormItems([{ date: ot.date, start_time: ot.start_time?.substring(0,5) || "", end_time: ot.end_time?.substring(0,5) || "", reason: ot.reason || "" }]);
+      setFormItems([{
+        tempId: generateUniqueId(),
+        date: ot.date,
+        start_time: ot.start_time?.substring(0,5) || "",
+        end_time: ot.end_time?.substring(0,5) || "",
+        reason: ot.reason || ""
+      }]);
     } else {
       setFormItems([emptyItem()]);
     }
@@ -122,7 +146,12 @@ export default function OvertimesPage() {
     }
     setIsSubmitting(true);
     try {
-      const payload = { title: formTitle || null, status: submitStatus, items: formItems, signature: formSignature || null };
+      const cleanedItems = formItems.map((item) => {
+        const rest = { ...item };
+        delete rest.tempId;
+        return rest;
+      });
+      const payload = { title: formTitle || null, status: submitStatus, items: cleanedItems, signature: formSignature || null };
       if (editingId) {
         await axiosInstance.put(`/overtimes/${editingId}`, payload);
       } else {
@@ -131,8 +160,9 @@ export default function OvertimesPage() {
       toast.success(submitStatus === "draft" ? "Draf lembur berhasil disimpan." : "Pengajuan lembur berhasil dikirim!");
       setViewMode("list");
       fetchOvertimes(page);
-    } catch (e: any) {
-      toast.error(e.response?.data?.message || "Gagal menyimpan lembur");
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Gagal menyimpan lembur");
     } finally { setIsSubmitting(false); }
   };
 
@@ -142,13 +172,16 @@ export default function OvertimesPage() {
       await axiosInstance.delete(`/overtimes/${id}`);
       toast.success("Lembur berhasil dihapus.");
       fetchOvertimes(page);
-    } catch (e: any) { toast.error(e.response?.data?.message || "Gagal menghapus"); }
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || "Gagal menghapus");
+    }
   };
 
   const handleExport = async () => {
     try {
       const res = await axiosInstance.get('/overtimes/export', { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const url = globalThis.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `laporan-lembur-${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -174,43 +207,14 @@ export default function OvertimesPage() {
   const handlePrint = (e: React.MouseEvent) => {
     e.preventDefault();
     setTimeout(() => {
-      window.print();
+      globalThis.print();
     }, 200);
   };
 
-  const handleDownloadPdf = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/overtime/${recordId}`, {
-        responseType: 'blob'
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Lembur_${userName.replace(/\s+/g, '_')}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-    } catch (err) {
-      toast.error("Gagal mendownload PDF.");
-    }
-  };
-
-  const handleDownloadExcel = async (recordId: number, userName: string) => {
-    try {
-      const response = await axiosInstance.get(`/export/overtime/${recordId}/excel`, {
-        responseType: 'blob'
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Lembur_${userName.replace(/\s+/g, '_')}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-    } catch (err) {
-      toast.error("Gagal mendownload Excel.");
-    }
-  };
+  const handleDownloadPdf = (recordId: number, userName: string) =>
+    downloadFile(`/export/overtime/${recordId}`, `Lembur_${sanitizeFileName(userName)}.pdf`, 'pdf');
+  const handleDownloadExcel = (recordId: number, userName: string) =>
+    downloadFile(`/export/overtime/${recordId}/excel`, `Lembur_${sanitizeFileName(userName)}.xlsx`, 'excel');
 
   const getStatusBadge = (status: string) => {
     const map: Record<string, { cls: string; text: string }> = {
@@ -256,9 +260,29 @@ export default function OvertimesPage() {
     return getIndonesianMonthYear(record.created_at || new Date().toISOString());
   };
 
+  const getApprovalStatusStamp = (status: string) => {
+    if (status === 'approved') {
+      return (
+        <div className="border-2 border-blue-600 text-blue-600 rounded px-2.5 py-0.5 inline-block font-bold text-xs uppercase tracking-wide rotate-[-3deg] bg-blue-50/50">
+          APPROVED
+        </div>
+      );
+    }
+    if (status === 'rejected') {
+      return (
+        <div className="border-2 border-red-600 text-red-600 rounded px-2.5 py-0.5 inline-block font-bold text-xs uppercase tracking-wide rotate-[-3deg] bg-red-50/50">
+          REJECTED
+        </div>
+      );
+    }
+    return (
+      <span className="text-gray-400 font-mono text-[10px]">— Belum Disetujui —</span>
+    );
+  };
+
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{ __html: String.raw`
         @page {
           size: portrait;
           margin: 10mm 15mm !important;
@@ -272,7 +296,7 @@ export default function OvertimesPage() {
             width: 100% !important;
           }
           aside, .dash-sidebar, .dash-desktop-header, .dash-mobile-header, .dash-overlay,
-          .print\\:hidden, .no-print, header, nav, footer, .dash-page-header, .dash-page-actions {
+          .print\:hidden, .no-print, header, nav, footer, .dash-page-header, .dash-page-actions {
             display: none !important;
           }
           .dash-layout, .dash-main {
@@ -542,7 +566,7 @@ export default function OvertimesPage() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-400">
                     {formItems.map((item, idx) => (
-                      <tr key={idx}>
+                      <tr key={item.tempId || idx}>
                         <td className="border border-gray-400 px-3 py-2 text-gray-500 text-center font-semibold">{idx + 1}</td>
                         <td className="border border-gray-400 px-2 py-1">
                           <input
@@ -747,7 +771,7 @@ export default function OvertimesPage() {
                 </thead>
                 <tbody>
                   {getRecordItems(selectedItem).map((it, idx) => (
-                    <tr key={idx} className="h-7">
+                    <tr key={it.id || idx} className="h-7">
                       <td className="border border-gray-800 px-3 py-1 text-gray-700 font-semibold">{idx + 1}</td>
                       <td className="border border-gray-800 px-3 py-1 text-left pl-4 font-semibold text-gray-900">{selectedItem.user?.name || '-'}</td>
                       <td className="border border-gray-800 px-3 py-1 text-gray-800">{it.start_time?.substring(0, 5)}</td>
@@ -788,7 +812,7 @@ export default function OvertimesPage() {
                       year: 'numeric'
                     });
                     return (
-                      <tr key={idx} className="h-7">
+                      <tr key={it.id || `${it.date}-${idx}`} className="h-7">
                         <td className="border border-gray-800 px-3 py-1 text-center text-gray-700 font-semibold w-12">{idx + 1}</td>
                         <td className="border border-gray-800 px-3 py-1 pl-4 text-gray-800">
                           <span className="font-semibold text-gray-900">{formattedDate}</span> - {it.reason}
@@ -838,17 +862,7 @@ export default function OvertimesPage() {
               <div className="text-center w-1/3">
                 <p className="font-bold text-xs text-gray-700 mb-8">Mengetahui</p>
                 <div className="h-16 flex items-center justify-center">
-                  {selectedItem.status === 'approved' ? (
-                    <div className="border-2 border-blue-600 text-blue-600 rounded px-2.5 py-0.5 inline-block font-bold text-xs uppercase tracking-wide rotate-[-3deg] bg-blue-50/50">
-                      APPROVED
-                    </div>
-                  ) : selectedItem.status === 'rejected' ? (
-                    <div className="border-2 border-red-600 text-red-600 rounded px-2.5 py-0.5 inline-block font-bold text-xs uppercase tracking-wide rotate-[-3deg] bg-red-50/50">
-                      REJECTED
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 font-mono text-[10px]">— Belum Disetujui —</span>
-                  )}
+                  {getApprovalStatusStamp(selectedItem.status)}
                 </div>
                 <p className="font-bold text-xs underline text-gray-800 mt-2">({selectedItem.approver?.name || selectedItem.user?.supervisor?.name || 'Operasional'})</p>
                 <p className="text-[10px] text-gray-500 font-bold">Operasional</p>
