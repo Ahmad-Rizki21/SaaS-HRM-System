@@ -409,32 +409,7 @@ class OvertimeController extends Controller
         }
 
         // ── Fallback: Default logic ──
-        abort_if(! $request->user()->hasPermission('approve-overtimes'), 403, self::MSG_FORBIDDEN);
-
-        $overtime->update([
-            'status' => 'approved',
-            'approved_by' => $request->user()->id,
-            'remark' => $request->remark,
-        ]);
-
-        // Log Activity
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'company_id' => $request->user()->company_id,
-            'action' => 'OVERTIME_APPROVAL',
-            'description' => "Menyetujui lembur {$overtime->user->name}",
-            'model_type' => self::MODEL_OVERTIME,
-            'model_id' => $overtime->id,
-        ]);
-
-        $this->notify(
-            $overtime->user,
-            'LEMBUR DISETUJUI',
-            "Permohonan lembur Anda telah DISETUJUI oleh Admin.",
-            'success'
-        );
-
-        return $this->successResponse($overtime, 'Permohonan lembur disetujui.');
+        return $this->handleFallbackDecision($request, $overtime, 'approve');
     }
 
     public function reject(Request $request, $id)
@@ -477,32 +452,7 @@ class OvertimeController extends Controller
         }
 
         // ── Fallback: Default logic ──
-        abort_if(! $request->user()->hasPermission('approve-overtimes'), 403, self::MSG_FORBIDDEN);
-
-        $overtime->update([
-            'status' => 'rejected',
-            'approved_by' => $request->user()->id,
-            'remark' => $request->remark,
-        ]);
-
-        // Log Activity
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'company_id' => $request->user()->company_id,
-            'action' => 'OVERTIME_REJECTION',
-            'description' => "Menolak lembur {$overtime->user->name}",
-            'model_type' => self::MODEL_OVERTIME,
-            'model_id' => $overtime->id,
-        ]);
-
-        $this->notify(
-            $overtime->user,
-            'LEMBUR DITOLAK',
-            "Mohon maaf, permohonan lembur Anda telah DITOLAK.",
-            'danger'
-        );
-
-        return $this->successResponse($overtime, 'Permohonan lembur ditolak.');
+        return $this->handleFallbackDecision($request, $overtime, 'reject');
     }
 
     public function destroy(Request $request, $id)
@@ -585,6 +535,45 @@ class OvertimeController extends Controller
         ];
 
         return Excel::download(new OvertimeExport($overtimes, $meta), 'laporan-lembur-'.now()->format('Y-m-d').'.xlsx');
+    }
+
+    /**
+     * Handle fallback approve/reject when no dynamic workflow is configured.
+     * Consolidates duplicate logic from approve() and reject() fallback paths.
+     */
+    private function handleFallbackDecision(Request $request, Overtime $overtime, string $decision): \Illuminate\Http\JsonResponse
+    {
+        abort_if(! $request->user()->hasPermission('approve-overtimes'), 403, self::MSG_FORBIDDEN);
+
+        $isApproval = $decision === 'approve';
+        $status = $isApproval ? 'approved' : 'rejected';
+        $action = $isApproval ? 'OVERTIME_APPROVAL' : 'OVERTIME_REJECTION';
+        $actionLabel = $isApproval ? 'Menyetujui' : 'Menolak';
+        $notifTitle = $isApproval ? 'LEMBUR DISETUJUI' : 'LEMBUR DITOLAK';
+        $notifMsg = $isApproval
+            ? "Permohonan lembur Anda telah DISETUJUI oleh Admin."
+            : "Mohon maaf, permohonan lembur Anda telah DITOLAK.";
+        $notifType = $isApproval ? 'success' : 'danger';
+        $responseMsg = $isApproval ? 'Permohonan lembur disetujui.' : 'Permohonan lembur ditolak.';
+
+        $overtime->update([
+            'status' => $status,
+            'approved_by' => $request->user()->id,
+            'remark' => $request->remark,
+        ]);
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'company_id' => $request->user()->company_id,
+            'action' => $action,
+            'description' => "$actionLabel lembur {$overtime->user->name}",
+            'model_type' => self::MODEL_OVERTIME,
+            'model_id' => $overtime->id,
+        ]);
+
+        $this->notify($overtime->user, $notifTitle, $notifMsg, $notifType);
+
+        return $this->successResponse($overtime, $responseMsg);
     }
 
     private function handleOvertimeWorkflowNotification(User $user, int $companyId)

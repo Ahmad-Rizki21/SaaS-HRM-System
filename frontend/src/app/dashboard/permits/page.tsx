@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
+import { downloadFile, sanitizeFileName } from "@/lib/downloadHelper";
 import { Plus, Search, Eye, Printer, ClipboardList, X, Check, FileDown } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import SignaturePad from "@/components/SignaturePad";
@@ -111,29 +112,10 @@ export default function PermitsPage() {
     }, 500);
   };
 
-  const handleDownload = async (recordId: number, userName: string, format: 'pdf' | 'excel') => {
-    try {
-      const urlPath = format === 'pdf' ? `/export/permit/${recordId}` : `/export/permit/${recordId}/excel`;
-      const ext = format === 'pdf' ? 'pdf' : 'xlsx';
-      
-      const response = await axiosInstance.get(urlPath, {
-        responseType: 'blob'
-      });
-      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Izin_${userName.replaceAll(/\s+/g, '_')}.${ext}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      toast.error(`Gagal mendownload ${format === 'pdf' ? 'PDF' : 'Excel'}.`);
-    }
-  };
-
-  const handleDownloadPdf = (recordId: number, userName: string) => handleDownload(recordId, userName, 'pdf');
-  const handleDownloadExcel = (recordId: number, userName: string) => handleDownload(recordId, userName, 'excel');
+  const handleDownloadPdf = (recordId: number, userName: string) =>
+    downloadFile(`/export/permit/${recordId}`, `Izin_${sanitizeFileName(userName)}.pdf`, 'pdf');
+  const handleDownloadExcel = (recordId: number, userName: string) =>
+    downloadFile(`/export/permit/${recordId}/excel`, `Izin_${sanitizeFileName(userName)}.xlsx`, 'excel');
 
 
   const getStatusBadge = (status: string) => {
