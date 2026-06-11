@@ -116,7 +116,7 @@ const ApprovalStatus = ({
   );
 };
 
-interface SectionProps {
+interface Part1EmployeeSectionProps {
   isFormMode: boolean;
   user: LeaveRecord['user'] | null | undefined;
   formData?: LeaveSheetInnerProps['formData'];
@@ -124,7 +124,12 @@ interface SectionProps {
   selectedItem?: LeaveRecord | null;
 }
 
-const Part1EmployeeSection = ({ isFormMode, user, formData, setFormData, selectedItem }: SectionProps) => {
+interface SectionProps {
+  isFormMode: boolean;
+  selectedItem?: LeaveRecord | null;
+}
+
+const Part1EmployeeSection = ({ isFormMode, user, formData, setFormData, selectedItem }: Part1EmployeeSectionProps) => {
   const name = isFormMode ? user?.name : selectedItem?.user?.name;
   const position = isFormMode ? user?.role?.name : selectedItem?.user?.role?.name;
   const department = isFormMode 
@@ -616,9 +621,9 @@ const LeaveSheetInner = ({
 
       <div className={`border border-gray-400 rounded-sm overflow-hidden ${isFormMode ? '' : 'mt-3'}`}>
         <Part1EmployeeSection isFormMode={isFormMode} user={user} formData={formData} setFormData={setFormData} selectedItem={selectedItem} />
-        <Part2HRDSection isFormMode={isFormMode} user={user} selectedItem={selectedItem} />
-        <Part3ManagerSection isFormMode={isFormMode} user={user} selectedItem={selectedItem} />
-        <Part4DirectorSection isFormMode={isFormMode} user={user} selectedItem={selectedItem} />
+        <Part2HRDSection isFormMode={isFormMode} selectedItem={selectedItem} />
+        <Part3ManagerSection isFormMode={isFormMode} selectedItem={selectedItem} />
+        <Part4DirectorSection isFormMode={isFormMode} selectedItem={selectedItem} />
       </div>
     </>
   );
